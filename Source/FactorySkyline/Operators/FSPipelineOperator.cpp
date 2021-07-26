@@ -43,7 +43,8 @@ AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 
 	TSet<UActorComponent*> Set = PipelineHologram->GetComponents();
 	for (UActorComponent* Component : Set) {
-		if (Component->GetName().Equals(TEXT("SplineMeshComponent_0"))) {
+		auto c = Cast<USplineMeshComponent>(Component);
+		if(c) {
 			SplineMeshComponent = Cast<USplineMeshComponent>(Component);
 			break;
 		}
@@ -57,13 +58,15 @@ AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 			Component->BodyInstance = SplineMeshComponent->BodyInstance;
 			Component->SetForwardAxis(SplineMeshComponent->ForwardAxis);
 			Component->SetMobility(SplineMeshComponent->Mobility);
-			for (int i = 0; i < SplineMeshComponent->GetNumMaterials(); i++)
+			for (int i = 0; i < SplineMeshComponent->GetNumMaterials(); i++) {
 				Component->SetMaterial(i, SplineMeshComponent->GetMaterial(i));
+			}
 			Component->SetStartAndEnd(Data.StartPos, Data.StartTangent, Data.EndPos, Data.EndTangent);
 			Component->AttachTo(PipelineHologram->GetRootComponent());
 			Component->RegisterComponent();
+		} else {
+			SplineMeshComponent->SetStartAndEnd(Data.StartPos, Data.StartTangent, Data.EndPos, Data.EndTangent);
 		}
-		else SplineMeshComponent->SetStartAndEnd(Data.StartPos, Data.StartTangent, Data.EndPos, Data.EndTangent);
 		NeedNew = true;
 	}
 	return PipelineHologram;
