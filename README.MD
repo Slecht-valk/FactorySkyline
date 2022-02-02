@@ -37,7 +37,6 @@ Note That: The Key-Mapping Hint of the Build Gun will not change after rebinding
 
 [Cepheidqq](https://github.com/cepheidqq) after some pestering decided to release the source code of the mod to the public in the hope it can be updated. he made this statement in this [post](https://github.com/cepheidqq/FactorySkyline/issues/47):
 
-
 ```
 Hi everyone,
 I just upload my source code of this mod. You can download it at: https://github.com/cepheidqq/FactorySkyline/blob/main/FactorySkylineSourceCode.zip
@@ -50,9 +49,9 @@ I'm still a player of the Satisfactory Game. Hopes everybody have a good time:)
 ```
 
 ## Contributing
-Join the discord server [Here](https://discord.gg/vuFK7tsrE3)
-Join in the discussion [Here](https://forums.ficsit.app/t/factory-skyline-needs-your-help/1342) on the FICSIT.app forums
-Join [Here](https://www.reddit.com/r/SatisfactoryGame/comments/o5ldh7/factory_skyline_needs_your_help/) on Reddit
+Join the Discord server [here](https://discord.gg/vuFK7tsrE3)<br />
+Join in the discussion [here](https://forums.ficsit.app/t/factory-skyline-needs-your-help/1342) on the FICSIT.app forums<br />
+Join [here](https://www.reddit.com/r/SatisfactoryGame/comments/o5ldh7/factory_skyline_needs_your_help/) on Reddit
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
