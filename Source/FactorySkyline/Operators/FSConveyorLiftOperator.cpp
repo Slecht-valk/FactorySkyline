@@ -66,7 +66,7 @@ AFGBuildable* UFSConveyorLiftOperator::CreateCopy(const FSTransformOperator& Tra
 	*/
 	FSkyline->AdaptiveUtil->CopyConveyorLiftAttribute(SourceConveyorLift, TargetConveyorLift);
 
-	Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);
 
 	this->BuildableSubsystem->RemoveConveyorFromBucket(TargetConveyorLift);

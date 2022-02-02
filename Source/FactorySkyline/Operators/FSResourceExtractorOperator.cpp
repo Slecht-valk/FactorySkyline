@@ -41,7 +41,7 @@ AFGBuildable* UFSResourceExtractorOperator::CreateCopy(const FSTransformOperator
 
 			TargetExtractor->SetExtractableResource(Resource);
 
-			Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+			Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 			Buildable->FinishSpawning(Transform);
 
 			return Buildable;

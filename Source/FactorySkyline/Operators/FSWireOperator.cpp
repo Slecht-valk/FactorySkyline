@@ -59,7 +59,7 @@ AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOp
 	AFGBuildableWire* Wire = Cast<AFGBuildableWire>(Buildable);
 	Wire->Connect(TargetConnection0, TargetConnection1);
 
-	Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;

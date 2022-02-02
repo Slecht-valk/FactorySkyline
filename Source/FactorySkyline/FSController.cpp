@@ -491,7 +491,7 @@ void AFSController::Tick(float dt)
 		if (Etc->GetBool("InfiniteAmmo")) {
 			AFGWeapon* Weapon = Cast<AFGWeapon>(GetPlayer()->GetEquipmentInSlot(EEquipmentSlot::ES_ARMS));
 			if (Weapon) {
-				Weapon->mCurrentAmmo = Weapon->GetMagSize();
+				Weapon->mCurrentAmmoCount = Weapon->GetMagSize();
 			}
 		}
 	}
