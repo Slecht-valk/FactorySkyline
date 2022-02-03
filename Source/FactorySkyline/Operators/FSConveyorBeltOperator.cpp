@@ -33,7 +33,7 @@ AFGHologram* UFSConveyorBeltOperator::HologramCopy(FTransform& RelativeTransform
 	Hit.FaceIndex = -1;
 
 	Hologram->SetHologramLocationAndRotation(Hit);
-	Hologram->SetPlacementMaterial(true);
+	Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 
 	UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(SourceBelt->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
 	USplineMeshComponent* SplineMeshComponent = nullptr;
@@ -106,7 +106,7 @@ AFGBuildable* UFSConveyorBeltOperator::CreateCopy(const FSTransformOperator& Tra
 		TargetData->Add(NewPointData);
 	}
 
-	Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);
 
 	this->BuildableSubsystem->RemoveConveyorFromBucket(TargetConveyorBelt);

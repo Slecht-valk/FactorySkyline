@@ -330,9 +330,8 @@ void AFSBuilder::Update(const FHitResult& Hit)
 
 		for (int i = 0; i < this->HologramList.Num(); i++) {
 			if (LastShow != ShouldShow)	this->HologramList[i]->SetActorHiddenInGame(!ShouldShow);
-			//if (LastValid != Valid)	this->HologramList[i]->SetPlacementMaterial(Valid);
-			this->HologramList[i]->SetPlacementMaterial(true);
 			if (ShouldShow) this->HologramList[i]->SetActorTransform(FSTransform.Transform(this->RelativeTransform[i]));
+			this->HologramList[i]->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 		}
 
 		LastShow = ShouldShow;
@@ -350,7 +349,7 @@ void AFSBuilder::Update(FSRepeat* Repeat)
 
 	for (int i = 0; i < this->HologramList.Num(); i++) {
 		this->HologramList[i]->SetActorHiddenInGame(false);
-		this->HologramList[i]->SetPlacementMaterial(true);
+		this->HologramList[i]->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 		this->HologramList[i]->SetActorTransform(FSTransform.Transform(this->RelativeTransform[i]));
 	}
 }

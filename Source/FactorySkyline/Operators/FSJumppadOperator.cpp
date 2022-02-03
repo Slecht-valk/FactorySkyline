@@ -43,7 +43,7 @@ AFGBuildable* UFSJumppadOperator::CreateCopy(const FSTransformOperator& Transfor
 	TargetJumppad->SetLaunchAngle(SourceJumppad->mLaunchAngle);
 	//SML::Logging::info(SourceJumppad->mLaunchAngle);
 
-	Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);
 
 	UFGFactoryLegsComponent* Legs = Buildable->FindComponentByClass<UFGFactoryLegsComponent>();

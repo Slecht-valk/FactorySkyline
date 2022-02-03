@@ -36,7 +36,7 @@ AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 	Hit.FaceIndex = -1;
 
 	PipelineHologram->SetHologramLocationAndRotation(Hit);
-	PipelineHologram->SetPlacementMaterial(true);
+	PipelineHologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 
 	UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(SourcePipe->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
 	USplineMeshComponent* SplineMeshComponent = nullptr;
@@ -101,7 +101,7 @@ AFGBuildable* UFSPipelineOperator::CreateCopy(const FSTransformOperator& Transfo
 		TargetPipeline->mSplineData.Add(NewPointData);
 	}
 
-	Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;

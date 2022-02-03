@@ -11,6 +11,7 @@
 #include "FGProductionIndicatorInstanceComponent.h"
 #include "Components/ProxyInstancedStaticMeshComponent.h"
 
+static const uint8 BUILDABLE_COLORS_MAX_SLOTS = 18;
 
 void UFSSelection::Init()
 {
@@ -499,7 +500,7 @@ FSISMNode* UFSSelection::GetISM(UFGColoredInstanceMeshProxy* MeshProxy, UMateria
 	FSISMNode* Node = new FSISMNode();
 	ISMMapping.Add(TPair<UFGColoredInstanceManager*, UMaterialInterface* >(MeshProxy->mInstanceManager, Material), Node);
 
-	UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponents[0];
+	UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
 	Node->ISMComponent = NewObject<UHierarchicalInstancedStaticMeshComponent>(HISMComponent->GetAttachmentRootActor());
 	Node->ISMComponent->AttachTo(HISMComponent->GetAttachmentRootActor()->GetRootComponent());
 	Node->ISMComponent->SetStaticMesh(HISMComponent->GetStaticMesh());
@@ -539,21 +540,21 @@ void UFSSelection::RemoveInstance(UFGColoredInstanceMeshProxy* MeshProxy, FSMate
 
 void UFSSelection::AddInstance(UFGColoredInstanceMeshProxy* MeshProxy, uint8 Slot)
 {
-	UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponents[Slot];
+	UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
 	HISMComponent->AddInstance(MeshProxy->GetComponentTransform());
-	TArray <UFGColoredInstanceManager::InstanceHandle*>& NewHandlesArray = MeshProxy->mInstanceManager->mHandles[Slot];
+	TArray <UFGColoredInstanceManager::FInstanceHandle*>& NewHandlesArray = MeshProxy->mInstanceManager->mHandles;
 	MeshProxy->mInstanceHandle.HandleID = NewHandlesArray.Add(&MeshProxy->mInstanceHandle);
 }
 
 void UFSSelection::RemoveInstance(UFGColoredInstanceMeshProxy* MeshProxy, uint8 Slot)
 {
-	UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponents[Slot];
+	UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
 	int Index = MeshProxy->mInstanceHandle.HandleID;
 	if (Index < 0) return;
 
 	MeshProxy->mInstanceHandle.HandleID = INDEX_NONE;
 	HISMComponent->RemoveInstance(Index);
-	TArray <UFGColoredInstanceManager::InstanceHandle*>& HandlesArray = MeshProxy->mInstanceManager->mHandles[Slot];
+	TArray <UFGColoredInstanceManager::FInstanceHandle*>& HandlesArray = MeshProxy->mInstanceManager->mHandles;
 	HandlesArray.RemoveAtSwap(Index);
 	if (Index >= 0 && Index < HandlesArray.Num()) HandlesArray[Index]->HandleID = Index;
 }

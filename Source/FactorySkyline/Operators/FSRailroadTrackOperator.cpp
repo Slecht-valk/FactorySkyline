@@ -31,7 +31,7 @@ AFGHologram* UFSRailroadTrackOperator::HologramCopy(FTransform& RelativeTransfor
 	Hit.FaceIndex = -1;
 
 	Hologram->SetHologramLocationAndRotation(Hit);
-	Hologram->SetPlacementMaterial(true);
+	Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 
 	UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(Track->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
 	USplineMeshComponent* SplineMeshComponent = nullptr;
@@ -95,7 +95,7 @@ AFGBuildable* UFSRailroadTrackOperator::CreateCopy(const FSTransformOperator& Tr
 	//TODO:
 	//Buildable->SetBuildingID(Source->GetBuildingID());
 
-	Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);
 
 	AFGRailroadSubsystem* RailroadSubsystem = AFGRailroadSubsystem::Get(this);

@@ -58,7 +58,7 @@ AFGBuildable* UFSPipelineSupportOperator::CreateCopy(const FSTransformOperator& 
 	TargetPipelineSupport->SetSupportLength(SourcePipelineSupport->mLength);
 	TargetPipelineSupport->SetVerticalAngle(SourcePipelineSupport->mVerticalAngle);
 
-	Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;

@@ -21,7 +21,7 @@ AFGBuildable* UFSPumpOperator::CreateCopy(const FSTransformOperator& TransformOp
 	//TODO:
 	//Buildable->SetBuildingID(Source->GetBuildingID());
 
-	Buildable->SetColorSlot_Implementation(Source->GetColorSlot_Implementation());
+	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);
 
 	TargetPump->mDefaultFlowLimit = SourcePump->mDefaultFlowLimit;
