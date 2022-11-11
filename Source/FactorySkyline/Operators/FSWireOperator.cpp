@@ -20,6 +20,11 @@ AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOp
 
 	if (!TargetConnection0 && !TargetConnection1) return nullptr;
 
+	AActor* actor0 = nullptr;
+	AActor* actor1 = nullptr;
+
+	TArray<AActor*> actors;
+
 	if (!TargetConnection0 || !TargetConnection1) {
 		AFGBuildable* SourceExternal = Cast<AFGBuildable>(SourceWire->GetConnection(TargetConnection0 ? 1 : 0)->GetAttachmentRootActor());
 		if (SourceExternal) {
@@ -31,12 +36,22 @@ AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOp
 			FCollisionShape Shape;
 			Shape.SetSphere(50.0f);
 			World->OverlapMultiByChannel(Result, TargetLocation, FRotator::ZeroRotator.Quaternion(), ECollisionChannel::ECC_Visibility, Shape);
+
+			AActor* actor0 = nullptr;
+			AActor* actor1 = nullptr;
+
 			for (FOverlapResult& Res : Result) {
 				if (Res.GetActor()->GetClass() == SourceExternal->GetClass()) {
 					UFGCircuitConnectionComponent* Connection = Cast<UFGCircuitConnectionComponent>(Res.GetActor()->GetComponentByClass(UFGCircuitConnectionComponent::StaticClass()));
 					if (Connection->GetNumFreeConnections()) {
-						if (!TargetConnection0) TargetConnection0 = Connection;
-						if (!TargetConnection1) TargetConnection1 = Connection;
+						if (!TargetConnection0) {
+							actor0 = Res.GetActor();
+							TargetConnection0 = Connection;
+						}
+						if (!TargetConnection1) {
+							actor1 = Res.GetActor();
+							TargetConnection1 = Connection;
+						}
 						break;
 					}
 				}
@@ -58,6 +73,9 @@ AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOp
 
 	AFGBuildableWire* Wire = Cast<AFGBuildableWire>(Buildable);
 	Wire->Connect(TargetConnection0, TargetConnection1);
+
+	actors.Add(actor0);
+	actors.Add(actor1);
 
 	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);

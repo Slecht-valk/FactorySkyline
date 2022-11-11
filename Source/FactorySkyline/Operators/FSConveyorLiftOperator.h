@@ -22,5 +22,6 @@ public:
 	virtual AFGHologram* HologramCopy(FTransform& RelativeTransform);
 	virtual AFGBuildable* CreateCopy(const FSTransformOperator& TransformOperator);
 
+
 	UFGFactoryConnectionComponent* HitConnection;
 };

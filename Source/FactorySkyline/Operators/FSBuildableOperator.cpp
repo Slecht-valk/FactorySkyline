@@ -37,6 +37,17 @@
 #include "FactorySkyline/Operators/FSWallOperator.h"
 #include "FactorySkyline/Operators/FSWireOperator.h"
 
+#include "FactorySkyline/Operators/FSBuildablePassThroughOperator.h"
+#include "FactorySkyline/Operators/FSBuildableBeamOperator.h"
+#include "FactorySkyline/Operators/FSBuildableSignOperator.h"
+#include "FactorySkyline/Operators/FSBuildableLightsControlPanelOperator.h"
+#include "FactorySkyline/Operators/FSBuildableCircuitSwitchOperator.h"
+#include "FactorySkyline/Operators/FSBuildablePowerStorageOperator.h"
+#include "Buildables/FGBuildableWidgetSign.h"
+#include "Buildables/FGBuildableLightsControlPanel.h"
+#include "Buildables/FGBuildableCircuitSwitch.h"
+#include "Buildables/FGBuildablePowerStorage.h"
+
 #include "Buildables/FGBuildable.h"
 #include "Buildables/FGBuildableAttachmentMerger.h"
 #include "Buildables/FGBuildableAttachmentSplitter.h"
@@ -82,6 +93,14 @@
 #include "FGPowerConnectionComponent.h"
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
+
+#include <string>
+#include <exception>
+#include <iostream>
+
+#include<chrono>
+#include<thread>
+using namespace std;
 
 
 AFGHologram* UFSBuildableOperator::CreateHologram()
@@ -130,19 +149,102 @@ AFGHologram* UFSBuildableOperator::HologramCopy(FTransform& RelativeTransform)
 
 AFGBuildable* UFSBuildableOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
+	//std::this_thread::sleep_for(std::chrono::nanoseconds(10000000));
 	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = FTransform ();
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
+	sourceClass = Source->GetClass();
+	Buildable = nullptr;
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
-	if (!Recipe) return nullptr;
+	//TSubclassOf< UFGRecipe > ConveyorPoleRecipe = LoadClass<UFGRecipe>(this, TEXT("/Game/FactoryGame/Recipes/Buildings/Foundations/Recipe_Foundation_8x1_01.Recipe_Foundation_8x1_01_C"));
+	//try {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(sourceClass, Transform);
+		//if (Buildable == nullptr) return nullptr;
 
-	Buildable->SetBuiltWithRecipe(Recipe);
+	//}
+	//catch (exception& e) {
+		//cout << "Standard exception: " << e.what() << endl;
+	//}
+
+	//if (sourceClass->ClassGeneratedBy == nullptr) {
+		//return nullptr;
+	//}
+
+	//TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(sourceClass);
+	//if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	//if (!Recipe) return nullptr;
+
+	//Buildable->SetBuiltWithRecipe(Recipe);
 	//TODO:
 	//Buildable->SetBuildingID(Source->GetBuildingID());
 
+	//std::string  str = TCHAR_TO_UTF8(*Buildable->GetName());
+	//str.append("\n");
+	//std::wstring temp = std::wstring(str.begin(), str.end());
+	//LPCWSTR wideString = temp.c_str();
+	//OutputDebugStringW(wideString);
+	//FFactoryCustomizationData data = Source->GetCustomizationData_Implementation();
+	/*
+	FFactoryCustomizationData data = FFactoryCustomizationData();
+	FFactoryCustomizationData data2 = Source->mCustomizationData;
+	Buildable->mHologramClass = Source->mHologramClass;
+	Buildable->mDisplayName = Source->mDisplayName;
+	Buildable->mDescription = Source->mDescription;
+	Buildable->MaxRenderDistance = Source->MaxRenderDistance;
+	Buildable->mHighlightVector = Source->mHighlightVector;
+	Buildable->mDecoratorClass = Source->mDecoratorClass;
+	Buildable->mDefaultSwatchCustomizationOverride = Source->mDefaultSwatchCustomizationOverride;
+	//Buildable->SetCustomizationData_Implementation(Source->mCustomizationData);
+	//Buildable->SetCustomizationData_Native(Source->mCustomizationData);
+	Buildable->SetCustomizationData_Implementation(data2);
+	Buildable->mCustomizationData.ColorSlot = Source->mColorSlot;
+	TSubclassOf< UFGFactoryCustomizationDescriptor_Swatch > SwatchDesc = TSubclassOf< UFGFactoryCustomizationDescriptor_Swatch >();
+	data.SwatchDesc = SwatchDesc;
+	Buildable->OnRep_CustomizationData();
+	*/
+	//TSubclassOf< UFGFactoryCustomizationDescriptor_Skin > skin1 = Buildable->GetActiveSkin();
+	//TSubclassOf< UFGFactoryCustomizationDescriptor_Skin > skin2 = Buildable->GetActiveSkin();
+	//auto skin1 = Source->GetActiveSkin_Native();
+	//auto skin2 = Buildable->GetActiveSkin_Native();
+	//skin2.SwatchDesc = skin1.SwatchDesc;
+	//TSubclassOf< class UFGFactoryCustomizationDescriptor_Swatch > swatch = Source->swatch;
+	//Buildable->ApplySkinData(skinImp);
+	//Buildable->OnSkinCustomizationApplied(skinImp);
+	//Buildable->OverrideColorData =
+	// doesn't appear to save any color slot data in any scenario
+	//Buildable->mCustomizationData.ColorSlot = Source->mColorSlot;
+
+	//Source->GetCustomizationData();
+	// crashes game
+	//Buildable->SetCustomizationData(Source->GetCustomizationData());
+	// crashes game
+	//Buildable->ApplyCustomizationData(Source->GetCustomizationData());
+	//Buildable->ApplyCustomizationData_Native(Source->GetCustomizationData());
+
+	//Buildable->FlagReevaluateMaterialOnColored();
+	//Source->OnRep_CustomizationData();
+	//Buildable->OnRep_CustomizationData();
+	//Buildable->OnSkinCustomizationApplied(Source->GetActiveSkin_Implementation());
+
+	//TSubclassOf< UFGFactoryCustomizationDescriptor_Skin > skinImp = Source->UFGFactoryCustomizationDescriptor_Skin();
+	//Buildable->ApplySkinData(skinImp);
+	//Buildable->OnSkinCustomizationApplied(skinImp);
+
+	/*
+	AFSkyline* FSkyline = AFSkyline::Get(this);
+	// hack to refresh static mesh - This is needed for power indicators and meshes to update properly.
+	auto OutlineComp = UFGOutlineComponent::Get(FSkyline->FSCtrl->World);
+	OutlineComp->ShowDismantlePendingMaterial(Buildable);
+	OutlineComp->HideAllDismantlePendingMaterial();
+	*/
+
+
+	//Buildable->OnSkinCustomizationApplied(Source->TSubclassOf< class UFGFactoryCustomizationDescriptor_Skin >());
+
+	//Buildable->mColorSlot = Source->mColorSlot;
+	//uint8 color = Buildable->mColorSlot;
 	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+
 	Buildable->FinishSpawning(Transform);
 
 	UFGFactoryLegsComponent* Legs = Buildable->FindComponentByClass<UFGFactoryLegsComponent>();
@@ -163,7 +265,7 @@ AFGBuildable* UFSBuildableOperator::CreateCopy(const FSTransformOperator& Transf
 				SML::Logging::info(*MaterialInterface->GetFullName());
 		}
 	}*/
-
+	//this->firstBuild = true;
 	return Buildable;
 }
 
@@ -296,6 +398,29 @@ void UFSOperatorFactory::InitOperator(UFSBuildableOperator* Operator)
 
 UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 {
+	/*
+	if (Check(Buildable, "Build_Beam_Painted_C")) {
+		return NewObject <UFSBuildableBeamOperator>(this);
+	}
+	*/
+	if (Buildable->IsChildOf<AFGBuildableBeam>()) {
+		return NewObject <UFSBuildableBeamOperator>(this);
+	}
+	if (Buildable->IsChildOf<AFGBuildableWidgetSign>()) {
+		return NewObject <UFSBuildableSignOperator>(this);
+	}
+	if (Buildable->IsChildOf<AFGBuildableLightsControlPanel>()) {
+		return NewObject <UFSBuildableLightsControlPanelOperator>(this);
+	}
+
+	if (Buildable->IsChildOf<AFGBuildableCircuitSwitch>()) {
+		return NewObject <UFSBuildableCircuitSwitchOperator>(this);
+	}
+
+	if (Buildable->IsChildOf<AFGBuildablePowerStorage>()) {
+		return NewObject <UFSBuildablePowerStorageOperator>(this);
+	}
+
 	if (Buildable->IsChildOf<AFGBuildableFactoryBuilding>()) {
 		if (Buildable->IsChildOf<AFGBuildableFoundation>()) {
 			return NewObject<UFSFoundationOperator>(this);
@@ -454,6 +579,11 @@ UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 		//if (Check(Buildable, "Build_RailroadSwitchControl_C")) return NewObject<UFSRailroadSwitchOperator>(this);
 		return NewObject<UFSRailroadSwitchOperator>(this)->SetUnknown();
 	}
+
+	if (Check(Buildable, "Build_FoundationPassthrough_Lift_C") || Check(Buildable, "Build_FoundationPassthrough_Pipe_C")) {
+		return NewObject <UFSBuildablePassThroughOperator>(this);
+	}
+
 	if (Check(Buildable, "Build_Mam_C")) return NewObject<UFSBuildableOperator>(this);
 	if (Check(Buildable, "Build_WorkBench_C")) return NewObject<UFSBuildableOperator>(this);
 	if (Check(Buildable, "Build_Workshop_C")) return NewObject<UFSBuildableOperator>(this);
@@ -462,6 +592,7 @@ UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 	if (Check(Buildable, "Build_HyperTubeWallSupport_C")) return NewObject<UFSBuildableOperator>(this);
 	if (Check(Buildable, "Build_PipelineSupportWall_C")) return NewObject<UFSBuildableOperator>(this);
 	if (Check(Buildable, "Build_PipelineSupportWallHole_C")) return NewObject<UFSBuildableOperator>(this);
+
 	return NewObject<UFSBuildableOperator>(this)->SetUnknown();
 }
 
@@ -657,8 +788,14 @@ AFGConveyorLiftHologram* UFSSplineHologramFactory::CreateLiftHologram(AFGBuildab
 	TSubclassOf<UFGRecipe> HologramRecipe = this->GetRecipeFromClass(ConveyorLift->GetClass());
 	if (!HologramRecipe) return nullptr;
 	Log("%s", (*UFGRecipe::GetRecipeName(HologramRecipe).ToString()));
-	auto SpawnedLiftHologram = AFGHologram::SpawnHologramFromRecipe(HologramRecipe, Builder, FVector(), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer());
+
+	// developer note, passing FVector() is unsafe use FVector(0.0f, 0.0f, 0.0f) instead
+	AFGHologram* SpawnedLiftHologram = AFGHologram::SpawnHologramFromRecipe(HologramRecipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer());
 	AFGConveyorLiftHologram* ConveyorLiftHologram = Cast<AFGConveyorLiftHologram>(SpawnedLiftHologram);
+	//auto ConveyorLiftHologram = SpawnedLiftHologram;
+	if (ConveyorLiftHologram != nullptr) {
+		// probably a check that won't fix this?
+	}
 	ConveyorLiftHologram->SetHologramLocationAndRotation(Hit);
 	ConveyorLiftHologram->DoMultiStepPlacement(false);
 
@@ -721,7 +858,7 @@ AFGPipelineHologram* UFSSplineHologramFactory::CreatePipelineHologram(AFGBuildab
 	TSubclassOf<UFGRecipe> HologramRecipe = this->GetRecipeFromClass(Pipeline->GetClass());
 	if (!HologramRecipe) return nullptr;
 
-	AFGPipelineHologram* PipelineHologram = Cast<AFGPipelineHologram>(AFGHologram::SpawnHologramFromRecipe(HologramRecipe, Builder, FVector(), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer()));
+	AFGPipelineHologram* PipelineHologram = Cast<AFGPipelineHologram>(AFGHologram::SpawnHologramFromRecipe(HologramRecipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer()));
 	PipelineHologram->SetHologramLocationAndRotation(Hit);
 	PipelineHologram->DoMultiStepPlacement(false);
 
@@ -786,7 +923,7 @@ AFGPipelineHologram* UFSSplineHologramFactory::CreatePipelineHologram(AFGBuildab
 	TSubclassOf<UFGRecipe> HologramRecipe = this->GetRecipeFromClass(Pipeline->GetClass());
 	if (!HologramRecipe) return nullptr;
 
-	AFGPipelineHologram* PipelineHologram = Cast<AFGPipelineHologram>(AFGHologram::SpawnHologramFromRecipe(HologramRecipe, Builder, FVector(), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer()));
+	AFGPipelineHologram* PipelineHologram = Cast<AFGPipelineHologram>(AFGHologram::SpawnHologramFromRecipe(HologramRecipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer()));
 	PipelineHologram->SetHologramLocationAndRotation(Hit);
 	PipelineHologram->DoMultiStepPlacement(false);
 

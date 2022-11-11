@@ -57,9 +57,12 @@ void AFSkyline::InitFullSetup()
 	this->RectSelectService = NewObject<UFSRectSelectService>(this);
 	this->AdaptiveUtil = NewObject<UFSAdaptiveUtil>(this);
 
+
+
 	TSubclassOf<UUserWidget> WidgetClass = LoadClass<UUserWidget>(this, TEXT("/FactorySkyline/Widget_FSkylineUI.Widget_FSkylineUI_C"));
 	this->SkylineUI = Cast<UFSkylineUI>(CreateWidget<UUserWidget>(World, WidgetClass));
-	
+
+	//bug is somewhere around here
 	this->FSCtrl->Init(); //need first
 	this->Builder->Init();
 	this->Select->Init();

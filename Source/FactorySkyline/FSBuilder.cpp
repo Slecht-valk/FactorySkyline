@@ -33,6 +33,10 @@
 #include "Hologram/FGFactoryHologram.h"
 #include "Hologram/FGFoundationHologram.h"
 
+#include "Buildables/FGBuildablePowerPole.h"
+#include "FGPowerConnectionComponent.h"
+#include "FGPowerInfoComponent.h"
+
 void AFSBuilder::Init()
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
@@ -451,8 +455,10 @@ FTransform AFSBuilder::GetFixedSourceTransform()
 
 bool AFSBuilder::CheckCost()
 {
+	/*
 	UFSkylineUI* SkylineUIVar = (UFSkylineUI*)this->SkylineUI;
 	FSInventory Left = *Inventory;
+	
 	TMap<TSubclassOf<UFGItemDescriptor>, int> Minus;
 	Left.AddResource(&Cost, -1);
 	if (Left.Valid(Minus)) {
@@ -486,8 +492,8 @@ bool AFSBuilder::CheckCost()
 		Count++;
 	}
 	SkylineUIVar->ItemBox->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-
-	return false;
+	*/
+	return true;
 }
 
 bool AFSBuilder::Consume()
@@ -534,6 +540,13 @@ void UFSSyncBuild::Unload()
 	BuildableMapping.Empty();
 	InternalConnectionMapping.Empty();
 	List.Empty();
+
+	UFSBuildableOperatorList.Empty();
+	passThroughBuildableList.Empty();
+	passThroughNewList.Empty();
+	LightsControlPanelNewList.Empty();
+	LightSourceNewList.Empty();
+
 }
 
 void UFSSyncBuild::PreWork()
@@ -563,6 +576,12 @@ bool UFSSyncBuild::DoWork(float TimeLimitParam)
 
 void UFSSyncBuild::StepA()
 {
+	//AFSkyline* FSkyline = AFSkyline::Get(this);
+
+	//UFSBuildableOperatorList.Empty();
+	//passThroughBuildableList.Empty();
+	//passThroughNewList.Empty();
+
 	for (; Index < List.Num(); Index++) {
 		if (Time.GetTime() > TimeLimit) return;
 
@@ -570,24 +589,178 @@ void UFSSyncBuild::StepA()
 		if (Buildable) {
 			UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Buildable);
 			if (Cast<AFGBuildableWire>(Buildable)) continue;
-
-			AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
-
-			BuildableMapping.Add(Buildable, NewBuildable);
-
-			if (NewBuildable) {
-
-				Operator->UpdateInternelConnection(NewBuildable);
-				//NewBuildable->PlayBuildEffects(this->Player);
-				//NewBuildable->ExecutePlayBuildEffects();
-
-				this->NewDesign->BuildableSet.Add(NewBuildable);
+			
+			//check if its a lift
+			if (Cast<AFGBuildableConveyorLift>(Buildable)) {
+				TArray< class AFGBuildablePassthrough* > ThroughsSource = Cast<AFGBuildableConveyorLift>(Buildable)->GetSnappedPassthroughs();
+				// if its connected to any passthroughs we build these a little different so skip the normal buildig method.
+				if (ThroughsSource[0] || ThroughsSource[1]) {
+					continue;
+				}
 			}
+
+			//if (!Operator->firstBuild) {
+			//if (Buildable->GetName().Contains("Build_PowerPoleMk")) {
+				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
+				if (NewBuildable != nullptr) {
+					BuildableMapping.Add(Buildable, NewBuildable);
+
+					if (NewBuildable) {
+
+						Operator->UpdateInternelConnection(NewBuildable);
+						//NewBuildable->PlayBuildEffects(FSkyline->FSCtrl->GetPlayer());
+						//NewBuildable->ExecutePlayBuildEffects();
+
+						this->NewDesign->BuildableSet.Add(NewBuildable);
+
+						if (Cast<AFGBuildablePassthrough>(Buildable)) {
+							/*
+							if (Buildable->GetName().Contains("Build_FoundationPassthrough_Pipe_C")) {
+								continue;
+							}
+							*/
+							if (!Buildable->GetName().Contains("Build_FoundationPassthrough_Lift_C")) {
+								continue;
+							}
+							UFSBuildableOperatorList.Add(Operator);
+							passThroughBuildableList.Add(Cast<AFGBuildablePassthrough>(Buildable));
+							passThroughNewList.Add(Cast<AFGBuildablePassthrough>(NewBuildable));
+						}
+
+						if (Cast<AFGBuildableLightsControlPanel>(NewBuildable)) {
+							LightsControlPanelNewList.Add(Cast<AFGBuildableLightsControlPanel>(NewBuildable));
+						}
+
+						if (Cast<AFGBuildableLightSource>(NewBuildable)) {
+							LightSourceNewList.Add(Cast<AFGBuildableLightSource>(NewBuildable));
+						}
+
+					}
+				}
+			//}
 		}
 		Current++;
 	}
 	Index = 0;
 	Step++;
+
+	// conveyor buildablepassthrough logic here
+	// first build all of the passthroughs
+
+	for (int i = 0; i < passThroughBuildableList.Num(); i++) {
+		AFGBuildablePassthrough* passThrough1 = passThroughBuildableList[i];
+		UFGConnectionComponent* bottomConnection1 = passThrough1->mBottomSnappedConnection;
+		UFGConnectionComponent* TopConnection1 = passThrough1->mTopSnappedConnection;
+
+		// check if conveyor lift is connected to this through at the bottom
+		if (bottomConnection1 != nullptr) {
+			AFGBuildableConveyorLift* bottomConnectedLift1 = Cast<AFGBuildableConveyorLift>(Cast< UFGFactoryConnectionComponent>(bottomConnection1)->GetOuterBuildable());
+			bool foundNoPassThroughConnections = true;
+			int foundIndex = 0;
+			for (int j = 0; j < passThroughBuildableList.Num(); j++) {
+				// because we only want to look at other connections
+				if (i == j) {
+					continue;
+				}
+
+				AFGBuildablePassthrough* passThrough2 = passThroughBuildableList[j];
+				UFGConnectionComponent* TopConnection2 = passThrough2->mTopSnappedConnection;
+
+				if (!TopConnection2) {
+					continue;
+				}
+
+				AFGBuildableConveyorLift* topConnectedLift1 = Cast<AFGBuildableConveyorLift>(Cast< UFGFactoryConnectionComponent>(TopConnection2)->GetOuterBuildable());
+				if (bottomConnectedLift1 == topConnectedLift1) {
+					foundNoPassThroughConnections = false;
+					foundIndex = j;
+					break;
+				}
+			}
+			if (foundNoPassThroughConnections) {
+				UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(bottomConnectedLift1));
+				Operator->bottomPassThrough = passThroughNewList[i];
+				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
+				if (NewBuildable != nullptr) {
+					BuildableMapping.Add(Cast< AFGBuildable>(bottomConnectedLift1), NewBuildable);
+					Operator->UpdateInternelConnection(NewBuildable);
+					this->NewDesign->BuildableSet.Add(NewBuildable);
+				}
+			}
+		}
+		////
+
+		// check if conveyor lift is connected to this through at the top
+		if (TopConnection1 != nullptr) {
+			AFGBuildableConveyorLift* topConnectedLift1 = Cast<AFGBuildableConveyorLift>(Cast< UFGFactoryConnectionComponent>(TopConnection1)->GetOuterBuildable());
+			bool foundNoPassThroughConnections = true;
+			int foundIndex = 0;
+			for (int j = 0; j < passThroughBuildableList.Num(); j++) {
+				// because we only want to look at other connections
+				if (i == j) {
+					continue;
+				}
+
+				AFGBuildablePassthrough* passThrough2 = passThroughBuildableList[j];
+				UFGConnectionComponent* bottomConnection2 = passThrough2->mBottomSnappedConnection;
+				UFGConnectionComponent* TopConnection2 = passThrough2->mTopSnappedConnection;
+
+				if (!bottomConnection2) {
+					continue;
+				}
+
+				AFGBuildableConveyorLift* bottomConnectedLift4 = Cast<AFGBuildableConveyorLift>(Cast< UFGFactoryConnectionComponent>(bottomConnection2)->GetOuterBuildable());
+				if (bottomConnectedLift4 == topConnectedLift1) {
+					foundNoPassThroughConnections = false;
+					foundIndex = j;
+					break;
+				}
+
+				// its not connected to to anything else so this is the end of a piece
+				if (bottomConnection2 == nullptr && TopConnection2 == nullptr) {
+				}
+
+			}
+			if (foundNoPassThroughConnections) {
+				UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(topConnectedLift1));
+				//Operator->bottomPassThrough = passThroughNewList[i];
+				Operator->topPassThrough = passThroughNewList[i];
+				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
+				if (NewBuildable != nullptr) {
+					BuildableMapping.Add(Cast< AFGBuildable>(topConnectedLift1), NewBuildable);
+					Operator->UpdateInternelConnection(NewBuildable);
+					this->NewDesign->BuildableSet.Add(NewBuildable);
+				}
+			}
+
+			// a top connect is connected to a bottom connection
+			if (!foundNoPassThroughConnections) {
+
+				// check if a connection between pass throughs has already been made if so we don't need to make duplicates
+				///if (passThroughNewList[foundIndex]->mTopSnappedConnection != nullptr || passThroughNewList[i]->mBottomSnappedConnection != nullptr) {
+					//continue;
+				//}
+
+				AFGBuildablePassthrough* passThrough2 = passThroughBuildableList[foundIndex];
+				UFGConnectionComponent* bottomConnection2 = passThrough2->mBottomSnappedConnection;
+				AFGBuildableConveyorLift* bottomConnectedLift = Cast<AFGBuildableConveyorLift>(Cast< UFGFactoryConnectionComponent>(bottomConnection2)->GetOuterBuildable());
+				if (bottomConnectedLift == topConnectedLift1) {
+					UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(bottomConnectedLift));
+					Operator->bottomPassThrough = passThroughNewList[i];
+					Operator->topPassThrough = passThroughNewList[foundIndex];
+					AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
+					if (NewBuildable != nullptr) {
+						BuildableMapping.Add(Cast< AFGBuildable>(topConnectedLift1), NewBuildable);
+						Operator->UpdateInternelConnection(NewBuildable);
+						this->NewDesign->BuildableSet.Add(NewBuildable);
+					}
+				}
+
+			}
+		}
+
+	}
+
 }
 
 void UFSSyncBuild::StepB()
@@ -600,19 +773,23 @@ void UFSSyncBuild::StepB()
 			UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Buildable);
 
 			if (Cast<AFGBuildableWire>(Buildable)) {
-				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
+				//if (!Operator->firstBuild) {
+					AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
 
-				BuildableMapping.Add(Buildable, NewBuildable);
+					if (NewBuildable != nullptr) {
+						BuildableMapping.Add(Buildable, NewBuildable);
 
-				if (NewBuildable) {
+						if (NewBuildable) {
 
-					Operator->UpdateInternelConnection(NewBuildable);
-					//NewBuildable->PlayBuildEffects(this->Player);
-					//NewBuildable->ExecutePlayBuildEffects();
+							Operator->UpdateInternelConnection(NewBuildable);
+							//NewBuildable->PlayBuildEffects(this->Player);
+							//NewBuildable->ExecutePlayBuildEffects();
 
-					this->NewDesign->BuildableSet.Add(NewBuildable);
-				}
-				Current++;
+							this->NewDesign->BuildableSet.Add(NewBuildable);
+						}
+					}
+					Current++;
+				//}
 			}
 			else {
 				AFGBuildable** NewBuildable = BuildableMapping.Find(Buildable);
@@ -626,6 +803,72 @@ void UFSSyncBuild::StepB()
 	}
 	Index = 0;
 	Step++;
+	
+	//std::this_thread::sleep_for(std::chrono::nanoseconds(50000000));
+	for (int i = 0; i < LightsControlPanelNewList.Num(); i++) {
+		AFGBuildableLightsControlPanel* controlPanel = LightsControlPanelNewList[i];
+		AFGBuildableControlPanelHost* controlPanelHost = Cast< AFGBuildableControlPanelHost>(controlPanel);
+		//controlPanel->PasteSettings_Implementation(controlPanel->CopySettings_Implementation());
+		//controlPanel->SetLightControlData(controlPanel->GetLightControlData());
+		//controlPanel->SetLightDataOnControlledLights(controlPanel->GetLightControlData());
+		//controlPanel->SetLightEnabled(controlPanel->IsLightEnabled());
+		//controlPanel->mLightControlData = SourceBuildableLightsControlPanel->mLightControlData;
+		//controlPanel->mIsEnabled = SourceBuildableLightsControlPanel->mIsEnabled;
+		//controlPanel->OnRep_IsEnabled();
+		//controlPanel->PasteSettings_Implementation(controlPanel->CopySettings_Implementation());
+		AFGBuildableCircuitBridge* bridge = Cast<AFGBuildableCircuitBridge>(controlPanel);
+		
+		TArray<UFGCircuitConnectionComponent*> connections = bridge->mConnections;
+		UFGCircuitConnectionComponent* downStreamConnection = controlPanelHost->mDownstreamConnection;
+		//UFGCircuitConnectionComponent* connection = connections[0];
+		
+		int32 hostCircuitId = downStreamConnection->GetCircuitID();
+
+		for (int j = 0; j < LightSourceNewList.Num(); j++) {
+			//LightSourceNewList[j]->mPowerInfo->mCircuitID;
+			AFGBuildableLightSource* lightSource = LightSourceNewList[j];
+			UFGPowerInfoComponent* powerInfo = lightSource->mPowerInfo;
+			int32 lightSourceId = powerInfo->mCircuitID;
+
+			// check if the host and the light source are on the same circuit
+			if (hostCircuitId == lightSourceId) {
+				FLightSourceControlData controlData = FLightSourceControlData();
+
+				controlData.ColorSlotIndex = controlPanel->mLightControlData.ColorSlotIndex;
+				controlData.Intensity = controlPanel->mLightControlData.Intensity;
+				controlData.IsTimeOfDayAware = controlPanel->mLightControlData.IsTimeOfDayAware;
+
+				lightSource->mLightControlData = controlData;
+
+				lightSource->SetLightControlData(controlData);
+				lightSource->OnRep_IsEnabled();
+				lightSource->OnRep_LightControlData();
+				lightSource->OnRep_HasPower();
+				lightSource->OnRep_IsDay();
+				lightSource->UpdateMeshDataAndHandles();
+				lightSource->UpdateCurrentLightColor();
+				lightSource->UpdatePowerConsumption();
+
+			}
+		}
+
+		/*
+		for (int j = 0; j < connections.Num(); j++) {
+			UFGCircuitConnectionComponent* connection = connections[i];
+			TArray<AFGBuildableWire*> ConnectionWires;
+			connection->GetWires(ConnectionWires);
+
+			for (int k = 0; k < ConnectionWires.Num(); k++) {
+				AFGBuildableWire* Wire = ConnectionWires[j];
+			}
+			//r (AFGBuildableWire* TargetWire : ConnectionWires) {
+				//AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+			//}
+		}
+		*/
+
+	}
+	
 }
 
 void UFSSyncBuild::StepC()

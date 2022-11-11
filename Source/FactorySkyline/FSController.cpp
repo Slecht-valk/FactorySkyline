@@ -17,6 +17,8 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
+#include <string>
+
 
 void AFSController::Init() {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
@@ -51,6 +53,7 @@ void AFSController::Init() {
 	}
 
 	UE_LOG(LogSkyline, Verbose, TEXT("Initializing global Keybinds"));
+	
 	FSInput->BindDelegate("MenuKey", FSInputEvent::FS_Pressed, this, &AFSController::onCallMenu);
 	FSInput->BindDelegate("EscapeKey", FSInputEvent::FS_Pressed, this, &AFSController::onEscPressed);
 	FSInput->BindDelegate("LeftControlKey", FSInputEvent::FS_Pressed, this, &AFSController::onLeftCtrlPressed);
@@ -68,6 +71,7 @@ void AFSController::Init() {
 	FSInput->BindDelegate("ActionShortcut1Key", FSInputEvent::FS_Pressed, this, &AFSController::onActionShortcut1);
 	FSInput->BindDelegate("DeleteKey", FSInputEvent::FS_Pressed, this, &AFSController::onDesignDelete);
 	
+	
 	LastLeftCtrlPressed = 0.0f;
 	LastRightMouseDown = 0.0f;
 
@@ -84,13 +88,26 @@ void AFSController::Init() {
 	AFGCharacterPlayer::OnEquipmentEquipped.AddUObject<AFSController>(this, &AFSController::onPlayerEquipmentEquipped);
 	AFGCharacterPlayer::OnEquipmentUnequipped.AddUObject<AFSController>(this, &AFSController::onPlayerEquipmentUnequipped);
 
+	// TODO Most recent patch for u6 broke this, find alternative?
+	
 	FScriptDelegate Func1;
 	Func1.BindUFunction(this, FName("onBuildGunRecipeChanged"));
 	FGBuildGun->mOnRecipeChanged.Add(Func1);
+	
 
 	FScriptDelegate Func2;
 	Func2.BindUFunction(this, FName("onBuildGunStateChanged"));
 	FGBuildGun->mOnStateChanged.Add(Func2);
+	
+
+	// TODO This attempt at fix didn't work either
+	/*
+	if (FGBuildGun != nullptr) {
+		FGBuildGun->mOnRecipeChanged.AddDynamic(this, &AFSController::onBuildGunRecipeChanged);
+
+		FGBuildGun->mOnStateChanged.AddDynamic(this, &AFSController::onBuildGunStateChanged);
+	}
+	*/
 
 	this->SetActorTickEnabled(true);
 	Timer.Start();
@@ -205,6 +222,7 @@ void AFSController::EndRectangleSelect(bool Valid)
 
 void AFSController::ExitRectangleSelectMode()
 {
+	
 	EndRectangleSelect(false);
 
 	if (SkylineUI->SelectRect->GetVisibility() == ESlateVisibility::SelfHitTestInvisible) {
@@ -223,7 +241,7 @@ void AFSController::ExitRectangleSelectMode()
 		RectangleSelectMode = false;
 		LastShowMouseCursor = false;
 	}
-
+	
 	CheckFlying();
 }
 
@@ -452,7 +470,7 @@ void AFSController::Tick(float dt)
 	if (!this->World) return;
 
 	FSInput->Tick();
-
+	
 	if (SkylineUI->IsActive) {
 		if (State == FSState::Select) {
 			TickSelect(dt);
@@ -478,7 +496,8 @@ void AFSController::Tick(float dt)
 			SkylineUI->Message->SetText(FText::FromString(FString::Printf(TEXT("Waiting for building %d / %d"), Builder->SyncBuild->GetCurrent(), Builder->SyncBuild->GetTotal())));
 		}
 	}
-
+	
+	
 	if (GetPlayer()) {
 		if (Etc->GetBool("IsFlying")) {
 			EMovementMode MovementMode = GetPlayer()->GetCharacterMovement()->MovementMode;
@@ -495,7 +514,8 @@ void AFSController::Tick(float dt)
 			}
 		}
 	}
-
+	
+	
 	if (Etc->GetBool("DisableHighSpaceFog")) {
 		UExponentialHeightFogComponent* Fog = this->WorldSettings->GetExponentialHeightFog()->GetComponent();
 		if (Fog->FogDensity > 0.02) Fog->FogDensity = 0.02;
@@ -505,8 +525,10 @@ void AFSController::Tick(float dt)
 		}
 	}
 
+	
 	if (FGController->IsMoveInputIgnored() && !this->FSInput->IsKeyDown("LeftControlKey"))
 		ExitRectangleSelectMode();
+	
 
 	if (TurboSprint && !this->FSInput->IsKeyDown("TurboSprintKey")) TurboSprint = false;
 }
@@ -526,10 +548,19 @@ void AFSController::TickSelect(float dt)
 			if (this->CurrentFocusBuilding.Get()) this->ClearFocusBuilding();
 
 			if (Building) {
+
+				std::string  str = TCHAR_TO_UTF8(*Building->GetName());
+				str.append("\n");
+				str.append("FOUND HIT\n");
+				std::wstring temp = std::wstring(str.begin(), str.end());
+				LPCWSTR wideString = temp.c_str();
+				OutputDebugStringW(wideString);
+
 				if (this->FSInput->IsKeyDown("LeftMouseKey")) {
 					if (!this->FSInput->IsKeyDown("RightMouseKey")) {
 						if (!ConnectSelectMode) {
 							if (!this->Design->IsElementSelected(Building)) {
+
 								this->Select->Select(Building);
 								LeftMousePressed = false;
 							}
@@ -1091,8 +1122,15 @@ void AFSController::CheckFlying()
 		MovementComponent->MaxAcceleration = 0.0f;
 	}
 	else {
-		MovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
-		MovementComponent->MaxAcceleration = 10000.0f;
+		// TODO should be good as far as fix I think
+		bool hoverPackUsage = false;
+		if (MovementComponent->CustomMovementMode == 4) {
+			hoverPackUsage = true;
+		}
+		if (!hoverPackUsage) {
+			MovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+			MovementComponent->MaxAcceleration = 10000.0f;
+		}
 	}
 }
 
@@ -1137,13 +1175,17 @@ FHitResult AFSController::GetSelectHitResult()
 {
 	if (IsShowMouseCursor()) return GetMouseCursorHitResult(true);
 
-	FHitResult Hit = this->FGBuildGun->GetHitResult();
+	FHitResult Hit;
+	
+	Hit = this->FGBuildGun->GetHitResult();
 	if (AcquireBuildable(Hit)) return Hit;	
+	
 
 	FVector CamLoc;
 	FRotator CamRot;
 	this->FGController->GetPlayerViewPoint(CamLoc, CamRot);
 
+	float max = 1000.0f;
 	const FVector TraceStart = CamLoc;
 	const FVector Direction = CamRot.Vector();
 	const FVector TraceEnd = TraceStart + (Direction * DistanceMax);
@@ -1221,6 +1263,8 @@ FHitResult AFSController::GetMouseCursorHitResult(bool RequireBuildable)
 
 void AFSController::SetFocusBuilding(AFGBuildable* Buildable)
 {
+	//this->GetPlayer()->GetOutline()->ShowOutline(Buildable, EOutlineColor::OC_HOLOGRAM);
+	//this->GetPlayer()->GetOutline()->ShowDismantlePendingMaterial(Buildable);
 	CurrentFocusBuilding = Buildable;
 	this->Select->EnableHightLightFocus(CurrentFocusBuilding.Get());
 }

@@ -106,6 +106,9 @@ public:
 	UFSBuildableOperator* SetUnknown();
 	
 	bool Unknown = false;
+
+	//bool firstBuild = false;
+
 	FSBuildableType TypeCache;
 
 	AFGBuildable* Source;
@@ -120,6 +123,13 @@ public:
 	TMap<UFGConnectionComponent*, UFGConnectionComponent*>* InternalConnectionMapping;
 	//TMap<AFGBuildableConveyorBase*, int32>* BucketIDMapping;
 	//TMap<int32, TArray<AFGBuildableConveyorBase*> >* BucketMapping;
+
+	UClass* sourceClass;
+	FSTransformOperator transform;
+	AFGBuildable* Buildable;
+
+	AFGBuildablePassthrough* bottomPassThrough;
+	AFGBuildablePassthrough* topPassThrough;
 };
 
 UCLASS()

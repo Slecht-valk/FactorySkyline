@@ -34,6 +34,7 @@ public:
 	TSet< TWeakObjectPtr<AFGBuildable> > BuildableSet;
 	TMap< TWeakObjectPtr<AFGBuildable>, int> BuildableMark;
 	TWeakObjectPtr<AFGBuildable> Anchor = nullptr;
+	TArray<AFGBuildable*> BuildableArray;
 
 	UPROPERTY(SaveGame)
 	TSet<AFGBuildable*> Set;

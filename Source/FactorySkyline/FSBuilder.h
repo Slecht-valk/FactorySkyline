@@ -12,6 +12,7 @@
 #include "FGPlayerController.h"
 #include "Equipment/FGBuildGun.h"
 #include "Equipment/FGEquipment.h"
+#include "Buildables/FGBuildableLightsControlPanel.h"
 #include "FSBuilder.generated.h"
 
 class UFSSyncBuild;
@@ -130,6 +131,13 @@ public:
 
 	TMap<AFGBuildable*, AFGBuildable*> BuildableMapping;
 	TMap<UFGConnectionComponent*, UFGConnectionComponent*> InternalConnectionMapping;
+
+	TArray<UFSBuildableOperator*> UFSBuildableOperatorList;
+	TArray<AFGBuildablePassthrough*> passThroughBuildableList;
+	TArray<AFGBuildablePassthrough*> passThroughNewList;
+	//TArray<class AFGBuildablePassthrough*> passThroughNewList;
+	TArray<AFGBuildableLightsControlPanel*> LightsControlPanelNewList;
+	TArray<AFGBuildableLightSource*> LightSourceNewList;
 
 	TSet< TWeakObjectPtr<AFGBuildable> > BuildableSet;
 	TWeakObjectPtr<AFGBuildable> Anchor;

@@ -13,7 +13,8 @@
 
 bool CheckVersion(int Ver)
 {
-	return Ver >= 136408;
+	//return Ver >= 136408;
+	return Ver >= 195135;
 }
 
 void FFactorySkylineModule::StartupModule() {
@@ -23,6 +24,8 @@ void FFactorySkylineModule::StartupModule() {
 		UE_LOG(LogSkyline, Log, TEXT("Skyline Version missmatch..."));
 		return;
 	}
+	//FScriptDelegate Func1 = FScriptDelegate();
+	//FScriptDelegate Func2 = FScriptDelegate();
 
 	UE_LOG(LogSkyline, Log, TEXT("Loading Mod: Factory Skyline..."));
 	UFGGameInstance* GameManager = GetMutableDefault<UFGGameInstance>();

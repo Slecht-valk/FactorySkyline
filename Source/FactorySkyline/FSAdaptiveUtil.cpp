@@ -39,6 +39,7 @@ TArray< FSplinePointData >* UFSAdaptiveUtil::GetConveyorBeltSplineData(AFGBuilda
 {
 	if (GameVersion <= 136408) return (TArray< FSplinePointData >*)(((char*)Conveyor) + 1944);
 	return &Conveyor->mSplineData;
+	//return &Conveyor.GetSplineData();
 }
 
 

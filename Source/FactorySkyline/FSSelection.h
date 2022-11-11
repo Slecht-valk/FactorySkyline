@@ -17,6 +17,8 @@ struct FSMeshMaterial
 	TWeakObjectPtr<UMeshComponent> MeshComponent = nullptr;
 	UFGColoredInstanceMeshProxy* MeshProxy = nullptr;
 	TArray<UMaterialInterface*> MaterialInterfaceList;
+	TArray<UMaterialInterface*> MaterialInterfaceList2;
+	//TMap< TWeakObjectPtr<UMeshComponent>, TArray<UMaterialInterface*> > MeshComponentArray;
 };
 
 struct FSActorMaterial
@@ -30,6 +32,8 @@ struct FSMaterialHandle
 {
 	//UMaterialInterface* Material;
 	TArray<class UMaterialInterface*> Materials;
+	TArray<UMaterialInterface*> MaterialInterfaceList;
+	TMap<UMeshComponent*, FSMeshMaterial* > MaterialMapping;
 	UMaterialInterface* Material;
 	int32 Handle;
 };
@@ -43,6 +47,47 @@ struct FSISMNode
 /**
  * 
  */
+
+USTRUCT()
+struct FACTORYSKYLINE_API FSavedMaterialInterfaces
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY()
+	TArray<class UMaterialInterface*> MaterialInterfaces;
+
+public:
+	FORCEINLINE ~FSavedMaterialInterfaces() = default;
+};
+
+USTRUCT()
+struct FACTORYSKYLINE_API FSelectedActorInfo
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY()
+	TMap<class UMeshComponent*, FSavedMaterialInterfaces> SavedMaterialInterfaces;
+
+public:
+	FORCEINLINE ~FSelectedActorInfo() = default;
+};
+
+
+USTRUCT()
+struct FACTORYSKYLINE_API FComponentSavedInterfaces
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY()
+	TArray<UMaterialInterface*> SavedInterfaces;
+
+public:
+	FORCEINLINE ~FComponentSavedInterfaces() = default;
+};
+
 UCLASS()
 class FACTORYSKYLINE_API UFSSelection : public UObject
 {
@@ -85,6 +130,8 @@ public:
 
 	void InitMaterials();
 
+	void HideHologram(AActor* Actor, FSMaterialHandle& ActorInfo);
+
 	UFSDesign* Design;
 	UFSConnectSelectService* ConnectSelectService = nullptr;
 	UFSRectSelectService* RectSelectService = nullptr;
@@ -95,6 +142,8 @@ public:
 
 	TMap<AFGBuildable*, FSActorMaterial> ActorMaterialCache;
 
+	TMap<AFGBuildable*, FSActorMaterial> ActorMaterialCache2;
+
 	UPROPERTY()
 	UMaterialInstanceConstant* Hologram = nullptr;
 
@@ -103,6 +152,10 @@ public:
 	TMap<TPair<UFGColoredInstanceManager*, UMaterialInterface* >, FSISMNode*> ISMMapping;
 	//TMap<UMeshComponent*, FSMaterialHandle > MaterialMapping;
 	TMap<UMeshComponent*, FSMaterialHandle* > MaterialMapping;
+	UPROPERTY()
+	TArray<AActor*> ActorList;
+	TMap<AActor*, FSMaterialHandle*> SelectedMap;
+	TMap<UMeshComponent*, FSMaterialHandle* > MaterialMapping2;
 
 	UPROPERTY()
 	TSet<UMaterialInstanceDynamic*> DynamicInstanceSet;
@@ -118,4 +171,14 @@ public:
 
 	UPROPERTY()
 	bool MaterialisInitialized;
+
+	//UPROPERTY()
+	//TMap<AActor*, FSelectedActorInfo> SelectedMap;
+
+	//UPROPERTY()
+	//TMap<AActor*, TArray<UMaterialInterface*>> SavedInterfaceList;
+
+	//UPROPERTY()
+	//TMap<UMeshComponent*, FComponentSavedInterfaces> SavedMaterialInterfaces;
+
 };

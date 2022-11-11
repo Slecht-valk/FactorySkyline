@@ -58,11 +58,14 @@ bool UFSDesign::IsElementSelected(AFGBuildable* Buildable)
 void UFSDesign::AddElement(AFGBuildable* Buildable)
 {
 	BuildableSet.Add(Buildable);
+	BuildableArray.Add(Buildable);
 }
 
 void UFSDesign::RemoveElement(AFGBuildable* Buildable)
 {
 	BuildableSet.Remove(Buildable);
+	BuildableArray.Remove(Buildable);
+
 }
 
 void UFSDesign::SetElementMark(AFGBuildable* Buildable, bool MarkParam)

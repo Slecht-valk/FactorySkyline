@@ -14,17 +14,22 @@ void UFSConnectSelectService::Init()
 
 	this->World = FSkyline->World;
 	this->FGController = FSkyline->FGController;
-	
+
+	// keep with commented out
 	//this->Select = FSkyline->Select;
 	this->BuildableService = FSkyline->BuildableService;
-	this->ConnectSelect = &this->ConnectSelectAsyncTask.GetTask();
+
+	this->ConnectSelect = new FSConnectSelect();
 
 	this->OperatorFactory = NewObject<UFSOperatorFactory>(this);
-
-	this->ConnectSelect->NativeInit(this, OperatorFactory);
-	this->OperatorFactory->Init();
-
-	this->ConnectSelectAsyncTask.StartBackgroundTask();
+	if (this->ConnectSelect) {
+		this->ConnectSelect->NativeInit(this, OperatorFactory);
+	}
+	if (this->OperatorFactory) {
+		this->OperatorFactory->Init();
+	}
+	this->ConnectSelectAsyncTask = new FAutoDeleteAsyncTask<FSConnectSelect>();
+	//this->ConnectSelectAsyncTask->StartBackgroundTask();
 }
 
 void UFSConnectSelectService::RefreshRecipe()
@@ -78,6 +83,11 @@ bool UFSConnectSelectService::SubmitConnectSelectTask(UFSDesign* Design, AFGBuil
 	ConnectSelect->TaskType = SelectType;
 	ConnectSelect->StartTask();
 
+	//std::this_thread::sleep_for(std::chrono::nanoseconds(100000000));
+	//this->ConnectSelect->DoWork();
+	//this->ConnectSelectAsyncTask = new FAutoDeleteAsyncTask<FSConnectSelect>();
+	this->ConnectSelectAsyncTask->StartBackgroundTask();
+
 	return true;
 }
 
@@ -88,17 +98,41 @@ void UFSConnectSelectService::TerminalCurrentTask()
 
 void UFSConnectSelectService::BeginDestroy()
 {
-	
+	/*
 	if (!ConnectSelectAsyncTask.IsWorkDone()) {
 		ConnectSelectAsyncTask.Cancel();
 		ConnectSelectAsyncTask.WaitCompletionWithTimeout(5000);
 		ConnectSelectAsyncTask.EnsureCompletion(false);
+
+		ConnectSelectAsyncTask.GetTask().ShutDown();
 	}
+	*/
+	//this->World = nullptr;
+	//this->OperatorFactory = nullptr;
+
+	//ConnectSelectAsyncTask->Abandon();
+	//delete ConnectSelectAsyncTask;
+	//delete this;
+	//ConnectSelectAsyncTask = nullptr;
+
+	//this->ConnectSelect->NeedRunning = false;
+	//this->ConnectSelect->TaskType = 3;
+	//ConnectSelectAsyncTask.GetTask().ShutDown();
+	//ConnectSelectAsyncTask = nullptr;
 
 	Super::BeginDestroy();
 }
 
+void UFSConnectSelectService::FinishDestroy()
+{
+	//delete ConnectSelectAsyncTask;
 
+
+	//ConnectSelect->ShutDown();
+	//this->ConnectSelect->NeedRunning = false;
+	//ConnectSelectAsyncTask = nullptr;
+	Super::FinishDestroy();
+}
 
 void FSConnectSelect::NativeInit(UObject* WorldContext, UFSOperatorFactory* OperatorFactory)
 {
@@ -120,10 +154,14 @@ void FSConnectSelect::NativeInit(UObject* WorldContext, UFSOperatorFactory* Oper
 
 void FSConnectSelect::DoWork()
 {
-	while (NeedRunning) {
+
+	//while (NeedRunning) {
+		if (TaskType == 3) {
+			//break;
+		}
 		if (TaskType == 0) {
 			this->Ready = true;
-			Event->Wait();
+			//Event->Wait();
 		}
 		else if (TaskType == 1) {
 			Search_Positive();
@@ -133,7 +171,8 @@ void FSConnectSelect::DoWork()
 			Search_Nagetive();
 			TaskType = 0;
 		}
-	}
+	//}
+
 }
 
 void FSConnectSelect::ShutDown()
@@ -270,10 +309,14 @@ void UFSRectSelectService::Init()
 	this->FGController = FSkyline->FGController;
 
 	this->BuildableService = FSkyline->BuildableService;
-	this->RectSelect = &this->RectSelectAsyncTask.GetTask();
+	this->RectSelect = new FSRectSelect();
 
-	this->RectSelect->NativeInit(this);
-	this->RectSelectAsyncTask.StartBackgroundTask();
+	if (this->RectSelect) {
+		this->RectSelect->NativeInit(this);
+	}
+
+	this->RectSelectAsyncTask = new FAutoDeleteAsyncTask<FSRectSelect>();
+	//this->RectSelectAsyncTask->StartBackgroundTask();
 }
 
 bool UFSRectSelectService::Ready()
@@ -304,6 +347,11 @@ bool UFSRectSelectService::StartRectSelect(UFSDesign* Design, const FVector2D& S
 	RectSelect->Load();
 	RectSelect->StartTask();
 
+	//std::this_thread::sleep_for(std::chrono::nanoseconds(100000000));
+	//this->RectSelect->DoWork();
+	//this->RectSelectAsyncTask = new FAutoDeleteAsyncTask<FSRectSelect>();
+	this->RectSelectAsyncTask->StartBackgroundTask();
+
 	return true;
 }
 
@@ -317,6 +365,10 @@ bool UFSRectSelectService::QueryRectSelect(int x, int y)
 
 	RectSelect->StartTask();
 
+	//this->RectSelect->DoWork();
+	//this->RectSelectAsyncTask = new FAutoDeleteAsyncTask<FSRectSelect>();
+	this->RectSelectAsyncTask->StartBackgroundTask();
+
 	return true;
 }
 
@@ -327,12 +379,17 @@ void UFSRectSelectService::TerminalCurrentTask()
 
 void UFSRectSelectService::BeginDestroy()
 {
+	/*
 	if (RectSelectAsyncTask.GetTask().IsInited) {
 		RectSelectAsyncTask.GetTask().ShutDown();
 		RectSelectAsyncTask.EnsureCompletion(false);
 	}
-
+	*/
 	Super::BeginDestroy();
+}
+void UFSRectSelectService::FinishDestroy()
+{
+	Super::FinishDestroy();
 }
 
 
@@ -354,10 +411,10 @@ void FSRectSelect::NativeInit(UObject* WorldContext)
 
 void FSRectSelect::DoWork()
 {
-	while (NeedRunning) {
+	//while (NeedRunning) {
 		if (TaskType == 0) {
 			this->Ready = true;
-			Event->Wait();
+			//Event->Wait();
 		}
 		else if (TaskType == 1) {
 			Build();
@@ -367,7 +424,7 @@ void FSRectSelect::DoWork()
 			Query();
 			TaskType = 0;
 		}
-	}
+	//}
 }
 
 void FSRectSelect::Load()

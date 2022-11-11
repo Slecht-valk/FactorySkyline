@@ -9,10 +9,16 @@
 #include "Operators/FSBuildableOperator.h"
 #include "Equipment/FGBuildGun.h"
 #include "FGBuildableSubsystem.h"
+
+#include<chrono>
+#include<thread>
+
 #include "FSSelectService.generated.h"
 
 class FSConnectSelect : public FNonAbandonableTask
 {
+	//friend class FAsyncTask<FSConnectSelect>;
+	friend class FAutoDeleteAsyncTask<FSConnectSelect>;
 public:
 	FSConnectSelect() { IsInited = false; Event = nullptr; }
 
@@ -50,12 +56,12 @@ public:
 	TArray<TWeakObjectPtr<AFGBuildable> > Stack;
 
 	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FSConnectSelect, STATGROUP_ThreadPoolAsyncTasks); }
-	
-	~FSConnectSelect() { if (Event) FGenericPlatformProcess::ReturnSynchEventToPool(Event); }
+
+	//~FSConnectSelect() { if (Event) FGenericPlatformProcess::ReturnSynchEventToPool(Event); }
 };
 
 /**
- * 
+ *
  */
 UCLASS()
 class FACTORYSKYLINE_API UFSConnectSelectService : public UObject
@@ -70,8 +76,9 @@ public:
 	bool GetLastResult(TArray< TWeakObjectPtr<AFGBuildable> >*& Result);
 	bool SubmitConnectSelectTask(UFSDesign* Design, AFGBuildable* Buildable, int SelectType);
 	void TerminalCurrentTask();
-	
+
 	virtual void BeginDestroy();
+	virtual void FinishDestroy();
 
 
 	UWorld* World = nullptr;
@@ -83,14 +90,15 @@ public:
 	UFSBuildableService* BuildableService = nullptr;
 
 	UPROPERTY()
-	UFSOperatorFactory* OperatorFactory = nullptr;
+		UFSOperatorFactory* OperatorFactory = nullptr;
 
 	FSConnectSelect* ConnectSelect = nullptr;
-	FAsyncTask<FSConnectSelect> ConnectSelectAsyncTask;
+	FAutoDeleteAsyncTask<FSConnectSelect>* ConnectSelectAsyncTask;
 };
 
 class FSRectSelect : public FNonAbandonableTask
 {
+	friend class FAutoDeleteAsyncTask<FSRectSelect>;
 public:
 	FSRectSelect() { IsInited = false; Event = nullptr; }
 
@@ -151,6 +159,7 @@ public:
 	void TerminalCurrentTask();
 
 	virtual void BeginDestroy();
+	virtual void FinishDestroy();
 
 	UWorld* World = nullptr;
 	AFGPlayerController* FGController = nullptr;
@@ -159,5 +168,5 @@ public:
 	UFSBuildableService* BuildableService = nullptr;
 
 	FSRectSelect* RectSelect = nullptr;
-	FAsyncTask<FSRectSelect> RectSelectAsyncTask;
+	FAutoDeleteAsyncTask<FSRectSelect>* RectSelectAsyncTask;
 };
