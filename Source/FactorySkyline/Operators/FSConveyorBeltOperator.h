@@ -19,6 +19,7 @@ class FACTORYSKYLINE_API UFSConveyorBeltOperator : public UFSConveyorOperator
 public:
 
 	virtual AFGHologram* HologramCopy(FTransform& RelativeTransform);
+	//virtual void UpdateSplineData(AFGSplineHologram* Hologram);
 	virtual AFGBuildable* CreateCopy(const FSTransformOperator& TransformOperator);
 
 };

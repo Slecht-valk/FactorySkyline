@@ -5,6 +5,7 @@
 #include "Buildables/FGBuildable.h"
 #include "Buildables/FGBuildableConveyorLift.h"
 #include "Buildables/FGBuildablePassthrough.h"
+#include "Hologram/FGPassthroughHologram.h"
 #include "Hologram/FGConveyorLiftHologram.h"
 #include "FactorySkyline/FSkyline.h"
 
@@ -39,12 +40,46 @@ void UFSBuildablePassThroughOperator::UpdateHologramState(const FHitResult& Hit,
 
 	ShouldShow = Valid = true;
 }
-/*
+
 AFGHologram* UFSBuildablePassThroughOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	return SplineHologramFactory->CreateLiftHologram(Cast<AFGBuildableConveyorLift>(Source), RelativeTransform);
+	RelativeTransform = Source->GetTransform();
+	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
+	if (!Recipe) return nullptr;
+	AFGHologram* Hologram = AFGHologram::SpawnHologramFromRecipe(Recipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer());
+	
+	if (!Hologram) return nullptr;
+	AFGPassthroughHologram* PassthroughHologram = Cast<AFGPassthroughHologram>(Hologram);
+	if (!PassthroughHologram) return Hologram;
+
+	AFGBuildablePassthrough* SourceBuildablePassthrough = Cast<AFGBuildablePassthrough>(Source);
+
+	float num = SourceBuildablePassthrough->mSnappedBuildingThickness;
+	//PassthroughHologram.snapped
+
+	FHitResult Hit;
+	Hit.Actor = nullptr;
+	Hit.Time = 0.006946;
+	Hit.Location = FVector(-11720.067f, 248538.719f, -10141.936f);
+	Hit.ImpactPoint = FVector(-11720.066f, 248538.719f, -10141.936f);
+	Hit.Normal = FVector(1.0f, 0.0f, 0.0f);
+	Hit.ImpactNormal = FVector(1.0f, 0.0f, 0.0f);
+	Hit.TraceStart = FVector(-11025.803f, 248538.188f, -10162.381f);
+	Hit.TraceEnd = FVector(-110982.445f, 248615.406f, -12781.198f);
+	Hit.PenetrationDepth = 0.0f;
+	Hit.Item = -1;
+	Hit.FaceIndex = -1;
+
+	PassthroughHologram->SnapHologramLocationToGuidelines(Source->GetTransform().GetTranslation());
+	//PassthroughHologram->TrySnapToActor(Hit);
+
+	//PassthroughHologram->BuildMeshes();
+
+	Hologram->SetActorTransform(Source->GetTransform());
+
+	return Hologram;
 }
-*/
+
 AFGBuildable* UFSBuildablePassThroughOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);

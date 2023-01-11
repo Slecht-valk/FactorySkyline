@@ -251,4 +251,5 @@ public:
 	bool CopyConsole = false;
 	bool BuildRepeatCallBack = false;
 	bool RecycleMaterials;
+	AFGBuildable* BuildingPtr;
 };

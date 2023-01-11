@@ -43,10 +43,12 @@
 #include "FactorySkyline/Operators/FSBuildableLightsControlPanelOperator.h"
 #include "FactorySkyline/Operators/FSBuildableCircuitSwitchOperator.h"
 #include "FactorySkyline/Operators/FSBuildablePowerStorageOperator.h"
+#include "FactorySkyline/Operators/FSBuildableRailroadSignalOperator.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Buildables/FGBuildableLightsControlPanel.h"
 #include "Buildables/FGBuildableCircuitSwitch.h"
 #include "Buildables/FGBuildablePowerStorage.h"
+#include "Buildables/FGBuildableRailroadSignal.h"
 
 #include "Buildables/FGBuildable.h"
 #include "Buildables/FGBuildableAttachmentMerger.h"
@@ -421,6 +423,10 @@ UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 		return NewObject <UFSBuildablePowerStorageOperator>(this);
 	}
 
+	if (Buildable->IsChildOf<AFGBuildableRailroadSignal>()) {
+		return NewObject <UFSBuildableRailroadSignalOperator>(this);
+	}
+
 	if (Buildable->IsChildOf<AFGBuildableFactoryBuilding>()) {
 		if (Buildable->IsChildOf<AFGBuildableFoundation>()) {
 			return NewObject<UFSFoundationOperator>(this);
@@ -771,16 +777,25 @@ AFGConveyorLiftHologram* UFSSplineHologramFactory::CreateLiftHologram(AFGBuildab
 	FTransform ConveyorLiftStart(Rotator0, Vevtor0);
 	FTransform ConveyorLiftEnd(Rotator1, Vevtor1);
 
+	FVector Translate = ConveyorLiftEnd.GetTranslation();
+	//Translate.Z = 1000;
+	ConveyorLiftEnd.SetTranslation(Translate);
+
 	RelativeTransform = ConveyorLiftStart;
 	FHitResult Hit;
 	Hit.Actor = ConveyorPole;
 	Hit.Time = 0.005515f;
+
 	Hit.Location = FVector(-53839.797f, 244792.078f, -13691.415f);
+	Hit.Location = Vevtor1;
 	Hit.ImpactPoint = FVector(-53839.797f, 244792.078f, -13691.415f);
+	Hit.ImpactPoint = Vevtor1;
 	Hit.Normal = FVector(-1.0f, 0.0f, 0.0f);
 	Hit.ImpactNormal = FVector(-1.0f, 0.0f, 0.0f);
 	Hit.TraceStart = FVector(-54390.883f, 244772.328f, -13682.122f);
+	Hit.TraceStart = Vevtor0;
 	Hit.TraceEnd = FVector(45530.727f, 248354.750f, -15367.185f);
+	Hit.TraceEnd = Vevtor1;
 	Hit.PenetrationDepth = 0.0f;
 	Hit.Item = -1;
 	Hit.FaceIndex = -1;
@@ -796,8 +811,8 @@ AFGConveyorLiftHologram* UFSSplineHologramFactory::CreateLiftHologram(AFGBuildab
 	if (ConveyorLiftHologram != nullptr) {
 		// probably a check that won't fix this?
 	}
-	ConveyorLiftHologram->SetHologramLocationAndRotation(Hit);
-	ConveyorLiftHologram->DoMultiStepPlacement(false);
+	//ConveyorLiftHologram->SetHologramLocationAndRotation(Hit);
+	//ConveyorLiftHologram->DoMultiStepPlacement(false);
 
 	FSTransformOperator FSTransform(ConveyorLiftEnd, ConveyorLiftHologram->GetTransform());
 	ConveyorLiftHologram->SetActorTransform(FSTransform.Transform(ConveyorLiftStart));
@@ -809,7 +824,19 @@ AFGConveyorLiftHologram* UFSSplineHologramFactory::CreateLiftHologram(AFGBuildab
 		y += 90.0f;
 	}
 
-	ConveyorLiftHologram->SetHologramLocationAndRotation(Hit);
+	//ConveyorLiftHologram->SetHologramLocationAndRotation(Hit);
+
+	FTransform transform = ConveyorLiftHologram->GetTransform();
+	ConveyorLiftHologram->SetActorTransform(transform);
+
+	ConveyorLiftHologram->mSnappedPassthroughs = ConveyorLift->mSnappedPassthroughs;
+	UFGFactoryConnectionComponent * Connection0 = Cast< AFGBuildableConveyorBase>(ConveyorLift)->GetConnection0();
+	UFGFactoryConnectionComponent * Connection1 = Cast< AFGBuildableConveyorBase>(ConveyorLift)->GetConnection1();
+	ConveyorLiftHologram->mConnectionComponents[0] = Connection0;
+	ConveyorLiftHologram->mConnectionComponents[1] = Connection1;
+
+	ConveyorLiftHologram->mTopTransform = ConveyorLift->mTopTransform;
+	ConveyorLiftHologram->OnPendingConstructionHologramCreated_Implementation(ConveyorLiftHologram);
 
 	return ConveyorLiftHologram;
 }

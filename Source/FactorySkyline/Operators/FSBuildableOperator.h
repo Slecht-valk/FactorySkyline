@@ -19,6 +19,7 @@
 #include "FGBuildableSubsystem.h"
 #include "FactorySkyline/FSBuildableService.h"
 #include "FGBuildablePipelineSupport.h"
+#include "FGRailroadTrackConnectionComponent.h"
 #include "FSBuildableOperator.generated.h"
 
 
@@ -130,6 +131,10 @@ public:
 
 	AFGBuildablePassthrough* bottomPassThrough;
 	AFGBuildablePassthrough* topPassThrough;
+
+	UFGRailroadTrackConnectionComponent* Connection0;
+	UFGRailroadTrackConnectionComponent* Connection1;
+
 };
 
 UCLASS()

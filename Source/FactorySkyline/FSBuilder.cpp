@@ -26,6 +26,7 @@
 #include "Buildables/FGBuildablePipeline.h"
 #include "Buildables/FGBuildableConveyorBelt.h"
 #include "Buildables/FGBuildableRailroadTrack.h"
+#include "Buildables/FGBuildableRailroadSignal.h"
 #include "Buildables/FGBuildableRailroadStation.h"
 #include "Buildables/FGBuildableWire.h"
 #include "Hologram/FGHologram.h"
@@ -455,7 +456,7 @@ FTransform AFSBuilder::GetFixedSourceTransform()
 
 bool AFSBuilder::CheckCost()
 {
-	/*
+	
 	UFSkylineUI* SkylineUIVar = (UFSkylineUI*)this->SkylineUI;
 	FSInventory Left = *Inventory;
 	
@@ -492,8 +493,8 @@ bool AFSBuilder::CheckCost()
 		Count++;
 	}
 	SkylineUIVar->ItemBox->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-	*/
-	return true;
+	
+	return false;
 }
 
 bool AFSBuilder::Consume()
@@ -588,6 +589,8 @@ void UFSSyncBuild::StepA()
 		AFGBuildable* Buildable = List[Index].Get();
 		if (Buildable) {
 			UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Buildable);
+
+			if (Cast< AFGBuildableRailroadSignal>(Buildable)) continue;
 			if (Cast<AFGBuildableWire>(Buildable)) continue;
 			
 			//check if its a lift
@@ -915,6 +918,113 @@ void UFSSyncBuild::StepC()
 			}*/
 		}
 	}
+
+	/*
+	for (Index = 0; Index < List.Num(); Index++) {
+		AFGBuildable* ExistingBuildable = List[Index].Get();
+		AFGBuildable** Ptr = BuildableMapping.Find(ExistingBuildable);
+		if (Ptr) {
+			AFGBuildableRailroadSignal* NewSignal = Cast<AFGBuildableRailroadSignal>(*Ptr);
+			// once a signal is found
+			if (NewSignal) {
+				AFGBuildableRailroadSignal* ExistingSignal = Cast<AFGBuildableRailroadSignal>(ExistingBuildable);
+				TArray< UFGRailroadTrackConnectionComponent*> GuardedConnections = ExistingSignal->mGuardedConnections;
+				for (int q = 0; q < GuardedConnections.Num(); q++) {
+					UFGRailroadTrackConnectionComponent* GuardedConnection = GuardedConnections[q];
+
+					// now find a existing track this connection is connected to
+					for (int i = 0; i < List.Num(); i++) {
+						AFGBuildable* ExistingBuildable = List[i].Get();
+						AFGBuildable** Ptr = BuildableMapping.Find(ExistingBuildable);
+						if (Ptr) {
+							AFGBuildableRailroadTrack* NewTrack = Cast<AFGBuildableRailroadTrack>(*Ptr);
+							if (NewTrack) {
+								AFGBuildableRailroadTrack* ExistingTrack = Cast<AFGBuildableRailroadTrack>(ExistingBuildable);
+								UFGRailroadTrackConnectionComponent* Connection = ExistingTrack->GetConnection(0);
+
+								if (GuardedConnection == Connection) {
+									NewSignal->mObservedConnections.Add(NewTrack->GetConnection(0));
+								}
+
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	*/
+
+	// first iterate through all signals
+	
+	for (Index = 0; Index < List.Num(); Index++) {
+		AFGBuildable* ExistingBuildable = List[Index].Get();
+		//AFGBuildable** Ptr = BuildableMapping.Find(ExistingBuildable);
+		if (ExistingBuildable) {
+			AFGBuildableRailroadSignal* ExistingSignal = Cast<AFGBuildableRailroadSignal>(ExistingBuildable);
+			// once a signal is found
+			if (ExistingSignal) {
+
+				/*
+				UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(ExistingSignal));
+
+				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
+				if (NewBuildable != nullptr) {
+					BuildableMapping.Add(Cast< AFGBuildable>(ExistingSignal), NewBuildable);
+					Operator->UpdateInternelConnection(NewBuildable);
+					this->NewDesign->BuildableSet.Add(NewBuildable);
+				}
+				*/
+
+				TArray< UFGRailroadTrackConnectionComponent*> GuardedConnections = ExistingSignal->mGuardedConnections;
+				
+				for (int q = 0; q < GuardedConnections.Num(); q++) {
+					UFGRailroadTrackConnectionComponent* GuardedConnection = GuardedConnections[q];
+
+					// now find a existing track this connection is connected to
+					for (int i = 0; i < List.Num(); i++) {
+						AFGBuildable* ExistingBuildable = List[i].Get();
+						AFGBuildable** Ptr = BuildableMapping.Find(ExistingBuildable);
+						if (Ptr) {
+							AFGBuildableRailroadTrack* NewTrack = Cast<AFGBuildableRailroadTrack>(*Ptr);
+							if (NewTrack) {
+								AFGBuildableRailroadTrack* ExistingTrack = Cast<AFGBuildableRailroadTrack>(ExistingBuildable);
+								UFGRailroadTrackConnectionComponent* Connection1 = ExistingTrack->GetConnection(1);
+
+								if (GuardedConnection == Connection1) {
+									UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(ExistingSignal));
+
+									Operator->Connection1 = NewTrack->GetConnection(1);
+
+									AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
+									if (NewBuildable != nullptr) {
+										BuildableMapping.Add(Cast< AFGBuildable>(ExistingSignal), NewBuildable);
+										Operator->UpdateInternelConnection(NewBuildable);
+										this->NewDesign->BuildableSet.Add(NewBuildable);
+									}
+									//NewSignal->mObservedConnections.Add(NewTrack->GetConnection(0));
+								}
+
+							}
+						}
+					}
+				}
+				
+			}
+		}
+	}
+
+	// not sure what AddSignal actually does?
+	for (Index = 0; Index < List.Num(); Index++) {
+		AFGBuildable** Ptr = BuildableMapping.Find(List[Index].Get());
+		if (Ptr) {
+			AFGBuildableRailroadSignal* Signal = Cast<AFGBuildableRailroadSignal>(*Ptr);
+			if (Signal) {
+				RailroadSubsystem->AddSignal(Signal);
+			}
+		}
+	}
+
 	BuildableSubsystem->mFactoryBuildingGroupsDirty = true;
 
 	AFGBuildable** Result = BuildableMapping.Find(this->Anchor.Get());

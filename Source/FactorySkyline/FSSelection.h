@@ -9,6 +9,11 @@
 #include "Buildables/FGBuildable.h"
 #include "FSDesign.h"
 #include "FSSelectService.h"
+
+#include "InstanceData.h"
+#include "HologramHelper.h"
+#pragma comment(lib, "FactoryGame-AbstractInstance-Win64-Shipping")
+
 #include "FSSelection.generated.h"
 
 
@@ -36,6 +41,11 @@ struct FSMaterialHandle
 	TMap<UMeshComponent*, FSMeshMaterial* > MaterialMapping;
 	UMaterialInterface* Material;
 	int32 Handle;
+	bool hologramVariation = false;
+	AFGHologram* Hologram;
+	TArray<FInstanceHandle*> InstanceHandles;
+	TArray<UHierarchicalInstancedStaticMeshComponent*> copiedComponents;
+	AHologramHelper* HologramHelper;
 };
 
 struct FSISMNode
@@ -131,6 +141,7 @@ public:
 	void InitMaterials();
 
 	void HideHologram(AActor* Actor, FSMaterialHandle& ActorInfo);
+	void BuildStaticMeshOrigin(AFGBuildable* Buildable, UStaticMesh* StaticMesh, UMaterialInterface* Material);
 
 	UFSDesign* Design;
 	UFSConnectSelectService* ConnectSelectService = nullptr;
@@ -155,6 +166,7 @@ public:
 	UPROPERTY()
 	TArray<AActor*> ActorList;
 	TMap<AActor*, FSMaterialHandle*> SelectedMap;
+	TArray<FSMaterialHandle*> HandleList;
 	TMap<UMeshComponent*, FSMaterialHandle* > MaterialMapping2;
 
 	UPROPERTY()
@@ -165,6 +177,9 @@ public:
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* FocusMaterial;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* InvisibleMaterial;
 
 	UPROPERTY()
 	UTexture* Scanline;
@@ -180,5 +195,17 @@ public:
 
 	//UPROPERTY()
 	//TMap<UMeshComponent*, FComponentSavedInterfaces> SavedMaterialInterfaces;
+	uint32 HandleID;
+	TArray<uint32>* handleIDs;
+	UAbstractInstanceDataObject* Data;
+	AAbstractInstanceManager* Manager;
+	TArray<FInstanceHandle*> InstanceHandles;
+	UStaticMesh* MeshFromHandle;
+	UStaticMesh* MeshFromInstanceData;
+
+	//AMyActor* Cube;
+	TSet<UStaticMeshComponent*> components;
+	UHierarchicalInstancedStaticMeshComponent* comp2;
+	TArray<int32> InstanceCount;
 
 };

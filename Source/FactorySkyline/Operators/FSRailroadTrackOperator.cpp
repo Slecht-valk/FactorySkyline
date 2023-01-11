@@ -45,6 +45,7 @@ AFGHologram* UFSRailroadTrackOperator::HologramCopy(FTransform& RelativeTransfor
 	}
 	
 	bool NeedNew = false;
+	/*
 	for (FInstancedSplineInstanceData& Data : SourceComponent->PerInstanceSplineData) {
 		if (NeedNew) {
 			USplineMeshComponent* Component = NewObject<USplineMeshComponent>(Hologram);
@@ -57,11 +58,32 @@ AFGHologram* UFSRailroadTrackOperator::HologramCopy(FTransform& RelativeTransfor
 			Component->SetStartAndEnd(Data.StartPos, Data.StartTangent, Data.EndPos, Data.EndTangent);
 			Component->AttachTo(Hologram->GetRootComponent());
 			Component->RegisterComponent();
+		} else {
+			SplineMeshComponent->SetStartAndEnd(Data.StartPos, Data.StartTangent, Data.EndPos, Data.EndTangent);
 		}
-		else SplineMeshComponent->SetStartAndEnd(Data.StartPos, Data.StartTangent, Data.EndPos, Data.EndTangent);
 		NeedNew = true;
 	}
+	*/
+
+	AFGSplineHologram* splineHologram = Cast<AFGSplineHologram>(Hologram);
 	
+	AFGBuildableRailroadTrack* SourceTrack = Cast<AFGBuildableRailroadTrack>(Source);
+	TArray< FSplinePointData > SourceData = SourceTrack->mSplineData;
+	TArray< FSplinePointData > TargetData = splineHologram->mSplineData;
+
+	TargetData.Empty();
+
+	for (const FSplinePointData& PointData : SourceTrack->mSplineData) {
+		FSplinePointData NewPointData;
+		NewPointData.Location = PointData.Location;
+		NewPointData.ArriveTangent = PointData.ArriveTangent;
+		NewPointData.LeaveTangent = PointData.LeaveTangent;
+		TargetData.Add(NewPointData);
+	}
+	splineHologram->mSplineData = TargetData;
+	
+	Hologram->OnPendingConstructionHologramCreated_Implementation(Hologram);
+
 	return Hologram;
 }
 

@@ -11,8 +11,15 @@
 
 AFGHologram* UFSConveyorBeltOperator::HologramCopy(FTransform& RelativeTransform)
 {
+	AFSkyline* FSkyline = AFSkyline::Get(this);
+
 	RelativeTransform = Source->GetTransform();
-	AFGHologram* Hologram = CreateHologram();
+	//AFGHologram* Hologram = CreateHologram();
+
+	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
+	if (!Recipe) return nullptr;
+	AFGHologram* Hologram = AFGHologram::SpawnHologramFromRecipe(Recipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer());
+
 	if (!Hologram) return nullptr;
 	AFGConveyorBeltHologram* ConveyorBeltHologram = Cast<AFGConveyorBeltHologram>(Hologram);
 	if (!ConveyorBeltHologram) return Hologram;
@@ -32,12 +39,13 @@ AFGHologram* UFSConveyorBeltOperator::HologramCopy(FTransform& RelativeTransform
 	Hit.Item = -1;
 	Hit.FaceIndex = -1;
 
-	Hologram->SetHologramLocationAndRotation(Hit);
+	//Hologram->SetHologramLocationAndRotation(Hit);
+	Hologram->SetActorTransform(Source->GetTransform());
 	Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 
 	UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(SourceBelt->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
 	USplineMeshComponent* SplineMeshComponent = nullptr;
-
+	
 	TSet<UActorComponent*> Set = Hologram->GetComponents();
 	for (UActorComponent* Component : Set) {
 		Log("%s", *Component->GetName());
@@ -47,29 +55,48 @@ AFGHologram* UFSConveyorBeltOperator::HologramCopy(FTransform& RelativeTransform
 			break;
 		}
 	}
-
+	
 	bool NeedNew = false;
-	for (FInstancedSplineInstanceData& Data : SourceComponent->PerInstanceSplineData) {
-		if (NeedNew) {
-			USplineMeshComponent* Component = NewObject<USplineMeshComponent>(Hologram);
-			Component->SetStaticMesh(SplineMeshComponent->GetStaticMesh());
-			Component->BodyInstance = SplineMeshComponent->BodyInstance;
-			Component->SetForwardAxis(SplineMeshComponent->ForwardAxis);
-			Component->SetMobility(SplineMeshComponent->Mobility);
-			for (int i = 0; i < SplineMeshComponent->GetNumMaterials(); i++) {
-				Component->SetMaterial(i, SplineMeshComponent->GetMaterial(i));
-			}
-			Component->SetStartAndEnd(Data.StartPos, Data.StartTangent, Data.EndPos, Data.EndTangent);
-			Component->AttachTo(Hologram->GetRootComponent());
-			Component->RegisterComponent();
-		}
-		else {
-			SplineMeshComponent->SetStartAndEnd(Data.StartPos, Data.StartTangent, Data.EndPos, Data.EndTangent);
-		}
-		NeedNew = true;
+
+	//TArray< FSplinePointData >* SourceData = &SourceConveyorBelt->mSplineData;
+	TArray< FSplinePointData >* SourceData = FSkyline->AdaptiveUtil->GetConveyorBeltSplineData(SourceBelt);
+	AFGSplineHologram* splineHologram = Cast<AFGSplineHologram>(ConveyorBeltHologram);
+	TArray< FSplinePointData > TargetData = splineHologram->mSplineData;
+
+	TargetData.Empty();
+
+	for (const FSplinePointData& PointData : *SourceData) {
+		FSplinePointData NewPointData;
+		NewPointData.Location = PointData.Location;
+		NewPointData.ArriveTangent = PointData.ArriveTangent;
+		NewPointData.LeaveTangent = PointData.LeaveTangent;
+		TargetData.Add(NewPointData);
 	}
+	splineHologram->mSplineData = TargetData;
+
+	ConveyorBeltHologram->OnPendingConstructionHologramCreated_Implementation(ConveyorBeltHologram);
+
 	return Hologram;
 }
+/*
+void UFSConveyorBeltOperator::UpdateSplineData(AFGSplineHologram* Hologram)
+{
+	//TArray< FSplinePointData >* SourceData = FSkyline->AdaptiveUtil->GetConveyorBeltSplineData(SourceBelt);
+	AFGSplineHologram* splineHologram = Cast<AFGSplineHologram>(Hologram);
+	TArray< FSplinePointData > TargetData = splineHologram->mSplineData;
+
+	TargetData.Empty();
+
+	for (const FSplinePointData& PointData : *SourceData) {
+		FSplinePointData NewPointData;
+		NewPointData.Location = PointData.Location;
+		NewPointData.ArriveTangent = PointData.ArriveTangent;
+		NewPointData.LeaveTangent = PointData.LeaveTangent;
+		TargetData.Add(NewPointData);
+	}
+	splineHologram->mSplineData = TargetData;
+}
+*/
 
 AFGBuildable* UFSConveyorBeltOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {

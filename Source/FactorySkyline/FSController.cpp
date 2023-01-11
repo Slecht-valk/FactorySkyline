@@ -817,6 +817,7 @@ void AFSController::onLeftMouseUp()
 			else if (State == FSState::SetAnchor) {
 				FHitResult Hit = this->GetCopyHitResult();
 				AFGBuildable* Building = this->AcquireBuildable(Hit);
+				BuildingPtr = Building;
 
 				if (this->Design->IsElementSelected(Building)) {
 					this->Design->Anchor = Building;
@@ -825,6 +826,7 @@ void AFSController::onLeftMouseUp()
 						StartCopyMode();
 					}
 				}
+				BuildingPtr = nullptr;
 			}
 			else if (State == FSState::SetItem) {
 				if (CurrentFocusBuilding.Get()) {
@@ -1206,14 +1208,19 @@ FHitResult AFSController::GetSelectHitResult()
 
 FHitResult AFSController::GetCopyHitResult()
 {
-	if (IsShowMouseCursor()) return GetMouseCursorHitResult(false);
+	if (IsShowMouseCursor()) return GetMouseCursorHitResult(true);
 
 	FHitResult Hit;
+	
+	Hit = this->FGBuildGun->GetHitResult();
+	if (AcquireBuildable(Hit)) return Hit;	
+	
 
 	FVector CamLoc;
 	FRotator CamRot;
 	this->FGController->GetPlayerViewPoint(CamLoc, CamRot);
 
+	float max = 1000.0f;
 	const FVector TraceStart = CamLoc;
 	const FVector Direction = CamRot.Vector();
 	const FVector TraceEnd = TraceStart + (Direction * DistanceMax);
@@ -1224,7 +1231,9 @@ FHitResult AFSController::GetCopyHitResult()
 	TraceParams.bTraceComplex = true;
 
 	if (this->World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, TraceParams)) {
-		return Hit;
+		if (AcquireBuildable(Hit)) {
+			return Hit;
+		}
 	}
 
 	return FHitResult();

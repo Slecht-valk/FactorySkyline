@@ -51,6 +51,7 @@ AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 	}
 
 	bool NeedNew = false;
+	/*
 	for (FInstancedSplineInstanceData& Data : SourceComponent->PerInstanceSplineData) {
 		if (NeedNew) {
 			USplineMeshComponent* Component = NewObject<USplineMeshComponent>(PipelineHologram);
@@ -69,6 +70,28 @@ AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 		}
 		NeedNew = true;
 	}
+	*/
+
+	AFGSplineHologram* splineHologram = Cast<AFGSplineHologram>(Hologram);
+
+
+	TArray< FSplinePointData > SourceData = SourcePipe->mSplineData;
+	TArray< FSplinePointData > TargetData = splineHologram->mSplineData;
+
+	TargetData.Empty();
+
+	for (const FSplinePointData& PointData : SourcePipe->mSplineData) {
+		FSplinePointData NewPointData;
+		NewPointData.Location = PointData.Location;
+		NewPointData.ArriveTangent = PointData.ArriveTangent;
+		NewPointData.LeaveTangent = PointData.LeaveTangent;
+		TargetData.Add(NewPointData);
+	}
+	splineHologram->mSplineData = TargetData;
+
+	Hologram->OnPendingConstructionHologramCreated_Implementation(Hologram);
+
+
 	return PipelineHologram;
 }
 
