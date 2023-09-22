@@ -2,8 +2,7 @@
 
 
 #include "FSGameWorldModule.h"
-#include "MyObject.h"
-#include "MyClass.h"
+
 
 #include "UObject/NoExportTypes.h"
 #include "Subsystem/SubsystemActorManager.h"
@@ -70,17 +69,11 @@ void UFSGameWorldModule::DispatchLifecycleEvent(ELifecyclePhase Phase) {
 			}
 
 
-			//UMyObject* UMyObject = NewObject<UMyObject>(this);
+
 
 		}
 	}
 
-	//UMyObject* UMyObject = NewObject<UMyObject>();
-	/*
-	int num = 5;
-	if (num == 5) {
-		MyClass testClass;
-	}
-	*/
+
 #endif
 }
