@@ -30,6 +30,9 @@ public:
 	void Fold();
 	void Expand();
 
+	UFUNCTION()
+	void onCheckBoxAddChanged(bool IsChecked);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UButton* SelectButton;
 
@@ -38,6 +41,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UFSFoldWidgetBase* FoldPanel;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UCheckBox* CheckBoxAdd;
 
 	UFSDesign* Design = nullptr;
 	//FButtonStyle ButtonStyle;

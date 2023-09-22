@@ -44,11 +44,14 @@
 #include "FactorySkyline/Operators/FSBuildableCircuitSwitchOperator.h"
 #include "FactorySkyline/Operators/FSBuildablePowerStorageOperator.h"
 #include "FactorySkyline/Operators/FSBuildableRailroadSignalOperator.h"
+#include "FactorySkyline/Operators/FSBuildableFloodlightOperator.h"
+#include "FactorySkyline/Operators/FSBuildableLightSourceOperator.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Buildables/FGBuildableLightsControlPanel.h"
 #include "Buildables/FGBuildableCircuitSwitch.h"
 #include "Buildables/FGBuildablePowerStorage.h"
 #include "Buildables/FGBuildableRailroadSignal.h"
+#include "Buildables/FGBuildableFloodlight.h"
 
 #include "Buildables/FGBuildable.h"
 #include "Buildables/FGBuildableAttachmentMerger.h"
@@ -112,7 +115,7 @@ AFGHologram* UFSBuildableOperator::CreateHologram()
 	AFGHologram* Hologram = AFGHologram::SpawnHologramFromRecipe(Recipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer());
 
 	FHitResult Hit;
-	Hit.Actor = nullptr;
+	//Hit.Actor = nullptr;
 	Hit.Time = 0.006946;
 	Hit.Location = FVector(-11720.067f, 248538.719f, -10141.936f);
 	Hit.ImpactPoint = FVector(-11720.066f, 248538.719f, -10141.936f);
@@ -124,7 +127,7 @@ AFGHologram* UFSBuildableOperator::CreateHologram()
 	Hit.Item = -1;
 	Hit.FaceIndex = -1;
 
-	if (Hologram) Hologram->SetHologramLocationAndRotation(Hit);
+	//if (Hologram) Hologram->SetHologramLocationAndRotation(Hit);
 
 	return Hologram;
 }
@@ -160,7 +163,9 @@ AFGBuildable* UFSBuildableOperator::CreateCopy(const FSTransformOperator& Transf
 
 	//TSubclassOf< UFGRecipe > ConveyorPoleRecipe = LoadClass<UFGRecipe>(this, TEXT("/Game/FactoryGame/Recipes/Buildings/Foundations/Recipe_Foundation_8x1_01.Recipe_Foundation_8x1_01_C"));
 	//try {
-		Buildable = BuildableSubsystem->BeginSpawnBuildable(sourceClass, Transform);
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(sourceClass, Source->GetTransform());
+		Buildable->FinishSpawning(Transform);
+
 		//if (Buildable == nullptr) return nullptr;
 
 	//}
@@ -425,6 +430,14 @@ UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 
 	if (Buildable->IsChildOf<AFGBuildableRailroadSignal>()) {
 		return NewObject <UFSBuildableRailroadSignalOperator>(this);
+	}
+	if (Buildable->IsChildOf<AFGBuildableFloodlight>()) {
+		return NewObject <UFSBuildableFloodlightOperator>(this);
+	}
+	if (Buildable->IsChildOf<AFGBuildableLightSource>()) {
+		if (CheckContains(Buildable, "Build_StreetLight")) {
+			return NewObject <UFSBuildableLightSourceOperator>(this);
+		}
 	}
 
 	if (Buildable->IsChildOf<AFGBuildableFactoryBuilding>()) {
@@ -783,7 +796,7 @@ AFGConveyorLiftHologram* UFSSplineHologramFactory::CreateLiftHologram(AFGBuildab
 
 	RelativeTransform = ConveyorLiftStart;
 	FHitResult Hit;
-	Hit.Actor = ConveyorPole;
+	//Hit.Actor = ConveyorPole;
 	Hit.Time = 0.005515f;
 
 	Hit.Location = FVector(-53839.797f, 244792.078f, -13691.415f);
@@ -870,7 +883,7 @@ AFGPipelineHologram* UFSSplineHologramFactory::CreatePipelineHologram(AFGBuildab
 	RelativeTransform = PipelineStart;
 
 	FHitResult Hit;
-	Hit.Actor = PipelineSupport;
+	//Hit.Actor = PipelineSupport;
 	Hit.Time = 0.006946;
 	Hit.Location = FVector(-11720.067f, 248538.719f, -10141.936f);
 	Hit.ImpactPoint = FVector(-11720.066f, 248538.719f, -10141.936f);
@@ -935,7 +948,7 @@ AFGPipelineHologram* UFSSplineHologramFactory::CreatePipelineHologram(AFGBuildab
 	RelativeTransform = PipelineStart;
 
 	FHitResult Hit;
-	Hit.Actor = PipelineHyperSupport;
+	//Hit.Actor = PipelineHyperSupport;
 	Hit.Time = 0.006946;
 	Hit.Location = FVector(-1720.067f, 248538.719f, -10141.936f);
 	Hit.ImpactPoint = FVector(-1720.066f, 248538.719f, -10141.936f);

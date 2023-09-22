@@ -1,8 +1,8 @@
 {
 	"FileVersion": 3,
 	"Version": 0,
-	"VersionName": "0.2.9",
-	"SemVersion": "0.2.9",
+	"VersionName": "0.3.2",
+	"SemVersion": "0.3.2",
 	"FriendlyName": "FactorySkyline",
 	"Description": "Reboot of factory skyline",
 	"Category": "Modding",
@@ -19,13 +19,13 @@
 		{
 			"Name": "FactorySkyline",
 			"Type": "Runtime",
-			"LoadingPhase": "PostDefault"
+			"LoadingPhase": "Default"
 		}
 	],
 	"Plugins": [
 		{
 			"Name": "SML",
-			"SemVersion": "^3.2.0",
+			"SemVersion": "^3.5.0",
 			"Enabled": true
 		}
 	]

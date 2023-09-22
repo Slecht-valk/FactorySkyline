@@ -28,6 +28,7 @@ enum FSState
 	Open,
 	Select,
 	SetAnchor,
+	SetAreaAnchor,
 	SetItem,
 	Copy
 };
@@ -123,6 +124,8 @@ public:
 
 	void onPlayerEquipmentEquipped(AFGCharacterPlayer* Player, AFGEquipment* Equipment);
 	void onPlayerEquipmentUnequipped(AFGCharacterPlayer* Player, AFGEquipment* Equipment);
+
+	void OnActorSpawned(AActor* InActor);
 	
 	UFUNCTION()
 	void onBuildGunRecipeChanged(TSubclassOf< class UFGRecipe > newRecipe);
@@ -142,6 +145,8 @@ public:
 
 	void StartSetAnchorMode();
 	void ExitSetAnchorMode(bool RestoreEquipment);
+
+	void StartSetAreaAnchorMode();
 
 	void StartSelectMode();
 	void ExitSelectMode(bool RestoreEquipment);

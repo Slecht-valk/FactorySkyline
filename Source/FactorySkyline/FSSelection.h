@@ -12,7 +12,8 @@
 
 #include "InstanceData.h"
 #include "HologramHelper.h"
-#pragma comment(lib, "FactoryGame-AbstractInstance-Win64-Shipping")
+#include "MyActor.h"
+//#pragma comment(lib, "FactoryGame-AbstractInstance-Win64-Shipping")
 
 #include "FSSelection.generated.h"
 
@@ -79,6 +80,16 @@ struct FACTORYSKYLINE_API FSelectedActorInfo
 public:
 	UPROPERTY()
 	TMap<class UMeshComponent*, FSavedMaterialInterfaces> SavedMaterialInterfaces;
+	UPROPERTY()
+	bool hologramVariation = false;
+	UPROPERTY()
+	AFGHologram* Hologram;
+	//UPROPERTY()
+	TArray<FInstanceHandle*> InstanceHandles;
+	UPROPERTY()
+	TArray<UHierarchicalInstancedStaticMeshComponent*> copiedComponents;
+	UPROPERTY()
+	AHologramHelper* HologramHelper;
 
 public:
 	FORCEINLINE ~FSelectedActorInfo() = default;
@@ -136,12 +147,17 @@ public:
 	void AddInstance(UFGColoredInstanceMeshProxy* MeshProxy, uint8 Slot);
 	void RemoveInstance(UFGColoredInstanceMeshProxy* MeshProxy, uint8 Slot);
 
+	void SpawnInitialAreaBox(AFGBuildable* Buildable);
+	void ChangeAreaBox(float Size);
+	void SelectBuildablesInAreaBox();
+
 	void SetMeshInstanced(UMeshComponent* MeshComp, bool Instanced) const;
 
 	void InitMaterials();
 
-	void HideHologram(AActor* Actor, FSMaterialHandle& ActorInfo);
+	void HideHologram(AActor* Actor, FSelectedActorInfo& ActorInfo);
 	void BuildStaticMeshOrigin(AFGBuildable* Buildable, UStaticMesh* StaticMesh, UMaterialInterface* Material);
+	void TestMethod(AFGBuildable* Buildable);
 
 	UFSDesign* Design;
 	UFSConnectSelectService* ConnectSelectService = nullptr;
@@ -165,7 +181,10 @@ public:
 	TMap<UMeshComponent*, FSMaterialHandle* > MaterialMapping;
 	UPROPERTY()
 	TArray<AActor*> ActorList;
-	TMap<AActor*, FSMaterialHandle*> SelectedMap;
+
+	UPROPERTY()
+	TMap<AActor*, FSelectedActorInfo> SelectedMap;
+
 	TArray<FSMaterialHandle*> HandleList;
 	TMap<UMeshComponent*, FSMaterialHandle* > MaterialMapping2;
 
@@ -180,6 +199,9 @@ public:
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* InvisibleMaterial;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* CubeMaterial;
 
 	UPROPERTY()
 	UTexture* Scanline;
@@ -203,7 +225,9 @@ public:
 	UStaticMesh* MeshFromHandle;
 	UStaticMesh* MeshFromInstanceData;
 
-	//AMyActor* Cube;
+	UPROPERTY()
+	AMyActor* Cube;
+
 	TSet<UStaticMeshComponent*> components;
 	UHierarchicalInstancedStaticMeshComponent* comp2;
 	TArray<int32> InstanceCount;

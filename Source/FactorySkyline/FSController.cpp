@@ -109,8 +109,39 @@ void AFSController::Init() {
 	}
 	*/
 
+	FOnActorSpawned::FDelegate ActorSpawnedDelegate = FOnActorSpawned::FDelegate::CreateUObject(this, &AFSController::OnActorSpawned);
+	this->World->AddOnActorSpawnedHandler(ActorSpawnedDelegate);
+
 	this->SetActorTickEnabled(true);
 	Timer.Start();
+}
+
+void AFSController::OnActorSpawned(AActor* InActor)
+{
+	//do something 
+
+	AFGBuildable* buildable = Cast<AFGBuildable>(InActor);
+
+	if (buildable) {
+		if (this->Design) {
+			if (this->Design->AddConstructedBuildable) {
+
+				this->Design->AddElement(buildable);
+				this->Design->BuildableMark.Add(buildable, 1);
+				//this->Select->EnableHightLight(buildable, this->Select->SelectMaterial);
+
+			}
+		}
+		/*
+		std::string  str;
+		//str.append("\n");
+		str.append("BUILDABLE SPAWNED!\n");
+		std::wstring temp = std::wstring(str.begin(), str.end());
+		LPCWSTR wideString = temp.c_str();
+		OutputDebugStringW(wideString);
+		*/
+	}
+
 }
 
 void AFSController::onPlayerEquipmentEquipped(AFGCharacterPlayer* Player, AFGEquipment* Equipment) {
@@ -127,7 +158,7 @@ void AFSController::onPlayerEquipmentEquipped(AFGCharacterPlayer* Player, AFGEqu
 void AFSController::onPlayerEquipmentUnequipped(AFGCharacterPlayer* Player, AFGEquipment* Equipment) {
 	if (SkylineUI->IsActive) {
 		if (Equipment == this->FGBuildGun) {
-			if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::Copy || State == FSState::SetItem) {
+			if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::Copy || State == FSState::SetItem || State == FSState::SetAreaAnchor) {
 				SetOpenState(false);
 			}
 		}
@@ -141,7 +172,7 @@ void AFSController::onBuildGunRecipeChanged(TSubclassOf<class UFGRecipe> newReci
 void AFSController::onBuildGunStateChanged(EBuildGunState newState)
 {
 	if (SkylineUI->IsActive) {
-		if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::Copy || State == FSState::SetItem) {
+		if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::Copy || State == FSState::SetItem || State == FSState::SetAreaAnchor) {
 			if (newState == EBuildGunState::BGS_NONE) return;
 			if (newState == EBuildGunState::BGS_MENU) {
 				UFGBuildGunState* StateVar = this->FGBuildGun->GetBuildGunStateFor(newState);
@@ -165,6 +196,11 @@ void AFSController::SetOpenState(bool RestoreEquipment)
 	if (State == FSState::Select) {
 		ExitSelectMode(RestoreEquipment);
 	}
+
+	if (State == FSState::SetAreaAnchor) {
+		ExitSelectMode(RestoreEquipment);
+	}
+
 	if (State == FSState::SetAnchor) {
 		ExitSetAnchorMode(RestoreEquipment);
 	}
@@ -247,6 +283,7 @@ void AFSController::ExitRectangleSelectMode()
 
 void AFSController::StartSelectMode()
 {
+	
 	if (State != FSState::Open) SetOpenState(true);
 
 	if (GetPlayer()->IsBuildGunEquipped()) GetPlayer()->ToggleBuildGun();
@@ -264,17 +301,24 @@ void AFSController::StartSelectMode()
 	ChangeConnectSelectMode();
 
 	this->SkylineUI->RestoreHighLightMapping();
+	
+	// visible ui elements
 	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	
 	this->SkylineUI->HoldCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->SelectScrollMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->SelectMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	
+	
 	this->SkylineUI->SelectAnchorMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->GotoBuildMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->ExitMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 	this->Select->LoadSelect(this->Design);
 	CurrentFocusBuilding = nullptr;
+	
 }
 
 
@@ -387,6 +431,39 @@ void AFSController::ExitSetAnchorMode(bool RestoreEquipment)
 	State = FSState::Open;
 
 	if (RestoreEquipment) UnequipBuilder();
+}
+
+void AFSController::StartSetAreaAnchorMode() {
+
+	if (State != FSState::Open) SetOpenState(true);
+
+	if (GetPlayer()->IsBuildGunEquipped()) GetPlayer()->ToggleBuildGun();
+
+	State = FSState::SetAreaAnchor;
+	this->SkylineUI->OperatingWidget->OnTab4Click();
+
+	EquipBuilder();
+	PopFGUI();
+
+	HideMouseCursor();
+
+	SelectWaitingResult = false;
+	ConnectSelectMode = true;
+	ChangeConnectSelectMode();
+
+	this->SkylineUI->RestoreHighLightMapping();
+	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	this->SkylineUI->HoldCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	this->SkylineUI->SelectScrollMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	this->SkylineUI->SelectMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	this->SkylineUI->SelectAnchorMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	this->SkylineUI->GotoBuildMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	this->SkylineUI->ExitMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	this->Select->LoadSetAnchor(this->Design);
+	CurrentFocusBuilding = nullptr;
+
 }
 
 void AFSController::StartSetItemMode()
@@ -628,6 +705,14 @@ void AFSController::LoadDesign(UFSDesign* DesignParam)
 	if (this->Design && this->Design != DesignParam) UnloadDesign(false);
 	this->Design = DesignParam;
 	Repeat.Ready = false;
+
+	if (this->Select != nullptr && this->Select->Cube != nullptr) {
+		if (this->Select->Cube->IsValidLowLevel() && !this->Select->Cube->IsPendingKill()) {
+			this->Select->Cube->Destroy();
+			this->Select->Cube = nullptr;
+		}
+	}
+
 }
 
 void AFSController::UnloadDesign(bool ShowMouse)
@@ -635,6 +720,14 @@ void AFSController::UnloadDesign(bool ShowMouse)
 	this->Design = nullptr;
 	SetOpenState(true);
 	if (ShowMouse) this->ShowMouseCursor();
+
+	if (this->Select != nullptr && this->Select->Cube != nullptr) {
+		if (this->Select->Cube->IsValidLowLevel() && !this->Select->Cube->IsPendingKill()) {
+			this->Select->Cube->Destroy();
+			this->Select->Cube = nullptr;
+		}
+	}
+
 }
 
 void AFSController::onCallMenu() {
@@ -649,6 +742,14 @@ void AFSController::onEscPressed()
 		State = FSState::Close;
 		SkylineUI->HideMenu();
 	}
+
+	if (this->Select != nullptr && this->Select->Cube != nullptr) {
+		if (this->Select->Cube->IsValidLowLevel() && !this->Select->Cube->IsPendingKill()) {
+			this->Select->Cube->Destroy();
+			this->Select->Cube = nullptr;
+		}
+	}
+
 }
 
 void AFSController::onLeftCtrlPressed()
@@ -843,6 +944,16 @@ void AFSController::onLeftMouseUp()
 					//this->onBuildFinish();
 				}
 			}
+			else if (State == FSState::SetAreaAnchor) {
+				FHitResult Hit = this->GetCopyHitResult();
+				AFGBuildable* Building = this->AcquireBuildable(Hit);
+				//BuildingPtr = Building;
+
+				if (Building) {
+					this->Select->SpawnInitialAreaBox(Building);
+
+				}
+			}
 		}
 		SkylineUI->RestoreHighLightMapping();
 	}
@@ -889,7 +1000,7 @@ void AFSController::onRightMouseUp()
 	if (LeftCtrlPressed) {
 	}
 	else {
-		if (RightMousePressed && (State == FSState::Select || State == FSState::SetAnchor || State == FSState::SetItem || State == FSState::Copy && !CopyConsole)) {
+		if (RightMousePressed && (State == FSState::Select || State == FSState::SetAnchor || State == FSState::SetItem || State == FSState::Copy || State == FSState::SetAreaAnchor && !CopyConsole)) {
 			
 			if (World->GetRealTimeSeconds() - LastRightMouseDown < ShortPressMouseRightTimeLimit) {
 				SetOpenState(true);
@@ -1073,8 +1184,10 @@ void AFSController::ExecCallMenu()
 	//SML::Logging::info(Fog->FogDensity, TEXT(" "), Fog->FogHeightFalloff, TEXT(" "), *Fog->GetComponentLocation().ToString());
 
 	if (SkylineUI->IsActive) {
-		if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::SetItem || State == FSState::Copy) {
-			SetOpenState(true);
+		if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::SetItem || State == FSState::Copy || State == FSState::SetAreaAnchor) {
+			if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::SetItem || State == FSState::Copy) {
+				SetOpenState(true);
+			}
 			ShowMouseCursor();
 		}
 		else {
@@ -1127,6 +1240,9 @@ void AFSController::CheckFlying()
 		// TODO should be good as far as fix I think
 		bool hoverPackUsage = false;
 		if (MovementComponent->CustomMovementMode == 4) {
+			hoverPackUsage = true;
+		}
+		if (MovementComponent->MovementMode == 5) {
 			hoverPackUsage = true;
 		}
 		if (!hoverPackUsage) {
@@ -1236,7 +1352,7 @@ FHitResult AFSController::GetCopyHitResult()
 		}
 	}
 
-	return FHitResult();
+	return Hit;
 }
 
 FHitResult AFSController::GetMouseCursorHitResult(bool RequireBuildable)

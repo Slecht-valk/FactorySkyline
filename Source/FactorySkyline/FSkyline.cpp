@@ -16,6 +16,8 @@
 #include "Subsystem/ModSubsystem.h"
 #include "Subsystem/SubsystemActorManager.h"
 
+#include "FSHologramService.h"
+
 
 AFSkyline* AFSkyline::Get(UObject* WorldContext) {
 	UWorld* World = GEngine->GetWorldFromContextObjectChecked(WorldContext);
@@ -57,6 +59,8 @@ void AFSkyline::InitFullSetup()
 	this->RectSelectService = NewObject<UFSRectSelectService>(this);
 	this->AdaptiveUtil = NewObject<UFSAdaptiveUtil>(this);
 
+	//UFSHologramService* HologramService = NewObject<UFSHologramService>(this);
+	//HologramService->Init();
 
 
 	TSubclassOf<UUserWidget> WidgetClass = LoadClass<UUserWidget>(this, TEXT("/FactorySkyline/Widget_FSkylineUI.Widget_FSkylineUI_C"));

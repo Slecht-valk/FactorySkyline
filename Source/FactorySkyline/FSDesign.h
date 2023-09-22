@@ -46,4 +46,6 @@ public:
 	AFGBuildable* AnchorSave = nullptr;
 	
 	UTextBlock* SetItemFeedback = nullptr;
+
+	bool AddConstructedBuildable = false;
 };

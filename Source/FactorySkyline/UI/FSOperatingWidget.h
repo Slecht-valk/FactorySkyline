@@ -13,6 +13,7 @@
 #include "FactorySkyline/UI/FSCopyPanel.h"
 #include "FactorySkyline/UI/FSDeletePanel.h"
 #include "FactorySkyline/UI/FSAdvancedCopyPanel.h"
+#include "FactorySkyline/UI/FSEditAreaPanel.h"
 #include "FactorySkyline/FSDesign.h"
 #include "FSOperatingWidget.generated.h"
 
@@ -37,6 +38,9 @@ public:
 	class UVerticalBox* Box3;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UVerticalBox* Box4;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UButton* Tab1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
@@ -44,6 +48,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UButton* Tab3;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UButton* Tab4;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UCanvasPanel* MainPanel;
@@ -61,6 +68,9 @@ public:
 	UFUNCTION()
 	void OnTab3Click();
 
+	UFUNCTION()
+	void OnTab4Click();
+
 	void NativeTick(const FGeometry& Geometry, float dt);
 
 	FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
@@ -77,6 +87,7 @@ public:
 	UFSCopyPanel* CopyPanel = nullptr;
 	UFSAdvancedCopyPanel* AdvancedCopyPanel = nullptr;
 	UFSStatusPanel* StatusPanel = nullptr;
+	UFSEditAreaPanel* EditAreaPanel = nullptr;
 
 	virtual float Refresh();
 };

@@ -42,7 +42,7 @@ void UFSConveyorPoleStackableOperator::GetSelectConnectList(AFGBuildable* Builda
 	FTransform Transform = Buildable->GetTransform();
 	FVector Loc = Transform.GetLocation();
 
-	Shape.SetBox(FVector(10.0f, 120.0f, 50.0f));
+	Shape.SetBox(FVector3f(10.0f, 120.0f, 50.0f));
 	World->OverlapMultiByChannel(Result, FVector(Loc.X, Loc.Y, Loc.Z + 200.0f), Transform.GetRotation(), ECollisionChannel::ECC_Visibility, Shape);
 
 	for (FOverlapResult& Res : Result) {

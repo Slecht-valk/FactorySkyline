@@ -43,11 +43,22 @@ void UFSSelectPanel::Init()
 
 	this->FoldPanel->FoldBox->SetCheckedState(ECheckBoxState::Unchecked);
 	this->onCheckBoxChanged(false);
+
+	Func1.BindUFunction(this, FName("onCheckBoxAddChanged"));
+	this->CheckBoxAdd->OnCheckStateChanged.Add(Func1);
+	this->CheckBoxAdd->SetCheckedState(ECheckBoxState::Unchecked);
+
 }
 
 void UFSSelectPanel::Load(UFSDesign* Design)
 {
 	this->Design = Design;
+
+	if (this->Design->AddConstructedBuildable) {
+		this->CheckBoxAdd->SetCheckedState(ECheckBoxState::Checked);
+	} else {
+		this->CheckBoxAdd->SetCheckedState(ECheckBoxState::Unchecked);
+	}
 }
 
 void UFSSelectPanel::Fold()
@@ -60,4 +71,11 @@ void UFSSelectPanel::Expand()
 {
 	//this->FoldPanel->Dark->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->Readme->SetVisibility(ESlateVisibility::Visible);
+}
+
+void UFSSelectPanel::onCheckBoxAddChanged(bool IsChecked)
+{
+	AFSkyline* Skyline = AFSkyline::Get(this);
+	//Skyline->FSCtrl->FullPreview = IsChecked;
+	Skyline->FSCtrl->Design->AddConstructedBuildable = IsChecked;
 }

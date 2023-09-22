@@ -18,7 +18,7 @@ AFGHologram* UFSRailroadTrackOperator::HologramCopy(FTransform& RelativeTransfor
 	AFGBuildableRailroadTrack* Track = Cast<AFGBuildableRailroadTrack>(Source);
 
 	FHitResult Hit;
-	Hit.Actor = nullptr;
+	//Hit.Actor = nullptr;
 	Hit.Time = 0.006946;
 	Hit.Location = FVector(-11720.067f, 248538.719f, -10141.936f);
 	Hit.ImpactPoint = FVector(-11720.066f, 248538.719f, -10141.936f);

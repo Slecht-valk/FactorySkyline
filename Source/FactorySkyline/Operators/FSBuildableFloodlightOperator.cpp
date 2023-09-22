@@ -1,11 +1,10 @@
 // ILikeBanas
 
 
-#include "FSBuildablePowerStorageOperator.h"
-#include "Buildables/FGBuildablePowerStorage.h"
+#include "FSBuildableFloodlightOperator.h"
 #include "Buildables/FGBuildable.h"
 #include "Buildables/FGBuildableConveyorLift.h"
-#include "Buildables/FGBuildableCircuitSwitch.h"
+#include "Buildables/FGBuildableFloodlight.h"
 #include "Hologram/FGConveyorLiftHologram.h"
 #include "FactorySkyline/FSkyline.h"
 #include "Buildables/FGBuildableLightSource.h"
@@ -66,23 +65,40 @@ AFGHologram* UFSBuildableSignOperator::HologramCopy(FTransform& RelativeTransfor
 }
 */
 
-AFGBuildable* UFSBuildablePowerStorageOperator::CreateCopy(const FSTransformOperator& TransformOperator)
+AFGBuildable* UFSBuildableFloodlightOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
 	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
 	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildablePowerStorage* SourceBuildablePowerStorage = Cast<AFGBuildablePowerStorage>(Source);
-	AFGBuildablePowerStorage* BuildablePowerStorage = Cast<AFGBuildablePowerStorage>(Buildable);
 
-	BuildablePowerStorage->mPowerStore = SourceBuildablePowerStorage->mPowerStore;
+	
+	AFGBuildableFloodlight* SourceBuildableLightsControlPanel = Cast<AFGBuildableFloodlight>(Source);
+	AFGBuildableFloodlight* BuildableLightsControlPanel = Cast<AFGBuildableFloodlight>(Buildable);
+
+
+	BuildableLightsControlPanel->PasteSettings_Implementation(SourceBuildableLightsControlPanel->CopySettings_Implementation());
+	BuildableLightsControlPanel->SetLightControlData(SourceBuildableLightsControlPanel->GetLightControlData());
+	BuildableLightsControlPanel->SetLightEnabled(SourceBuildableLightsControlPanel->IsLightEnabled());
+	BuildableLightsControlPanel->mLightControlData = SourceBuildableLightsControlPanel->mLightControlData;
+	BuildableLightsControlPanel->mIsEnabled = SourceBuildableLightsControlPanel->mIsEnabled;
+
+	FLightSourceControlData controlData = FLightSourceControlData();
+	controlData.ColorSlotIndex = SourceBuildableLightsControlPanel->mLightControlData.ColorSlotIndex;
+	controlData.Intensity = SourceBuildableLightsControlPanel->mLightControlData.Intensity;
+	controlData.IsTimeOfDayAware = SourceBuildableLightsControlPanel->mLightControlData.IsTimeOfDayAware;
+
+	BuildableLightsControlPanel->mLightControlData = controlData;
+	BuildableLightsControlPanel->OnRep_IsEnabled();
+	BuildableLightsControlPanel->mFixtureAngle = SourceBuildableLightsControlPanel->mFixtureAngle;
 
 	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
 	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
+	
 
 	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
 	Buildable->FinishSpawning(Transform);

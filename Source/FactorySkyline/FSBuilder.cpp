@@ -29,10 +29,13 @@
 #include "Buildables/FGBuildableRailroadSignal.h"
 #include "Buildables/FGBuildableRailroadStation.h"
 #include "Buildables/FGBuildableWire.h"
+#include "Buildables/FGBuildableBlueprintDesigner.h"
 #include "Hologram/FGHologram.h"
 #include "Hologram/FGBuildableHologram.h"
 #include "Hologram/FGFactoryHologram.h"
 #include "Hologram/FGFoundationHologram.h"
+
+#include "Hologram/FGRailroadTrackHologram.h"
 
 #include "Buildables/FGBuildablePowerPole.h"
 #include "FGPowerConnectionComponent.h"
@@ -628,6 +631,14 @@ void UFSSyncBuild::StepA()
 							UFSBuildableOperatorList.Add(Operator);
 							passThroughBuildableList.Add(Cast<AFGBuildablePassthrough>(Buildable));
 							passThroughNewList.Add(Cast<AFGBuildablePassthrough>(NewBuildable));
+
+							for (TObjectIterator<AFGBuildable> Worker; Worker; ++Worker) {
+								AFGBuildable* buildablePtr = *Worker;
+								if (Cast<AFGBuildableBlueprintDesigner>(buildablePtr)) {
+									Cast<AFGBuildableBlueprintDesigner>(buildablePtr)->OnBuildableConstructedInsideDesigner(NewBuildable);
+								}
+							}
+
 						}
 
 						if (Cast<AFGBuildableLightsControlPanel>(NewBuildable)) {

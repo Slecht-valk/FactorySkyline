@@ -10,7 +10,7 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Math/Color.h"
-#include "UI/FSMenuEntryBase.h"
+#include "FactorySkyline/UI/FSMenuEntryBase.h"
 #include "Blueprint/UserWidget.h"
 #include "FSButtonWidget.generated.h"
 

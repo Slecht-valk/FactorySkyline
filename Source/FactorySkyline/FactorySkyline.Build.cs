@@ -6,39 +6,60 @@ public class FactorySkyline : ModuleRules
 {
     public FactorySkyline(ReadOnlyTargetRules Target) : base(Target)
     {
-        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        ShadowVariableWarningLevel = WarningLevel.Off;
+    PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+    ShadowVariableWarningLevel = WarningLevel.Off;
 
-        PublicDependencyModuleNames.AddRange(new string[] {
+    // FactoryGame transitive dependencies
+    // Not all of these are required, but including the extra ones saves you from having to add them later.
+    PublicDependencyModuleNames.AddRange(new[] {
             "Core", "CoreUObject",
             "Engine",
+            "DeveloperSettings",
+            "PhysicsCore",
             "InputCore",
-            "OnlineSubsystem", "OnlineSubsystemUtils", "OnlineSubsystemNULL", "OnlineSubsystemEOS",
+            "OnlineSubsystem", "OnlineSubsystemNull", "OnlineSubsystemUtils", "OnlineSubsystemEOS",
             "SignificanceManager",
-            "PhysX", "APEX", "PhysXVehicles", "ApexDestruction",
-            "AkAudio",
-            "ReplicationGraph",
-            "UMG",
-            "AIModule",
-            "NavigationSystem",
-            "AssetRegistry",
-            "GameplayTasks",
+            "GeometryCollectionEngine",
+            "ChaosVehiclesCore", "ChaosVehicles", "ChaosSolverEngine",
             "AnimGraphRuntime",
-            "Slate", "SlateCore",
-            "InstancedSplines"
-            });
+            "AkAudio",
+            "AssetRegistry",
+            "NavigationSystem",
+            "ReplicationGraph",
+            "AIModule",
+            "GameplayTasks",
+            "SlateCore", "Slate", "UMG",
+            "InstancedSplines",
+            "RenderCore",
+            "CinematicCamera",
+            "Foliage",
+            "Niagara",
+            "EnhancedInput",
+            "GameplayCameras",
+            "TemplateSequence",
+            "NetCore",
+            "GameplayTags",
+        });
 
-        if (Target.Type == TargetRules.TargetType.Editor)
-        {
-            PublicDependencyModuleNames.AddRange(new string[] { "OnlineBlueprintSupport", "AnimGraph" });
-        }
+    // FactoryGame plugins
+    PublicDependencyModuleNames.AddRange(new[] {
+            "AbstractInstance",
+            "InstancedSplinesComponent",
+            "SignificanceISPC"
+        });
 
-        // Uncomment if you are using Slate UI
-        PrivateDependencyModuleNames.AddRange(new string[] { "UMG", "Engine", "ApplicationCore" });
-        //PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+    // Header stubs
+    PublicDependencyModuleNames.AddRange(new[] {
+            "DummyHeaders",
+        });
 
-
-        // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
-        PublicDependencyModuleNames.AddRange(new string[] {"FactoryGame", "SML"});
+    if (Target.Type == TargetRules.TargetType.Editor)
+    {
+        PublicDependencyModuleNames.AddRange(new string[] { "OnlineBlueprintSupport", "AnimGraph" });
     }
+
+    PrivateDependencyModuleNames.AddRange(new string[] { "UMG", "Engine", "ApplicationCore" });
+
+    PublicDependencyModuleNames.AddRange(new string[] { "FactoryGame", "SML" });
+}
 }

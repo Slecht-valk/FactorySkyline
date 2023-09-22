@@ -57,7 +57,7 @@ void UFSLadderOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWe
 		FTransform Transform = Ladder->GetTransform();
 		FVector Loc = Transform.GetLocation();
 		Loc.Z += Ladder->mMeshHeight * Ladder->mNumSegments / 2.0;
-		Shape.SetBox(FVector(10.0f, 10.0f, Ladder->mMeshHeight * Ladder->mNumSegments / 2.0 + 50.0f));
+		Shape.SetBox(FVector3f(10.0f, 10.0f, Ladder->mMeshHeight * Ladder->mNumSegments / 2.0 + 50.0f));
 		World->OverlapMultiByChannel(Result, Loc, Transform.GetRotation(), ECollisionChannel::ECC_Visibility, Shape);
 				
 		for (FOverlapResult& Res : Result) {

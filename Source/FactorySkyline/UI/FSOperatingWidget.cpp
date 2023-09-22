@@ -26,6 +26,9 @@ void UFSOperatingWidget::Init()
 	FScriptDelegate Func3;
 	Func3.BindUFunction(this, FName("OnTab3Click"));
 	Tab3->OnClicked.Add(Func3);
+	FScriptDelegate Func4;
+	Func4.BindUFunction(this, FName("OnTab4Click"));
+	Tab4->OnClicked.Add(Func4);
 	FScriptDelegate FuncSelect;
 	
 	FSlateBrush Normal;
@@ -75,6 +78,11 @@ void UFSOperatingWidget::Init()
 	AdvancedCopyPanel->Init();
 	Box3->AddChild(AdvancedCopyPanel);
 
+	WidgetClass = LoadClass<UUserWidget>(this, TEXT("/FactorySkyline/Widget_EditAreaPanel.Widget_EditAreaPanel_C"));
+	EditAreaPanel = CreateWidget<UFSEditAreaPanel>(this, WidgetClass);
+	EditAreaPanel->Init();
+	Box4->AddChild(EditAreaPanel);
+
 	WidgetClass = LoadClass<UUserWidget>(this, TEXT("/FactorySkyline/Widget_StatusPanel.Widget_StatusPanel_C"));
 	StatusPanel = CreateWidget<UFSStatusPanel>(this, WidgetClass);
 	StatusPanel->Init();
@@ -92,10 +100,12 @@ void UFSOperatingWidget::Load(UFSDesignMenu* Item)
 	DeletePanel->Load(Design);
 	CopyPanel->Load(Design);
 	AdvancedCopyPanel->Load(Design);
+	EditAreaPanel->Load(Design);
 
 	Cast<UCanvasPanelSlot>(Box1->Slot)->SetPosition(FVector2D(0.0f, 0.0f));
 	Cast<UCanvasPanelSlot>(Box2->Slot)->SetPosition(FVector2D(0.0f, 0.0f));
 	Cast<UCanvasPanelSlot>(Box3->Slot)->SetPosition(FVector2D(0.0f, 0.0f));
+	Cast<UCanvasPanelSlot>(Box4->Slot)->SetPosition(FVector2D(0.0f, 0.0f));
 
 	if (Design->BuildableSet.Num() == 0) OnTab2Click();
 	else {
@@ -117,11 +127,23 @@ void UFSOperatingWidget::OnTab1Click()
 	Box1->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	Box2->SetVisibility(ESlateVisibility::Hidden);
 	Box3->SetVisibility(ESlateVisibility::Hidden);
+	Box4->SetVisibility(ESlateVisibility::Hidden);
 	Tab1->SetStyle(InStyleClick);
 	Tab2->SetStyle(InStyle);
 	Tab3->SetStyle(InStyle);
+	Tab4->SetStyle(InStyle);
 	CurrentBox = Box1;
 	StatusPanel->Load(Design);
+
+	AFSkyline* Skyline = AFSkyline::Get(this);
+
+	if (Skyline->FSCtrl->Select != nullptr && Skyline->FSCtrl->Select->Cube != nullptr) {
+		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !Skyline->FSCtrl->Select->Cube->IsPendingKill()) {
+			Skyline->FSCtrl->Select->Cube->Destroy();
+			Skyline->FSCtrl->Select->Cube = nullptr;
+		}
+	}
+
 }
 
 void UFSOperatingWidget::OnTab2Click()
@@ -131,10 +153,22 @@ void UFSOperatingWidget::OnTab2Click()
 	Box1->SetVisibility(ESlateVisibility::Hidden);
 	Box2->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	Box3->SetVisibility(ESlateVisibility::Hidden);
+	Box4->SetVisibility(ESlateVisibility::Hidden);
 	Tab1->SetStyle(InStyle);
 	Tab2->SetStyle(InStyleClick);
 	Tab3->SetStyle(InStyle);
+	Tab4->SetStyle(InStyle);
 	CurrentBox = Box2;
+
+	AFSkyline* Skyline = AFSkyline::Get(this);
+
+	if (Skyline->FSCtrl->Select != nullptr && Skyline->FSCtrl->Select->Cube != nullptr) {
+		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !Skyline->FSCtrl->Select->Cube->IsPendingKill()) {
+			Skyline->FSCtrl->Select->Cube->Destroy();
+			Skyline->FSCtrl->Select->Cube = nullptr;
+		}
+	}
+
 }
 
 void UFSOperatingWidget::OnTab3Click()
@@ -144,9 +178,36 @@ void UFSOperatingWidget::OnTab3Click()
 	Box1->SetVisibility(ESlateVisibility::Hidden);
 	Box2->SetVisibility(ESlateVisibility::Hidden);
 	Box3->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	Box4->SetVisibility(ESlateVisibility::Hidden);
 	Tab1->SetStyle(InStyle);
 	Tab2->SetStyle(InStyle);
 	Tab3->SetStyle(InStyleClick);
+	Tab4->SetStyle(InStyle);
+	CurrentBox = Box3;
+
+	AFSkyline* Skyline = AFSkyline::Get(this);
+
+	if (Skyline->FSCtrl->Select != nullptr && Skyline->FSCtrl->Select->Cube != nullptr) {
+		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !Skyline->FSCtrl->Select->Cube->IsPendingKill()) {
+			Skyline->FSCtrl->Select->Cube->Destroy();
+			Skyline->FSCtrl->Select->Cube = nullptr;
+		}
+	}
+
+}
+
+void UFSOperatingWidget::OnTab4Click()
+{
+	if (TabIndex == 4) return;
+	TabIndex = 4;
+	Box1->SetVisibility(ESlateVisibility::Hidden);
+	Box2->SetVisibility(ESlateVisibility::Hidden);
+	Box3->SetVisibility(ESlateVisibility::Hidden);
+	Box4->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	Tab1->SetStyle(InStyle);
+	Tab2->SetStyle(InStyle);
+	Tab3->SetStyle(InStyle);
+	Tab4->SetStyle(InStyleClick);
 	CurrentBox = Box3;
 }
 

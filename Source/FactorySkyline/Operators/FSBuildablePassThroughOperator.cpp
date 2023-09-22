@@ -54,11 +54,11 @@ AFGHologram* UFSBuildablePassThroughOperator::HologramCopy(FTransform& RelativeT
 
 	AFGBuildablePassthrough* SourceBuildablePassthrough = Cast<AFGBuildablePassthrough>(Source);
 
-	float num = SourceBuildablePassthrough->mSnappedBuildingThickness;
+	//float num = SourceBuildablePassthrough->mSnappedBuildingThickness;
 	//PassthroughHologram.snapped
 
 	FHitResult Hit;
-	Hit.Actor = nullptr;
+	//Hit.Actor = nullptr;
 	Hit.Time = 0.006946;
 	Hit.Location = FVector(-11720.067f, 248538.719f, -10141.936f);
 	Hit.ImpactPoint = FVector(-11720.066f, 248538.719f, -10141.936f);
@@ -70,10 +70,22 @@ AFGHologram* UFSBuildablePassThroughOperator::HologramCopy(FTransform& RelativeT
 	Hit.Item = -1;
 	Hit.FaceIndex = -1;
 
-	PassthroughHologram->SnapHologramLocationToGuidelines(Source->GetTransform().GetTranslation());
+	//PassthroughHologram->SnapHologramLocationToGuidelines(Source->GetTransform().GetTranslation());
 	//PassthroughHologram->TrySnapToActor(Hit);
 
 	//PassthroughHologram->BuildMeshes();
+
+	/*
+	float num = SourceBuildablePassthrough->mSnappedBuildingThickness;
+	PassthroughHologram->mSnappedBuildingThickness = num;
+	PassthroughHologram->mConnectionClass = SourceBuildablePassthrough->mConnectionComponentClass;
+	PassthroughHologram->mClearanceHeightMin = 100;
+	PassthroughHologram->mClearanceThickness = 100;
+	PassthroughHologram->mMinHeight = 100;
+	PassthroughHologram->OnPendingConstructionHologramCreated_Implementation(PassthroughHologram);
+	PassthroughHologram->BuildMeshes();
+	PassthroughHologram->UpdateClearance();
+	*/
 
 	Hologram->SetActorTransform(Source->GetTransform());
 
@@ -90,6 +102,7 @@ AFGBuildable* UFSBuildablePassThroughOperator::CreateCopy(const FSTransformOpera
 	AFGBuildablePassthrough* BuildablePassthrough = Cast<AFGBuildablePassthrough>(Buildable);
 
 	float num = SourceBuildablePassthrough->mSnappedBuildingThickness;
+	//BuildablePassthrough->mSnappedBuildingThickness = 50;
 	BuildablePassthrough->mSnappedBuildingThickness = num;
 
 	BuildablePassthrough->mMidMeshLength = SourceBuildablePassthrough->mMidMeshLength;

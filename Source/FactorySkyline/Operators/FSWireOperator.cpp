@@ -37,8 +37,8 @@ AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOp
 			Shape.SetSphere(50.0f);
 			World->OverlapMultiByChannel(Result, TargetLocation, FRotator::ZeroRotator.Quaternion(), ECollisionChannel::ECC_Visibility, Shape);
 
-			AActor* actor0 = nullptr;
-			AActor* actor1 = nullptr;
+			//AActor* actor0 = nullptr;
+			//AActor* actor1 = nullptr;
 
 			for (FOverlapResult& Res : Result) {
 				if (Res.GetActor()->GetClass() == SourceExternal->GetClass()) {
