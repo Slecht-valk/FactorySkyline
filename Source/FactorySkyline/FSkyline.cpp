@@ -100,3 +100,10 @@ T* AFSkyline::SpawnHiddenActor()
 	Result->FinishSpawning(Transform);
 	return Result;
 }
+
+void AFSkyline::Connect(AFGBuildable* selfCA)
+{
+
+	selfCA->mManagedByLightweightBuildableSubsystem = 0;
+
+}

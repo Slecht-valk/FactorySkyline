@@ -20,7 +20,13 @@
 #include "FactorySkyline/FSBuildableService.h"
 #include "FGBuildablePipelineSupport.h"
 #include "FGRailroadTrackConnectionComponent.h"
+
+#include "FSBuildable.h"
+
 #include "FSBuildableOperator.generated.h"
+
+//struct FSBuildable;
+
 
 
 enum FSBuildableType
@@ -88,7 +94,7 @@ class FACTORYSKYLINE_API UFSBuildableOperator : public UObject
 	GENERATED_BODY()
 public:
 	
-	inline void LoadBuildable(AFGBuildable*& Buildable) { this->Source = Buildable; }
+	inline void LoadBuildable(FSBuildable Buildable) { this->Source = Buildable; }
 
 	virtual AFGHologram* CreateHologram();
 	virtual void UpdateHologramState(const FHitResult &Hit, AFGHologram* Hologram, bool& ShouldShow, bool& Valid);
@@ -99,7 +105,7 @@ public:
 	virtual void ApplyConnection(AFGBuildable* Buildable, const FSTransformOperator& TransformOperator, bool Force);
 	virtual void ApplySettingsTo(AFGBuildable* Buildable);
 	virtual FSBuildableType GetType() const;
-	virtual void GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> > & List) const;
+	virtual void GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> > & List) const;
 
 	template<class T>
 	inline T* ConnectionMapping(UFGConnectionComponent* Source);
@@ -112,7 +118,7 @@ public:
 
 	FSBuildableType TypeCache;
 
-	AFGBuildable* Source;
+	FSBuildable Source;
 	UWorld* World;
 	UObject* Skyline;
 	AActor* Builder;
@@ -134,6 +140,10 @@ public:
 
 	UFGRailroadTrackConnectionComponent* Connection0;
 	UFGRailroadTrackConnectionComponent* Connection1;
+
+	FVector RelativeVector;
+	FQuat RelativeRotation;
+	bool TemporaryBuildable = false;
 
 };
 
@@ -158,23 +168,43 @@ public:
 	UPROPERTY()
 	TMap<TSubclassOf<AFGBuildable>, UFSBuildableOperator*> Map;
 
+	UPROPERTY()
+	UFSBuildableOperator* AbstractOperator = nullptr;
+
 	void Init();
 
-	UFSBuildableOperator* AcquireOperator(AFGBuildable* Buildable);
-	UFSBuildableOperator* CreateOperator(AFGBuildable* Buildable);
+	UFSBuildableOperator* AcquireOperator(FSBuildable* Buildable);
+	UFSBuildableOperator* CreateOperator(FSBuildable* Buildable);
 	UFSBuildableOperator* CreateEmptyOperator(UClass* Buildable);
 	UFSBuildableOperator* EnsureCache(UClass* Buildable);
 	void InitOperator(UFSBuildableOperator* Operator);
 
-	inline FSBuildableType GetType(AFGBuildable*& Buildable) const
+	inline FSBuildableType GetType(FSBuildable* Buildable) const
 	{
-		UFSBuildableOperator* const* Ptr = Map.Find(Buildable->GetClass());
-		return Ptr ? (*Ptr)->TypeCache : FSBuildableType::Unknown;
+		UFSBuildableOperator* const* Ptr;
+		if (Buildable) {
+			if (Buildable->Buildable) {
+				Ptr = Map.Find(Buildable->Buildable->GetClass());
+				return Ptr ? (*Ptr)->TypeCache : FSBuildableType::Unknown;
+			}
+			else {
+			}
+		}
+		//UFSBuildableOperator* const* Ptr = Map.Find(Buildable->GetClass());
+		//return Ptr ? (*Ptr)->TypeCache : FSBuildableType::Unknown;
+		return FSBuildableType::Unknown;
 	}
 
-	inline void GetSelectConnectList(AFGBuildable*& Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const
+	inline void GetSelectConnectList(FSBuildable*& Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const
 	{
-		UFSBuildableOperator* const* Ptr = Map.Find(Buildable->GetClass());
+		UFSBuildableOperator* const* Ptr = nullptr;
+		if (Buildable->Buildable) {
+			Ptr = Map.Find(Buildable->Buildable->GetClass());
+		}
+		else {
+		}
+
+		//UFSBuildableOperator* const* Ptr = Map.Find(Buildable->GetClass());
 		if (Ptr && *Ptr) (*Ptr)->GetSelectConnectList(Buildable, List);
 	}
 

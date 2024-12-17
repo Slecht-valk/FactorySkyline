@@ -7,9 +7,14 @@
 
 void UFSConveyorSmartSplitterOperator::ApplySettingsTo(AFGBuildable* Buildable)
 {
-	Super::ApplySettingsTo(Buildable);
+	//Super::ApplySettingsTo(Buildable);
 
-	AFGBuildableSplitterSmart* SourceSplitter = Cast<AFGBuildableSplitterSmart>(Source);
+	AFGBuildableSplitterSmart* SourceSplitter = nullptr;
+
+	if (Source.Buildable) {
+		SourceSplitter = Cast<AFGBuildableSplitterSmart>(Source.Buildable);
+	}
+
 	AFGBuildableSplitterSmart* TargetSplitter = Cast<AFGBuildableSplitterSmart>(Buildable);
 	/*
 	TargetSplitter->RemoveSortRuleAt(0);

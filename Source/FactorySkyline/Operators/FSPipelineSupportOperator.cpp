@@ -8,14 +8,22 @@
 
 AFGHologram* UFSPipelineSupportOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	RelativeTransform = Source->GetTransform();
+	//RelativeTransform = Source->GetTransform();
+
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
 
 	AFGHologram* Hologram = CreateHologram();
 	if (!Hologram) return nullptr;
 	AFGPipelineSupportHologram* PipelineSupportHologram = Cast<AFGPipelineSupportHologram>(Hologram);
 	if (!PipelineSupportHologram) return Hologram;
 
-	AFGBuildablePipelineSupport* SourcePipelineSupport = Cast<AFGBuildablePipelineSupport>(Source);
+	AFGBuildablePipelineSupport* SourcePipelineSupport = nullptr;
+
+	if (Source.Buildable) {
+		SourcePipelineSupport = Cast<AFGBuildablePipelineSupport>(Source.Buildable);
+	}
 
 	FHitResult Hit;
 	//Hit.Actor = nullptr;
@@ -40,25 +48,44 @@ AFGHologram* UFSPipelineSupportOperator::HologramCopy(FTransform& RelativeTransf
 
 AFGBuildable* UFSPipelineSupportOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
+	FTransform Transform;
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+	}
+	TSubclassOf<UFGRecipe> Recipe;
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
 	//TODO:
 	//Buildable->SetBuildingID(Source->GetBuildingID());
 
-	AFGBuildablePipelineSupport* SourcePipelineSupport = Cast<AFGBuildablePipelineSupport>(Source);
+	AFGBuildablePipelineSupport* SourcePipelineSupport = nullptr;
+
+	if (Source.Buildable) {
+		SourcePipelineSupport = Cast<AFGBuildablePipelineSupport>(Source.Buildable);
+	}
+
 	AFGBuildablePipelineSupport* TargetPipelineSupport = Cast<AFGBuildablePipelineSupport>(Buildable);
 
 	TargetPipelineSupport->SetSupportLength(SourcePipelineSupport->mLength);
 	TargetPipelineSupport->SetVerticalAngle(SourcePipelineSupport->mVerticalAngle);
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;

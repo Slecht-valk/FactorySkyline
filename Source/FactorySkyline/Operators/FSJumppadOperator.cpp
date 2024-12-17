@@ -11,10 +11,16 @@
 
 AFGHologram* UFSJumppadOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	RelativeTransform = Source->GetTransform();
-
+	//RelativeTransform = Source->GetTransform();
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
 	AFGJumpPadLauncherHologram* Hologram = Cast<AFGJumpPadLauncherHologram>(CreateHologram());
-	AFGBuildableJumppad* SourceJumppad = Cast<AFGBuildableJumppad>(Source);
+
+	AFGBuildableJumppad* SourceJumppad;
+	if (Source.Buildable) {
+		SourceJumppad = Cast<AFGBuildableJumppad>(Source.Buildable);
+	}
 	/*
 	Hologram->DoMultiStepPlacement(false);
 	Hologram->mLaunchAngle = SourceJumppad->mLaunchAngle;
@@ -27,14 +33,28 @@ AFGHologram* UFSJumppadOperator::HologramCopy(FTransform& RelativeTransform)
 
 AFGBuildable* UFSJumppadOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildableJumppad* SourceJumppad = Cast<AFGBuildableJumppad>(Source);
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildableJumppad* SourceJumppad = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceJumppad = Cast<AFGBuildableJumppad>(Source.Buildable);
+	}
+
 	AFGBuildableJumppad* TargetJumppad = Cast<AFGBuildableJumppad>(Buildable);
-
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -43,14 +63,18 @@ AFGBuildable* UFSJumppadOperator::CreateCopy(const FSTransformOperator& Transfor
 	TargetJumppad->SetLaunchAngle(SourceJumppad->mLaunchAngle);
 	//SML::Logging::info(SourceJumppad->mLaunchAngle);
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	UFGFactoryLegsComponent* Legs = Buildable->FindComponentByClass<UFGFactoryLegsComponent>();
 	if (Legs) {
 		TArray< FFeetOffset > feetOffset = Legs->TraceFeetOffsets(Transform, Buildable);
 		Legs->SetFeetOffsets(feetOffset);
-		Legs->RecreateLegs();
+
+		// TODO DO WE NEED A ALTERNATIVE TO THIS?
+		//Legs->RecreateLegs();
 	}
 
 	return Buildable;

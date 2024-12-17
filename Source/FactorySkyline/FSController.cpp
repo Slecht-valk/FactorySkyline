@@ -16,6 +16,16 @@
 #include "Equipment/FGWeapon.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Engine/ExponentialHeightFog.h"
+#include "Components/ExponentialHeightFogComponent.h"
+
+#include "Equipment/FGBuildGunDismantle.h"
+
+#include "Tickable.h"
+#include "HAL/PlatformProcess.h" 
+#include "Ticker.h"
+
+//#include "FGLightweightBuildableSubsystem.h"
 
 #include <string>
 
@@ -56,9 +66,9 @@ void AFSController::Init() {
 	
 	FSInput->BindDelegate("MenuKey", FSInputEvent::FS_Pressed, this, &AFSController::onCallMenu);
 	FSInput->BindDelegate("EscapeKey", FSInputEvent::FS_Pressed, this, &AFSController::onEscPressed);
-	FSInput->BindDelegate("LeftControlKey", FSInputEvent::FS_Pressed, this, &AFSController::onLeftCtrlPressed);
-	FSInput->BindDelegate("LeftControlKey", FSInputEvent::FS_Repeat, this, &AFSController::onLeftCtrlPressedRepeat);
-	FSInput->BindDelegate("LeftControlKey", FSInputEvent::FS_Released, this, &AFSController::onLeftCtrlReleased);
+	//FSInput->BindDelegate("LeftControlKey", FSInputEvent::FS_Pressed, this, &AFSController::onLeftCtrlPressed);
+	//FSInput->BindDelegate("LeftControlKey", FSInputEvent::FS_Repeat, this, &AFSController::onLeftCtrlPressedRepeat);
+	//FSInput->BindDelegate("LeftControlKey", FSInputEvent::FS_Released, this, &AFSController::onLeftCtrlReleased);
 	FSInput->BindDelegate("FlyingKey", FSInputEvent::FS_Pressed, this, &AFSController::onDoubleSpacePressed);
 	FSInput->BindDelegate("TurboSprintKey", FSInputEvent::FS_Pressed, this, &AFSController::onDoubleShiftPressed);
 	FSInput->BindDelegate("ScrollUpKey", FSInputEvent::FS_Pressed, this, &AFSController::onMouseScrollUp);
@@ -90,6 +100,7 @@ void AFSController::Init() {
 
 	// TODO Most recent patch for u6 broke this, find alternative?
 	
+	
 	FScriptDelegate Func1;
 	Func1.BindUFunction(this, FName("onBuildGunRecipeChanged"));
 	FGBuildGun->mOnRecipeChanged.Add(Func1);
@@ -98,6 +109,7 @@ void AFSController::Init() {
 	FScriptDelegate Func2;
 	Func2.BindUFunction(this, FName("onBuildGunStateChanged"));
 	FGBuildGun->mOnStateChanged.Add(Func2);
+	
 	
 
 	// TODO This attempt at fix didn't work either
@@ -118,6 +130,20 @@ void AFSController::Init() {
 
 void AFSController::OnActorSpawned(AActor* InActor)
 {
+	/*
+	AFGHologram* buildableHologram = Cast<AFGHologram>(InActor);
+	if (buildableHologram) {
+		
+		std::string  str;
+		//str.append("\n");
+		str.append("buildableHologram SPAWNED!\n");
+		std::wstring temp = std::wstring(str.begin(), str.end());
+		LPCWSTR wideString = temp.c_str();
+		OutputDebugStringW(wideString);
+		
+	}
+	*/
+
 	//do something 
 
 	AFGBuildable* buildable = Cast<AFGBuildable>(InActor);
@@ -126,8 +152,10 @@ void AFSController::OnActorSpawned(AActor* InActor)
 		if (this->Design) {
 			if (this->Design->AddConstructedBuildable) {
 
-				this->Design->AddElement(buildable);
-				this->Design->BuildableMark.Add(buildable, 1);
+				// TODO REWORK THIS
+				//this->Design->AddElement(buildable);
+				//this->Design->BuildableMark.Add(buildable, 1);
+				
 				//this->Select->EnableHightLight(buildable, this->Select->SelectMaterial);
 
 			}
@@ -145,6 +173,9 @@ void AFSController::OnActorSpawned(AActor* InActor)
 }
 
 void AFSController::onPlayerEquipmentEquipped(AFGCharacterPlayer* Player, AFGEquipment* Equipment) {
+
+	this->localPlayer = Player;
+
 	if (SkylineUI->IsActive) {
 		if (Equipment == this->FGBuildGun) {
 			if (SkylineUI->GettingStart->AccquireMenuWidget()->GetParent()) {
@@ -171,6 +202,37 @@ void AFSController::onBuildGunRecipeChanged(TSubclassOf<class UFGRecipe> newReci
 
 void AFSController::onBuildGunStateChanged(EBuildGunState newState)
 {
+	if (newState == EBuildGunState::BGS_DISMANTLE) {
+		//UFGBuildGunStateDismantle* state = Cast< UFGBuildGunStateDismantle>(this->FGBuildGun->mDismantleStateClass);
+		//fgcheck(state);
+
+		//return;
+
+		// kills all inputs for dismantle state
+		/*
+		for (TObjectIterator<UInputComponent> It; It; ++It) {
+			if ((*It)->GetOuter() == this->FGBuildGun) {
+				this->FGController->PopInputComponent(*It);
+			}
+		}
+		*/
+
+	}
+
+	if (SkylineUI->IsActive) {
+		if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::Copy || State == FSState::SetItem || State == FSState::SetAreaAnchor) {
+			if (newState == EBuildGunState::BGS_DISMANTLE) {
+				for (TObjectIterator<UInputComponent> It; It; ++It) {
+					if ((*It)->GetOuter() == this->FGBuildGun) {
+						this->FGController->PopInputComponent(*It);
+					}
+				}
+				return;
+			}
+		}
+	}
+
+	
 	if (SkylineUI->IsActive) {
 		if (State == FSState::Select || State == FSState::SetAnchor || State == FSState::Copy || State == FSState::SetItem || State == FSState::SetAreaAnchor) {
 			if (newState == EBuildGunState::BGS_NONE) return;
@@ -189,6 +251,7 @@ void AFSController::onBuildGunStateChanged(EBuildGunState newState)
 			}
 		}
 	}
+	
 }
 
 void AFSController::SetOpenState(bool RestoreEquipment)
@@ -223,7 +286,8 @@ void AFSController::StartRectangleSelectMode()
 	ClearFocusBuilding();
 	ShowMouseCursor();
 
-	SkylineUI->SelectRect->Box->SetVisibility(ESlateVisibility::Collapsed);
+	Cast<UWidget>(SkylineUI->SelectRect->Box)->SetVisibility(ESlateVisibility::Collapsed);
+
 	SkylineUI->SelectRect->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	RectangleSelectMode = true;
 	RectangleSelecting = false;
@@ -243,7 +307,8 @@ void AFSController::StartRectangleSelect(const FVector2D& Start, bool IsPositive
 	float Scale = UWidgetLayoutLibrary::GetViewportScale(this);
 	SkylineUI->SelectRect->PanelSlot->SetPosition(Start/ Scale);
 	SkylineUI->SelectRect->PanelSlot->SetSize(FVector2D(0.0f, 0.0f));
-	SkylineUI->SelectRect->Box->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	Cast<UWidget>(SkylineUI->SelectRect->Box)->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 }
 
@@ -251,7 +316,8 @@ void AFSController::EndRectangleSelect(bool Valid)
 {
 	if (!RectangleSelecting) return;
 	RectangleSelecting = false;
-	SkylineUI->SelectRect->Box->SetVisibility(ESlateVisibility::Collapsed);
+
+	Cast<UWidget>(SkylineUI->SelectRect->Box)->SetVisibility(ESlateVisibility::Collapsed);
 
 	Select->RectSelectExit(Valid);
 }
@@ -303,7 +369,8 @@ void AFSController::StartSelectMode()
 	this->SkylineUI->RestoreHighLightMapping();
 	
 	// visible ui elements
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	
@@ -317,7 +384,8 @@ void AFSController::StartSelectMode()
 	this->SkylineUI->ExitMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 	this->Select->LoadSelect(this->Design);
-	CurrentFocusBuilding = nullptr;
+	FSBuildable Empty;
+	CurrentFocusBuilding = Empty;
 	
 }
 
@@ -326,7 +394,8 @@ void AFSController::ExitSelectMode(bool RestoreEquipment)
 {
 	ExitRectangleSelectMode();
 
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::Hidden);
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::Hidden);
+
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->HoldCtrlMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->SelectScrollMapping->SetVisibility(ESlateVisibility::Collapsed);
@@ -359,7 +428,9 @@ void AFSController::StartCopyMode()
 	HideMouseCursor();
 
 	this->SkylineUI->RestoreHighLightMapping();
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->CopyScrollMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->CopyMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
@@ -372,7 +443,9 @@ void AFSController::StartCopyMode()
 void AFSController::ExitCopyMode(bool RestoreEquipment)
 {
 	this->SkylineUI->RepeatWidget->SetVisibility(ESlateVisibility::Hidden);
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::Hidden);
+
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::Hidden);
+
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->CopyScrollMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->CopyMapping->SetVisibility(ESlateVisibility::Collapsed);
@@ -380,7 +453,7 @@ void AFSController::ExitCopyMode(bool RestoreEquipment)
 	this->SkylineUI->BackToSelectMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->ExitMapping->SetVisibility(ESlateVisibility::Collapsed);
 
-	this->SkylineUI->ItemBox->SetVisibility(ESlateVisibility::Collapsed);
+	Cast<UWidget>(this->SkylineUI->ItemBox)->SetVisibility(ESlateVisibility::Collapsed);
 
 	this->Builder->Unload();
 
@@ -408,19 +481,23 @@ void AFSController::StartSetAnchorMode()
 	HideMouseCursor();
 
 	this->SkylineUI->RestoreHighLightMapping();
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->SetAnchorMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->BackToSelectMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->ExitMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 	this->Select->LoadSetAnchor(this->Design);
-	CurrentFocusBuilding = nullptr;
+	FSBuildable Empty;
+	CurrentFocusBuilding = Empty;
 }
 
 void AFSController::ExitSetAnchorMode(bool RestoreEquipment)
 {
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::Hidden);
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::Hidden);
+
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->SetAnchorMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->BackToSelectMapping->SetVisibility(ESlateVisibility::Collapsed);
@@ -452,7 +529,9 @@ void AFSController::StartSetAreaAnchorMode() {
 	ChangeConnectSelectMode();
 
 	this->SkylineUI->RestoreHighLightMapping();
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->HoldCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->SelectScrollMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
@@ -462,7 +541,8 @@ void AFSController::StartSetAreaAnchorMode() {
 	this->SkylineUI->ExitMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 	this->Select->LoadSetAnchor(this->Design);
-	CurrentFocusBuilding = nullptr;
+	FSBuildable Empty;
+	CurrentFocusBuilding = Empty;
 
 }
 
@@ -480,18 +560,22 @@ void AFSController::StartSetItemMode()
 	HideMouseCursor();
 
 	this->SkylineUI->RestoreHighLightMapping();
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->SetCircleCenterMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	this->SkylineUI->ExitMapping->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 	this->Select->Load(this->Design);
-	CurrentFocusBuilding = nullptr;
+	FSBuildable Empty;
+	CurrentFocusBuilding = Empty;
 }
 
 void AFSController::ExitSetItemMode(bool RestoreEquipment)
 {
-	this->SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::Hidden);
+	Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::Hidden);
+
 	this->SkylineUI->PressCtrlMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->SetCircleCenterMapping->SetVisibility(ESlateVisibility::Collapsed);
 	this->SkylineUI->ExitMapping->SetVisibility(ESlateVisibility::Collapsed);
@@ -501,7 +585,8 @@ void AFSController::ExitSetItemMode(bool RestoreEquipment)
 	State = FSState::Open;
 
 	if (RestoreEquipment) UnequipBuilder();
-	CurrentFocusBuilding = nullptr;
+	FSBuildable Empty;
+	CurrentFocusBuilding = Empty;
 }
 
 void AFSController::SetLeftMousePressed(bool Pressed)
@@ -544,7 +629,28 @@ void AFSController::SetRightMousePressed(bool Pressed)
 
 void AFSController::Tick(float dt)
 {
+
+	//this->BuildableSubsystem = AFGBuildableSubsystem::Get(this);
+
+
+	//AFSkyline* FSkylin = AFSkyline::Get(this);
+	//FSkylin->Select->UpdateHighlightedActors();
+
 	if (!this->World) return;
+
+	/*
+	UFGHealthComponent* HealthComponent = GetPlayer()->GetHealthComponent();
+	if (HealthComponent) {
+		
+		//HealthComponent->Heal(HealthComponent->GetMaxHealth() - HealthComponent->GetCurrentHealth());
+		
+		HealthComponent->Heal(HealthComponent->GetMaxHealth());
+		HealthComponent->mIsDead = 0;
+		HealthComponent->mOnAdjustDamage.Empty();
+		HealthComponent->mDamageTypeModifiers.Empty();
+		//GetPlayer()->bCanBeDamaged = !Etc->GetBool("Godlike");
+	}
+	*/
 
 	FSInput->Tick();
 	
@@ -561,15 +667,111 @@ void AFSController::Tick(float dt)
 		if (SkylineUI->Logo->IsShow && !SkylineUI->GettingStart->AccquireMenuWidget()->GetParent() && SkylineUI->Logo->Time.GetTime() > 15.0) {
 			SkylineUI->Logo->StartFadeAnimation();
 		}
+
+		if (State == FSState::SetAreaAnchor) {
+			if (areaSelectPressed) {
+				
+				FVector CamLoc;
+				FRotator CamRot;
+				this->FGController->GetPlayerViewPoint(CamLoc, CamRot);
+
+				float DistanceOut = 2000.0f;
+				const FVector TraceStart = CamLoc;
+				const FVector Direction = CamRot.Vector();
+				const FVector TraceEnd = CamLoc + (CamRot.Vector() * DistanceOut);
+
+				CurrentMousePosition = TraceEnd;
+
+				// Calculate box dimensions
+				//FVector BoxExtent = ((InitialMousePosition - CurrentMousePosition) / 2);
+				FVector BoxExtent = ((InitialMousePosition - CurrentMousePosition))/2;
+				FVector BoxCenter = BoxStartPosition + BoxExtent;
+
+				FActorSpawnParameters* parameters = new FActorSpawnParameters();
+
+				FTransform cubeTransform = FTransform();
+				cubeTransform.SetTranslation(BoxStartPosition);
+
+
+
+
+				if (this->Select->Cube != nullptr) {
+					if (this->Select->Cube->IsValidLowLevel()) {
+						this->Select->Cube->Destroy();
+						this->Select->Cube = nullptr;
+					}
+				}
+
+				this->Select->Cube = (AMyActor*)this->World->SpawnActorAbsolute(AMyActor::StaticClass(), cubeTransform, *parameters);
+				FBoxSphereBounds baseBounds = this->Select->Cube->GetRootComponent()->Bounds;
+
+				FVector CubeScale = (BoxExtent / 50.0f);
+
+				this->Select->Cube->SetActorScale3D(CubeScale);
+
+				int AdjustmenX = BoxExtent.X;
+				int AdjustmenY = BoxExtent.Y;
+				int AdjustmenZ = BoxExtent.Z;
+
+
+				FTransform transform = this->Select->Cube->GetTransform();
+
+				FVector translate = transform.GetTranslation();
+
+				FVector newPoint = FVector(translate.X - AdjustmenX, translate.Y - AdjustmenY, translate.Z - AdjustmenZ);
+
+
+				transform.SetTranslation(newPoint);
+				this->Select->Cube->SetActorTransform(transform);
+
+
+				//BoxStartPosition.X
+				//int Adjustment = CubeScale.X * 50.f;
+
+				//FTransform transform = this->Select->Cube->GetTransform();
+
+				//FVector translate = transform.GetTranslation();
+
+				//FVector newPoint = FVector(translate.X + Adjustment, translate.Y, translate.Z);
+
+
+				//transform.SetTranslation(newPoint);
+				//this->Select->Cube->SetActorTransform(transform);
+
+				this->Select->Cube->SetActorEnableCollision(false);
+
+				std::string  str;
+				//str.append("\n");
+				str.append("AREA SELECT LOGIC INITIALIZED!\n");
+				std::wstring temp = std::wstring(str.begin(), str.end());
+				LPCWSTR wideString = temp.c_str();
+				OutputDebugStringW(wideString);
+
+				TInlineComponentArray<UMeshComponent*> MeshComps(this->Select->Cube);
+				for (const auto& MeshComponent : MeshComps) {
+					int num = MeshComponent->GetNumMaterials();
+					if (num) {
+						for (int i = 0; i < num; i++) {
+							MeshComponent->SetMaterial(i, this->Select->CubeMaterial);
+						}
+					}
+				}
+
+
+			}
+		}
+
 	}
 
 	if (CopyWaitingResult) {
-		if (this->Builder->CheckReady(0.003f)) {
+		if (!this->Builder->IsBuilding) {
 			CopyWaitingResult = false;
+
+			//TODO FIX
 			SkylineUI->MessageBox->SetVisibility(ESlateVisibility::Hidden);
+
 			this->onBuildFinish();
-		}
-		else {
+		} else {
 			SkylineUI->Message->SetText(FText::FromString(FString::Printf(TEXT("Waiting for building %d / %d"), Builder->SyncBuild->GetCurrent(), Builder->SyncBuild->GetTotal())));
 		}
 	}
@@ -579,8 +781,16 @@ void AFSController::Tick(float dt)
 		if (Etc->GetBool("IsFlying")) {
 			EMovementMode MovementMode = GetPlayer()->GetCharacterMovement()->MovementMode;
 			if (MovementMode != EMovementMode::MOVE_Custom) {
-				if (MovementMode != EMovementMode::MOVE_Flying) CheckFlying();
-				else TickFly(dt);
+				if (MovementMode != EMovementMode::MOVE_Flying) {
+					if (MovementMode == EMovementMode::MOVE_Falling) {
+						Etc->SetBool("IsFlying", !Etc->GetBool("IsFlying"));
+						CheckFlying();
+					} else {
+						CheckFlying();
+					}
+				} else {
+					TickFly(dt);
+				}
 			}
 		}
 
@@ -594,11 +804,15 @@ void AFSController::Tick(float dt)
 	
 	
 	if (Etc->GetBool("DisableHighSpaceFog")) {
-		UExponentialHeightFogComponent* Fog = this->WorldSettings->GetExponentialHeightFog()->GetComponent();
-		if (Fog->FogDensity > 0.02) Fog->FogDensity = 0.02;
-		if (Fog->GetComponentLocation().Z > -1500.0 + 1.0) {
-			if (Fog->FogHeightFalloff < 0.18) Fog->FogHeightFalloff = 0.18;
-			Fog->SetWorldLocation(FVector(0.0, 0.0, -1500.0));
+		auto* heightFog = this->WorldSettings->GetExponentialHeightFog();
+
+		if (heightFog) {
+			UExponentialHeightFogComponent* Fog = this->WorldSettings->GetExponentialHeightFog()->GetComponent();
+			if (Fog->FogDensity > 0.02) Fog->FogDensity = 0.02;
+			if (Fog->GetComponentLocation().Z > -1500.0 + 1.0) {
+				if (Fog->FogHeightFalloff < 0.18) Fog->FogHeightFalloff = 0.18;
+				Fog->SetWorldLocation(FVector(0.0, 0.0, -1500.0));
+			}
 		}
 	}
 
@@ -608,6 +822,48 @@ void AFSController::Tick(float dt)
 	
 
 	if (TurboSprint && !this->FSInput->IsKeyDown("TurboSprintKey")) TurboSprint = false;
+
+	//doesnt work crashes engine
+	/*
+	if (Collectgarbage) {
+		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
+		Collectgarbage = false;
+	}
+	*/
+
+	//doesnt work crashes engine
+	// Check if DoWork steps are fully completed before setting up garbage collection
+	/*
+	if (IsDoWorkComplete && !bGarbageCollectionScheduled)
+	{
+		// Schedule garbage collection with a short delay
+		GetWorld()->GetTimerManager().SetTimer(GCTimerHandle, this, &AFSController::PerformGarbageCollection, 0.1f, false);
+		bGarbageCollectionScheduled = true;  // Set a flag to avoid multiple GC schedules
+		IsDoWorkComplete = false;
+	}
+	*/
+
+	if (IsDoWorkComplete)
+	{
+		IsDoWorkComplete = false;
+
+		// Queue the garbage collection to the end of the frame
+		FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([this](float DeltaTime) {
+			CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
+
+			// Reset the flag once garbage collection completes
+			bGarbageCollectionScheduled = false;
+			return false;  // Return false to ensure it only executes once
+			}), 0.1f);  // Schedule it with a slight delay
+	}
+
+}
+
+// Define the garbage collection callback function
+void AFSController::PerformGarbageCollection()
+{
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
+	bGarbageCollectionScheduled = false;  // Reset flag after GC is complete
 }
 
 void AFSController::TickSelect(float dt)
@@ -618,34 +874,51 @@ void AFSController::TickSelect(float dt)
 		}
 	}
 	if (!SelectWaitingResult && !RectangleSelectMode) {
-		FHitResult Hit = this->GetSelectHitResult();
+		FSHitResults FSHit = this->GetSelectHitResult();
+		FHitResult Hit = FSHit.Hit;
 		AFGBuildable* Building = this->AcquireBuildable(Hit);
 
-		if (Building != this->CurrentFocusBuilding.Get()) {
-			if (this->CurrentFocusBuilding.Get()) this->ClearFocusBuilding();
+		FSBuildable Buildable;
+		Buildable.Abstract = FSHit.Abstract;
+		Buildable.Handle = FSHit.Handle;
+		Buildable.RuntimeData = FSHit.RuntimeData;
+		Buildable.BuildableClass = FSHit.BuildableClass;
+		Buildable.Transform = FSHit.InstanceTransform;
+		Buildable.Buildable = Building;
 
-			if (Building) {
+		FSBuildableTest Buildable1(this->AcquireBuildable(Hit));
 
+		//fgcheck(Buildable.RuntimeData);
+		//fgcheck(Buildable.BuildableClass);
+
+		if (Buildable != CurrentFocusBuilding) {
+			if (CurrentFocusBuilding != BuildableEmpty) this->ClearFocusBuilding();
+
+ 			if (Buildable != BuildableEmpty) {
+
+				/* This won't always return a valid result so disable this debug for now*/
+				/*
 				std::string  str = TCHAR_TO_UTF8(*Building->GetName());
 				str.append("\n");
 				str.append("FOUND HIT\n");
 				std::wstring temp = std::wstring(str.begin(), str.end());
 				LPCWSTR wideString = temp.c_str();
-				OutputDebugStringW(wideString);
+				*/
+				//OutputDebugStringW(wideString);
 
 				if (this->FSInput->IsKeyDown("LeftMouseKey")) {
 					if (!this->FSInput->IsKeyDown("RightMouseKey")) {
 						if (!ConnectSelectMode) {
-							if (!this->Design->IsElementSelected(Building)) {
+							if (!this->Design->IsElementSelected(Buildable)) {
 
-								this->Select->Select(Building);
+								this->Select->Select(Buildable);
 								LeftMousePressed = false;
 							}
 						}
 					}
 				}
 				else {
-					this->SetFocusBuilding(Building);
+					this->SetFocusBuilding(Buildable);
 				}
 			}
 		}
@@ -654,19 +927,28 @@ void AFSController::TickSelect(float dt)
 
 void AFSController::TickSetItem(float dt)
 {
-	FHitResult Hit = this->GetSelectHitResult();
+	FSHitResults FSHit = this->GetSelectHitResult();
+	FHitResult Hit = FSHit.Hit;
 	AFGBuildable* Building = this->AcquireBuildable(Hit);
-	if (Building != this->CurrentFocusBuilding.Get()) {
-		if (this->CurrentFocusBuilding.Get()) this->ClearFocusBuilding();
-		if (Building) this->SetFocusBuilding(Building);
+
+	FSBuildable Buildable;
+	Buildable.Abstract = FSHit.Abstract;
+	Buildable.Handle = FSHit.Handle;
+	Buildable.RuntimeData = FSHit.RuntimeData;
+	Buildable.BuildableClass = FSHit.BuildableClass;
+	Buildable.Buildable = Building;
+
+	if (Buildable != this->CurrentFocusBuilding) {
+		if (CurrentFocusBuilding != BuildableEmpty) this->ClearFocusBuilding();
+		if (Building) this->SetFocusBuilding(Buildable);
 	}
 }
 
 void AFSController::TickCopy(float dt)
 {
 	if (!CopyConsole) {
-		FHitResult Hit = this->GetCopyHitResult();
-		this->Builder->Update(Hit);
+		FSHitResults Hit = this->GetCopyHitResult();
+		this->Builder->Update(Hit.Hit);
 	}
 	else {
 		this->Builder->Update(&this->Repeat);
@@ -876,10 +1158,23 @@ void AFSController::onLeftMouseDown()
 				}
 				else {
 					if (!ConnectSelectMode) {
-						AFGBuildable* Building = CurrentFocusBuilding.Get();
-						if (Building && !this->Design->IsElementSelected(Building)) {
-							this->Select->Select(Building);
+						/*
+						AFGBuildable* Building = CurrentFocusBuilding.Buildable;
+						if (Building && !this->Design->IsElementSelected(CurrentFocusBuilding)) {
+							FSBuildable Buildable;
+							Buildable.Buildable = Building;
+							this->Select->Select(Buildable);
 							SkylineUI->SetHighLightMapping(SkylineUI->SelectMapping);
+						}
+						*/
+						AFGBuildable* Building = CurrentFocusBuilding.Buildable;
+						if (CurrentFocusBuilding != BuildableEmpty) {
+							//if (!this->Design->IsElementSelected(CurrentFocusBuilding)) {
+								FSBuildable Buildable;
+								Buildable.Buildable = Building;
+								this->Select->Select(CurrentFocusBuilding);
+								SkylineUI->SetHighLightMapping(SkylineUI->SelectMapping);
+							//}
 						}
 						else SetLeftMousePressed(true);
 					}
@@ -889,6 +1184,38 @@ void AFSController::onLeftMouseDown()
 			else SetLeftMousePressed(true);
 		}
 	}
+
+	if (State == FSState::SetAreaAnchor) {
+
+
+		// Get mouse position
+		float MouseX;
+		float MouseY;
+		FHitResult Hit;
+		//AFGBuildable* Building;
+
+		if (!areaSelectPressed) {
+			areaSelectPressed = true;
+
+			this->FGController->GetMousePosition(MouseX, MouseY);
+
+			Hit = this->GetCopyHitResultGeneric();
+			//Building = this->AcquireBuildable(Hit);
+
+			//if (Building) {
+
+				// Set initial mouse position and box start position
+				InitialMousePosition = Hit.Location;
+				BoxStartPosition = Hit.Location;
+
+			//}
+
+
+			//this->localPlayer
+
+		}
+	}
+
 	SetRightMousePressed(false);
 }
 
@@ -901,36 +1228,50 @@ void AFSController::onLeftMouseUp()
 	else {
 		if (LeftMousePressed) {
 			if (State == FSState::Select && !SelectWaitingResult) {
-				if (CurrentFocusBuilding.Get()) {
+				if (CurrentFocusBuilding != BuildableEmpty) {
 					if (ConnectSelectMode) {
-						if (this->Select->ConnectSelect(CurrentFocusBuilding.Get())) {
+						if (this->Select->ConnectSelect(CurrentFocusBuilding.Buildable)) {
 							SelectWaitingResult = true;
 						}
 					}
-					else this->Select->Select(CurrentFocusBuilding.Get());
+					else this->Select->Select(CurrentFocusBuilding);
 
-					if (Design->Anchor.Get() && !Design->IsElementSelected(Design->Anchor.Get())) {
-						Design->Anchor = nullptr;
+					// TODO REWORK THIS
+					
+					if (Design->Anchor != BuildableEmpty && !Design->IsElementSelected(Design->Anchor)) {
+						Design->Anchor = FSBuildable();
 						CheckAnchor(false);
 					}
+					
 				}
 			}
 			else if (State == FSState::SetAnchor) {
-				FHitResult Hit = this->GetCopyHitResult();
-				AFGBuildable* Building = this->AcquireBuildable(Hit);
+				FSHitResults Hit = this->GetCopyHitResult();
+				AFGBuildable* Building = this->AcquireBuildable(Hit.Hit);
 				BuildingPtr = Building;
 
-				if (this->Design->IsElementSelected(Building)) {
-					this->Design->Anchor = Building;
+				// TODO REWORK THIS
+				
+				FSBuildable Buildable;
+				Buildable.Abstract = Hit.Abstract;
+				Buildable.Handle = Hit.Handle;
+				Buildable.RuntimeData = Hit.RuntimeData;
+				Buildable.BuildableClass = Hit.BuildableClass;
+				Buildable.Transform = Hit.InstanceTransform;
+				Buildable.Buildable = Building;
+
+				if (this->Design->IsElementSelected(Buildable)) {
+					this->Design->Anchor = Buildable;
 					if (CheckAnchor(true)) {
 						SetOpenState(true);
 						StartCopyMode();
 					}
 				}
+				
 				BuildingPtr = nullptr;
 			}
 			else if (State == FSState::SetItem) {
-				if (CurrentFocusBuilding.Get()) {
+				if (CurrentFocusBuilding != BuildableEmpty) {
 					SkylineUI->OperatingWidget->AdvancedCopyPanel->SetCircleFeedback();
 				}
 			}
@@ -940,11 +1281,15 @@ void AFSController::onLeftMouseUp()
 				}
 				else if (this->Builder->Build(nullptr)) {
 					CopyWaitingResult = true;
+
+					//TODO FIX
 					SkylineUI->MessageBox->SetVisibility(ESlateVisibility::Visible);
+
 					//this->onBuildFinish();
 				}
 			}
 			else if (State == FSState::SetAreaAnchor) {
+				/*
 				FHitResult Hit = this->GetCopyHitResult();
 				AFGBuildable* Building = this->AcquireBuildable(Hit);
 				//BuildingPtr = Building;
@@ -953,10 +1298,18 @@ void AFSController::onLeftMouseUp()
 					this->Select->SpawnInitialAreaBox(Building);
 
 				}
+				*/
 			}
 		}
 		SkylineUI->RestoreHighLightMapping();
 	}
+
+	if (State == FSState::SetAreaAnchor) {
+		if (areaSelectPressed) {
+			areaSelectPressed = false;
+		}
+	}
+
 	SetLeftMousePressed(false);
 	SetRightMousePressed(false);
 }
@@ -1034,18 +1387,22 @@ void AFSController::onActionShortcut1()
 
 void AFSController::onSelectModeLeftRightMouseClickWithoutLeftCtrl()
 {
-	if (CurrentFocusBuilding.Get()) {
+	if (CurrentFocusBuilding != BuildableEmpty) {
 		if (Design->Anchor == CurrentFocusBuilding) {
-			Design->Anchor = nullptr;
+			Design->Anchor = BuildableEmpty;
 			this->Select->DisableHightLightFocus();
 		}
 		else {
-			if (!Design->IsElementSelected(CurrentFocusBuilding.Get())) {
-				this->Select->Select(CurrentFocusBuilding.Get());
+			if (!Design->IsElementSelected(CurrentFocusBuilding)) {
+				this->Select->Select(CurrentFocusBuilding);
 			}
-			if (Design->Anchor.Get()) this->Select->EnableHightLight(Design->Anchor.Get(), Select->SelectMaterial);
+			if (Design->Anchor != BuildableEmpty) {
+				//FSBuildable Buildable;
+				//Buildable.Buildable = Design->Anchor.Get();
+				this->Select->EnableHightLight(Design->Anchor, Select->SelectMaterial);
+			}
 			Design->Anchor = CurrentFocusBuilding;
-			this->Select->EnableHightLightFocus(CurrentFocusBuilding.Get());
+			this->Select->EnableHightLightFocus(CurrentFocusBuilding);
 		}
 		CheckAnchor(false);
 	}
@@ -1162,7 +1519,9 @@ void AFSController::onSetRepeat()
 			Repeat.NextRelative.SetLocation(Repeat.Target.InverseTransformPositionNoScale(Builder->Target.GetLocation()));
 			Repeat.NextRelative.SetRotation(Repeat.Target.InverseTransformRotation(Builder->Target.GetRotation()));
 			SkylineUI->OperatingWidget->AdvancedCopyPanel->SetTransform(Repeat.NextRelative);
-			SkylineUI->OperatingHelper->SetVisibility(ESlateVisibility::Hidden);
+
+			Cast<UWidget>(this->SkylineUI->OperatingHelper)->SetVisibility(ESlateVisibility::Hidden);
+
 			SkylineUI->RepeatWidget->Load();
 			SkylineUI->RepeatWidget->StartEnterAnimation();
 			CopyPosition = false;
@@ -1222,7 +1581,7 @@ void AFSController::UnequipBuilder() {
 }
 
 void AFSController::PopFGUI() {
-	//this->FGUI->PopAllWidgets();
+	this->FGUI->PopAllWidgets();
 }
 
 void AFSController::CheckFlying()
@@ -1230,14 +1589,26 @@ void AFSController::CheckFlying()
 	//SML::Logging::info(*GetPlayer()->GetFullName());
 	if (!GetPlayer()) return;
 	UCharacterMovementComponent* MovementComponent = GetPlayer()->GetCharacterMovement();
-	if (!MovementComponent) return;
+  	if (!MovementComponent) return;
 	if (Etc->GetBool("IsFlying")) {
 		MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying);
 		MovementComponent->MaxFlySpeed = 20000.0f;
 		MovementComponent->MaxAcceleration = 0.0f;
 	}
 	else {
+
+		bool hoverPackUsage = false;
+		if (MovementComponent->CustomMovementMode == 4 && MovementComponent->MovementMode == 6) {
+			hoverPackUsage = true;
+		}
+		if (!hoverPackUsage) {
+			MovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+			MovementComponent->MaxAcceleration = 10000.0f;
+		}
+
 		// TODO should be good as far as fix I think
+
+		/*
 		bool hoverPackUsage = false;
 		if (MovementComponent->CustomMovementMode == 4) {
 			hoverPackUsage = true;
@@ -1246,26 +1617,37 @@ void AFSController::CheckFlying()
 			hoverPackUsage = true;
 		}
 		if (!hoverPackUsage) {
-			MovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+			MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
+			//MovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
 			MovementComponent->MaxAcceleration = 10000.0f;
 		}
+		*/
 	}
 }
 
 bool AFSController::CheckAnchor(bool Warn)
 {
-	if (this->Design->Anchor.Get()) {
-		if (this->Builder->CheckAnchor(this->Design)) {
-			this->Design->SetItemFeedback->SetText(FText::FromString(this->Design->Anchor.Get()->GetName()));
-			this->Design->SetItemFeedback->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f)));
-			this->Design->SetItemFeedback->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-			return true;
-		}
-		else {
-			this->Design->SetItemFeedback->SetText(FText::FromString(TEXT("Anchor Not Valid")));
-			this->Design->SetItemFeedback->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f)));
-			this->Design->SetItemFeedback->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-			return false;
+	if (&this->Design->Anchor) {
+		if (this->Design->Anchor != BuildableEmpty) {
+
+			// TODO REWORK THIS
+			
+			if (this->Builder->CheckAnchor(this->Design)) {
+
+				if (this->Design->Anchor.Buildable) {
+					this->Design->SetItemFeedback->SetText(FText::FromString(this->Design->Anchor.Buildable->GetName()));
+				}
+				this->Design->SetItemFeedback->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f)));
+				this->Design->SetItemFeedback->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+				return true;
+			}
+			else {
+				this->Design->SetItemFeedback->SetText(FText::FromString(TEXT("Anchor Not Valid")));
+				this->Design->SetItemFeedback->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f)));
+				this->Design->SetItemFeedback->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+				return false;
+			}
+			
 		}
 	}
 	if (Warn) {
@@ -1289,15 +1671,25 @@ AFGBuildable* AFSController::AcquireBuildable(const FHitResult& Hit)
 	return nullptr;
 }
 
-FHitResult AFSController::GetSelectHitResult()
+FSHitResults AFSController::GetSelectHitResult()
 {
-	if (IsShowMouseCursor()) return GetMouseCursorHitResult(true);
+	FSHitResults FSHit;
+
+	if (IsShowMouseCursor()) {
+		// TODO DO WE NEED THIS?
+		//return GetMouseCursorHitResult(true);
+	}
 
 	FHitResult Hit;
-	
+
+	FHitResult Hit2;
+
 	Hit = this->FGBuildGun->GetHitResult();
-	if (AcquireBuildable(Hit)) return Hit;	
-	
+	if (AcquireBuildable(Hit)) {
+		FSHit.Hit = Hit;
+		return FSHit;
+	}
+
 
 	FVector CamLoc;
 	FRotator CamRot;
@@ -1315,22 +1707,190 @@ FHitResult AFSController::GetSelectHitResult()
 
 	if (this->World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, TraceParams)) {
 		if (AcquireBuildable(Hit)) {
-			return Hit;
+			FSHit.Hit = Hit;
+			return FSHit;
 		}
 	}
 
-	return FHitResult();
+
+	AFSkyline* FSkyline = AFSkyline::Get(this);
+	AAbstractInstanceManager* Manager = AAbstractInstanceManager::GetInstanceManager(FSkyline->World);
+
+	AFGLightweightBuildableSubsystem* lightweightSubsystem;
+
+	lightweightSubsystem = AFGLightweightBuildableSubsystem::Get(FSkyline->World);
+
+	//FGLightweightBuildableSubsystem* lightweightSubsystem = Cast< AFGLightweightBuildableSubsystem >(Actor)
+
+	// Because of how hitresults are resolved in the manager we create a dummy one that specifies the manager as the actor.
+	// If we find ourselves making more than this specific case trace situation we might want a more robust way of resolving hits against LightweightBuildables
+	FHitResult modifiedHitResult = FHitResult(Manager, Hit.GetComponent(), Hit.Location, Hit.Normal);
+	modifiedHitResult.Item = Hit.Item;
+	//FInstanceHandle Handle;
+
+	if (WorldHologramHelper == nullptr) {
+		WorldHologramHelper = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), Manager->GetTransform(), *(new FActorSpawnParameters()));
+	}
+
+	if (Manager->ResolveHit(modifiedHitResult, Handle))
+	{
+		//buildableClass = *Handle.GetInstancedBasedOnClass();
+		//runtimeData = lightweightSubsystem->GetRuntimeDataForBuildableClassAndHandleNearLocation(buildableClass, Handle, Hit.Location);
+
+		FLightweightBuildableInstanceRef buildableRef;
+		AFGLightweightBuildableSubsystem::ResolveLightweightInstance(Handle, buildableRef);
+		buildableClass = buildableRef.GetBuildableClass();
+		runtimeData = const_cast<FRuntimeBuildableInstanceData*>(buildableRef.ResolveBuildableInstanceData());
+
+		if (runtimeData)
+		{
+
+			/* it was a test but doesnt work to spawn the temporary buildables
+			lightweightSubsystem->AddInstanceConverterInstigator(10000, nullptr, runtimeData->Transform);
+
+			if (this->World->LineTraceSingleByChannel(Hit2, TraceStart, TraceEnd, ECC_Visibility, TraceParams)) {
+				if (AcquireBuildable(Hit2)) {
+					FSHit.Hit = Hit;
+					return FSHit;
+				}
+			}
+			*/
+
+			FSHit.Abstract = true;
+			FSHit.Handle = Handle;
+
+			FRuntimeBuildableInstanceData RuntimeData;
+			RuntimeData.Transform = runtimeData->Transform;
+			RuntimeData.CustomizationData = runtimeData->CustomizationData;
+			RuntimeData.BuiltWithRecipe = runtimeData->BuiltWithRecipe;
+			RuntimeData.BlueprintProxy = runtimeData->BlueprintProxy;
+			RuntimeData.Handles = runtimeData->Handles;
+
+			FSHit.RuntimeData = RuntimeData;
+			FSHit.BuildableClass = buildableClass;
+
+			FTransform InstanceTransform;
+			Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform, true);
+
+			FSHit.InstanceTransform = InstanceTransform;
+
+			//return FSHit;
+
+			UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = Handle.GetInstanceComponent();
+
+			if (CompCopy == nullptr) {
+				/*
+				CompCopy = DuplicateObject<UHierarchicalInstancedStaticMeshComponent>(OriginalHISMC, WorldHologramHelper);
+
+				CompCopy->ClearInstances();
+
+				// Attach the duplicated component to the actor
+				CompCopy->AttachToComponent(WorldHologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+				CompCopy->RegisterComponent();
+
+				// Make sure to set other properties as needed
+				CompCopy->SetVisibility(true);
+				CompCopy->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				*/
+
+
+				CompCopy = NewObject<UHierarchicalInstancedStaticMeshComponent>(WorldHologramHelper);
+
+
+				FTransform InstanceRelativeTransform = Handle.GetInstanceComponent()->GetRelativeTransform();
+				const FTransform InstanceSpawnLocation = InstanceRelativeTransform * WorldHologramHelper->GetActorTransform();
+
+				CompCopy->SetStaticMesh(Handle.GetInstanceComponent()->GetStaticMesh());
+
+				FInstanceData instanceData = FInstanceData();
+				instanceData.OverridenMaterials.Add(FSkyline->Select->SelectMaterial);
+
+				CompCopy->OverrideMaterials = instanceData.OverridenMaterials;
+				CompCopy->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				CompCopy->SetGenerateOverlapEvents(false);
+				CompCopy->SetMobility(Handle.GetInstanceComponent()->Mobility);
+				CompCopy->AttachToComponent(WorldHologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+				CompCopy->SetRelativeTransform(FTransform::Identity);
+				CompCopy->SetVisibility(true);
+				//comp2->NumCustomDataFloats = InstanceHandles[i]->GetInstanceComponent()->NumCustomDataFloats;
+				CompCopy->RegisterComponent();
+
+
+
+			}
+
+			//FTransform InstanceTransform;
+			//Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform);
+			//CompCopy->AddInstance(InstanceTransform);
+
+			FTransform InstanceTransform2;
+			Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform2, true);
+
+
+			// worth noting runtimeData transformation data is off in world position from world position returned by the components
+			// meaning this isnt accurate data to work with for some reason, investigate more to root cause to this as it should be the same?
+			//InstanceTransform = runtimeData->Transform;
+
+			CompCopy->AddInstance(InstanceTransform2, true);
+
+			FVector ComponentWorldLocation = CompCopy->GetComponentLocation();
+			FTransform InstanceTransform3;
+			InstanceTransform3.SetLocation(ComponentWorldLocation);
+
+			FSHit.InstanceTransform = FSHit.RuntimeData.Transform;
+
+			CompCopy->ClearInstances();
+
+			// doesnt work
+			//bool didSpawn = false;
+//			tempData = lightweightSubsystem->FindOrSpawnBuildableForRuntimeData(runtimeData, Handle.GetHandleID(), didSpawn);
+
+			/*
+			tempActor = lightweightSubsystem->AddInstanceConverterInstigator(10000, nullptr, FSHit.RuntimeData.Transform);
+			lightweightSubsystem->SetInstanceInstigatorLocation(tempActor, FSHit.RuntimeData.Transform.GetLocation());
+
+			FInstanceConverterInstigator converter;
+			converter.Instigator = tempActor;
+			converter.InfluenceRadius = 10000;
+
+			FInstanceToTemporaryBuildable temp;
+
+			//bool worked = converter.TryAddInstigatedBuildable(&temp);
+
+			//if (worked) {
+				return FSHitResults();
+			//}
+			*/
+
+			return FSHit;
+
+			Handle.HideInstance(true);
+
+
+		}
+	}
+
+	return FSHitResults();
 }
 
-FHitResult AFSController::GetCopyHitResult()
+FSHitResults AFSController::GetCopyHitResult()
 {
-	if (IsShowMouseCursor()) return GetMouseCursorHitResult(true);
+	if (IsShowMouseCursor()) {
+		// TODO DO WE NEED THIS?
+		//return GetMouseCursorHitResult(true);
+	}
+
+	FSHitResults FSHit;
 
 	FHitResult Hit;
 	
 	Hit = this->FGBuildGun->GetHitResult();
-	if (AcquireBuildable(Hit)) return Hit;	
-	
+	if (AcquireBuildable(Hit)) {
+
+		FSHit.Hit = Hit;
+		return FSHit;
+	}
 
 	FVector CamLoc;
 	FRotator CamRot;
@@ -1348,6 +1908,180 @@ FHitResult AFSController::GetCopyHitResult()
 
 	if (this->World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, TraceParams)) {
 		if (AcquireBuildable(Hit)) {
+			FSHit.Hit = Hit;
+			return FSHit;
+		}
+	}
+
+	AFSkyline* FSkyline = AFSkyline::Get(this);
+	AAbstractInstanceManager* Manager = AAbstractInstanceManager::GetInstanceManager(FSkyline->World);
+
+	AFGLightweightBuildableSubsystem* lightweightSubsystem;
+
+	lightweightSubsystem = AFGLightweightBuildableSubsystem::Get(FSkyline->World);
+
+	//FGLightweightBuildableSubsystem* lightweightSubsystem = Cast< AFGLightweightBuildableSubsystem >(Actor)
+
+	// Because of how hitresults are resolved in the manager we create a dummy one that specifies the manager as the actor.
+	// If we find ourselves making more than this specific case trace situation we might want a more robust way of resolving hits against LightweightBuildables
+	FHitResult modifiedHitResult = FHitResult(Manager, Hit.GetComponent(), Hit.Location, Hit.Normal);
+	modifiedHitResult.Item = Hit.Item;
+	//FInstanceHandle Handle;
+
+	if (WorldHologramHelper == nullptr) {
+		//WorldHologramHelper = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), Manager->GetTransform(), *(new FActorSpawnParameters()));
+	}
+
+	if (Manager->ResolveHit(modifiedHitResult, Handle))
+	{
+
+		//both of these methods are deprected now
+		//buildableClass = *Handle.GetInstancedBasedOnClass();
+		//deprected in recent update so use new methods to get the runtimedata
+		//runtimeData = lightweightSubsystem->GetRuntimeDataForBuildableClassAndHandleNearLocation(buildableClass, Handle, Hit.Location);
+
+		FLightweightBuildableInstanceRef buildableRef;
+		AFGLightweightBuildableSubsystem::ResolveLightweightInstance(Handle, buildableRef);
+		buildableClass = buildableRef.GetBuildableClass();
+		runtimeData = const_cast<FRuntimeBuildableInstanceData*>(buildableRef.ResolveBuildableInstanceData());
+
+		if (runtimeData)
+		{
+
+			/* it was a test but doesnt work to spawn the temporary buildables
+			lightweightSubsystem->AddInstanceConverterInstigator(10000, nullptr, runtimeData->Transform);
+
+			if (this->World->LineTraceSingleByChannel(Hit2, TraceStart, TraceEnd, ECC_Visibility, TraceParams)) {
+				if (AcquireBuildable(Hit2)) {
+					FSHit.Hit = Hit;
+					return FSHit;
+				}
+			}
+			*/
+
+			FSHit.Abstract = true;
+			FSHit.Handle = Handle;
+
+			FRuntimeBuildableInstanceData RuntimeData;
+			RuntimeData.Transform = runtimeData->Transform;
+			RuntimeData.CustomizationData = runtimeData->CustomizationData;
+			RuntimeData.BuiltWithRecipe = runtimeData->BuiltWithRecipe;
+			RuntimeData.BlueprintProxy = runtimeData->BlueprintProxy;
+			RuntimeData.Handles = runtimeData->Handles;
+
+			FSHit.RuntimeData = RuntimeData;
+
+			//FSHit.RuntimeData = runtimeData;
+			FSHit.BuildableClass = buildableClass;
+			FSHit.Hit = Hit;
+
+			FTransform InstanceTransform;
+			Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform, true);
+
+			//FSHit.InstanceTransform = InstanceTransform;
+
+			FSHit.InstanceTransform = FSHit.RuntimeData.Transform;
+
+			return FSHit;
+
+			UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = Handle.GetInstanceComponent();
+
+			if (CompCopy == nullptr) {
+				/*
+				CompCopy = DuplicateObject<UHierarchicalInstancedStaticMeshComponent>(OriginalHISMC, WorldHologramHelper);
+
+				CompCopy->ClearInstances();
+
+				// Attach the duplicated component to the actor
+				CompCopy->AttachToComponent(WorldHologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+				CompCopy->RegisterComponent();
+
+				// Make sure to set other properties as needed
+				CompCopy->SetVisibility(true);
+				CompCopy->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				*/
+
+
+				CompCopy = NewObject<UHierarchicalInstancedStaticMeshComponent>(WorldHologramHelper);
+
+
+				FTransform InstanceRelativeTransform = Handle.GetInstanceComponent()->GetRelativeTransform();
+				const FTransform InstanceSpawnLocation = InstanceRelativeTransform * WorldHologramHelper->GetActorTransform();
+
+				CompCopy->SetStaticMesh(Handle.GetInstanceComponent()->GetStaticMesh());
+
+				FInstanceData instanceData = FInstanceData();
+				instanceData.OverridenMaterials.Add(FSkyline->Select->SelectMaterial);
+
+				CompCopy->OverrideMaterials = instanceData.OverridenMaterials;
+				CompCopy->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				CompCopy->SetGenerateOverlapEvents(false);
+				CompCopy->SetMobility(Handle.GetInstanceComponent()->Mobility);
+				CompCopy->AttachToComponent(WorldHologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+				CompCopy->SetRelativeTransform(FTransform::Identity);
+				CompCopy->SetVisibility(true);
+				//comp2->NumCustomDataFloats = InstanceHandles[i]->GetInstanceComponent()->NumCustomDataFloats;
+				CompCopy->RegisterComponent();
+
+
+
+			}
+
+			//FTransform InstanceTransform;
+			//Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform);
+			//CompCopy->AddInstance(InstanceTransform);
+
+			FTransform InstanceTransform2;
+			Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform2, true);
+
+
+			// worth noting runtimeData transformation data is off in world position from world position returned by the components
+			// meaning this isnt accurate data to work with for some reason, investigate more to root cause to this as it should be the same?
+			//InstanceTransform = runtimeData->Transform;
+
+			CompCopy->AddInstance(InstanceTransform2, true);
+
+			//bool didSpawn = false;
+			//tempData = lightweightSubsystem->FindOrSpawnBuildableForRuntimeData(runtimeData, Handle.GetHandleID(), didSpawn);
+
+
+			Handle.HideInstance(true);
+
+
+		}
+	}
+
+	FSHit.Hit = Hit;
+
+	return FSHit;
+}
+FHitResult AFSController::GetCopyHitResultGeneric()
+{
+	//if (IsShowMouseCursor()) return GetMouseCursorHitResult(true);
+
+	FHitResult Hit;
+
+	Hit = this->FGBuildGun->GetHitResult();
+	if (Hit.GetActor()) return Hit;
+
+
+	FVector CamLoc;
+	FRotator CamRot;
+	this->FGController->GetPlayerViewPoint(CamLoc, CamRot);
+
+	float max = 1000.0f;
+	const FVector TraceStart = CamLoc;
+	const FVector Direction = CamRot.Vector();
+	const FVector TraceEnd = TraceStart + (Direction * DistanceMax);
+
+	FCollisionQueryParams TraceParams(FName(TEXT("TraceUsableActor")), true, GetPlayer());
+	TraceParams.AddIgnoredActor(this->FGBuildGun);
+	TraceParams.bReturnPhysicalMaterial = false;
+	TraceParams.bTraceComplex = true;
+
+	if (this->World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, TraceParams)) {
+		if (Hit.GetActor()) {
 			return Hit;
 		}
 	}
@@ -1372,6 +2106,9 @@ FHitResult AFSController::GetMouseCursorHitResult(bool RequireBuildable)
 
 		FVector WorldOrigin;
 		FVector WorldDirection;
+
+		// TODO WE NEED TO DO THIS LOGIC DIFFERENTLY
+
 		if (UGameplayStatics::DeprojectScreenToWorld(this->FGController, MousePosition, WorldOrigin, WorldDirection))
 		{
 			FHitResult Hit;
@@ -1386,20 +2123,21 @@ FHitResult AFSController::GetMouseCursorHitResult(bool RequireBuildable)
 	return FHitResult();
 }
 
-void AFSController::SetFocusBuilding(AFGBuildable* Buildable)
+void AFSController::SetFocusBuilding(FSBuildable Buildable)
 {
 	//this->GetPlayer()->GetOutline()->ShowOutline(Buildable, EOutlineColor::OC_HOLOGRAM);
 	//this->GetPlayer()->GetOutline()->ShowDismantlePendingMaterial(Buildable);
 	CurrentFocusBuilding = Buildable;
-	this->Select->EnableHightLightFocus(CurrentFocusBuilding.Get());
+	this->Select->EnableHightLightFocus(Buildable);
 }
 
 void AFSController::ClearFocusBuilding()
 {
-	if (CurrentFocusBuilding.Get()) {
+	if (CurrentFocusBuilding != BuildableEmpty) {
 		this->Select->DisableHightLightFocus();
 	}
-	CurrentFocusBuilding = nullptr;
+	FSBuildable Empty;
+	CurrentFocusBuilding = Empty;
 }
 
 void AFSController::ChangeConnectSelectMode()
@@ -1424,22 +2162,42 @@ void AFSController::onSwitchFlying()
 
 void AFSController::onSwitchFog()
 {
-	this->WorldSettings->GetExponentialHeightFog()->SetActorHiddenInGame(Etc->GetBool("DisableFog"));
+	//this->WorldSettings->GetExponentialHeightFog()->SetActorHiddenInGame(Etc->GetBool("DisableFog"));
+
+	//fgcheck(this);
+	//fgcheck(this->WorldSettings);
+	auto* heightFog = this->WorldSettings->GetExponentialHeightFog();
+	if (heightFog) {
+		//fgcheck(heightFog);
+		//fgcheck(Etc);
+		heightFog->SetActorHiddenInGame(Etc->GetBool("DisableFog"));
+	}
+
 }
 
 void AFSController::onSwitchGodlike()
 {
 	UFGHealthComponent* HealthComponent = GetPlayer()->GetHealthComponent();
+	
 	HealthComponent->Heal(HealthComponent->GetMaxHealth() - HealthComponent->GetCurrentHealth());
+	
+	//HealthComponent->Heal(HealthComponent->GetMaxHealth());
+	//HealthComponent->mIsDead = 0;
+	//HealthComponent->mOnAdjustDamage.Empty();
+	//HealthComponent->mDamageTypeModifiers.Empty();
 	GetPlayer()->bCanBeDamaged = !Etc->GetBool("Godlike");
 }
 
 void AFSController::onSwitchThirdPersonView()
 {
+
+	// TODO DO WE NEED A THIRD PERSON VIEW MODE?
+	/*
 	if (Etc->GetBool("ThirdPersonView"))
 		GetPlayer()->SetThirdPersonMode();
 	else
 		GetPlayer()->SetFirstPersonMode();
+	*/
 }
 
 void AFSController::onSwitchRecycleMaterials()
@@ -1449,9 +2207,14 @@ void AFSController::onSwitchRecycleMaterials()
 
 AFGCharacterPlayer* AFSController::GetPlayer()
 {
+	if (this->localPlayer) {
+		return this->localPlayer;
+	}
+
+	
 	if (CurrentPlayer.Get()) return CurrentPlayer.Get();
 
-	for (TActorIterator<AFGCharacterPlayer>It(World); It; ++It) {
+	for (TObjectIterator<AFGCharacterPlayer>It; It; ++It) {
 		if (It->IsLocallyControlled()) {
 			CurrentPlayer = *It;
 			this->FGBuildGun = GetPlayer()->GetBuildGun();
@@ -1459,6 +2222,7 @@ AFGCharacterPlayer* AFSController::GetPlayer()
 			return *It;
 		}
 	}
+	
 	//SML::Logging::info(TEXT("AFSController::GetPlayer"));
 	return nullptr;
 }

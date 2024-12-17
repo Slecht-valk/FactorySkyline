@@ -11,8 +11,18 @@ void UFSTrainStationOperator::ApplySettingsTo(AFGBuildable* Buildable)
 {
 	Super::ApplySettingsTo(Buildable);
 
-	AFGBuildableRailroadStation* SourceStation = Cast<AFGBuildableRailroadStation>(Source);
+	AFGBuildableRailroadStation* SourceStation;
+
+	if (Source.Buildable) {
+		SourceStation = Cast<AFGBuildableRailroadStation>(Source.Buildable);
+	}
+
 	AFGBuildableRailroadStation* TargetStation = Cast<AFGBuildableRailroadStation>(Buildable);
+
+	/*
+	TargetStation->SetupRailroadTrack();
+	TargetStation->OnRep_RailroadTrack();
+	*/
 	
 	AFGRailroadSubsystem* RailroadSubsystem = AFGRailroadSubsystem::Get(this); 
 	RailroadSubsystem->RemoveTrainStation(TargetStation);

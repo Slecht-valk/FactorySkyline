@@ -21,25 +21,27 @@ void UFSFoundationOperator::UpdateHologramState(const FHitResult& Hit, AFGHologr
 	ShouldShow = Valid = true;
 }
 
-void UFSFoundationOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSFoundationOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	AFGBuildableFoundation* Foundation = Cast<AFGBuildableFoundation>(Buildable);
-	if (Foundation) {
-		TArray<FOverlapResult> Result;
-		FCollisionShape Shape;
-		FTransform Transform = Foundation->GetTransform();
-		FVector Loc = Transform.GetLocation();
+	if (Buildable->Buildable) {
+		AFGBuildableFoundation* Foundation = Cast<AFGBuildableFoundation>(Buildable->Buildable);
+		if (Foundation) {
+			TArray<FOverlapResult> Result;
+			FCollisionShape Shape;
+			FTransform Transform = Foundation->GetTransform();
+			FVector Loc = Transform.GetLocation();
 
-		Shape.SetBox(FVector3f(Foundation->mDepth / 2.0 + 50.0f, Foundation->mWidth / 2.0 - 10.0f, Foundation->mHeight / 2.0 + Foundation->mElevation / 2.0 + 50.0f));
-		World->OverlapMultiByChannel(Result, FVector(Loc.X, Loc.Y, Loc.Z + Foundation->mElevation / 2.0), Transform.GetRotation(), ECollisionChannel::ECC_Visibility, Shape);
+			Shape.SetBox(FVector3f(Foundation->mDepth / 2.0 + 50.0f, Foundation->mWidth / 2.0 - 10.0f, Foundation->mHeight / 2.0 + Foundation->mElevation / 2.0 + 50.0f));
+			World->OverlapMultiByChannel(Result, FVector(Loc.X, Loc.Y, Loc.Z + Foundation->mElevation / 2.0), Transform.GetRotation(), ECollisionChannel::ECC_Visibility, Shape);
 
-		Shape.SetBox(FVector3f(Foundation->mDepth / 2.0 - 10.0f, Foundation->mWidth / 2.0 + 50.0f, Foundation->mHeight / 2.0 + Foundation->mElevation / 2.0 + 50.0f));
-		World->OverlapMultiByChannel(Result, FVector(Loc.X, Loc.Y, Loc.Z + Foundation->mElevation / 2.0), Transform.GetRotation(), ECollisionChannel::ECC_Visibility, Shape);
+			Shape.SetBox(FVector3f(Foundation->mDepth / 2.0 - 10.0f, Foundation->mWidth / 2.0 + 50.0f, Foundation->mHeight / 2.0 + Foundation->mElevation / 2.0 + 50.0f));
+			World->OverlapMultiByChannel(Result, FVector(Loc.X, Loc.Y, Loc.Z + Foundation->mElevation / 2.0), Transform.GetRotation(), ECollisionChannel::ECC_Visibility, Shape);
 
 
-		for (FOverlapResult& Res : Result) {
-			AFGBuildable* Buildable = Cast<AFGBuildable>(Res.GetActor());
-			if (Buildable) List.Add(Buildable);
+			for (FOverlapResult& Res : Result) {
+				AFGBuildable* Buildable = Cast<AFGBuildable>(Res.GetActor());
+				if (Buildable) List.Add(Buildable);
+			}
 		}
 	}
 }

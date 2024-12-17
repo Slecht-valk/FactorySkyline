@@ -5,6 +5,12 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Buildables/FGBuildable.h"
+#include "Components/TextBlock.h"
+
+#include "FSBuildable.h"
+
+//struct FSBuildable;
+
 #include "FSDesign.generated.h"
 
 /**
@@ -21,28 +27,29 @@ public:
 	void PostSaveGame_Implementation(int32 saveVersion, int32 gameVersion) override;
 	void PostLoadGame_Implementation(int32 saveVersion, int32 gameVersion) override;
 
-	bool IsElementSelected(AFGBuildable* Buildable);
-	void AddElement(AFGBuildable* Buildable);
-	void RemoveElement(AFGBuildable* Buildable);
-	void SetElementMark(AFGBuildable* Buildable, bool MarkParam);
+	bool IsElementSelected(FSBuildable Buildable);
+	void AddElement(FSBuildable Buildable);
+	void RemoveElement(FSBuildable Buildable);
+	void SetElementMark(FSBuildable Buildable, bool MarkParam);
 
 	void ClearAll();
 	void DismantleAll();
 
 	void RecheckNullptr();
 
-	TSet< TWeakObjectPtr<AFGBuildable> > BuildableSet;
-	TMap< TWeakObjectPtr<AFGBuildable>, int> BuildableMark;
-	TWeakObjectPtr<AFGBuildable> Anchor = nullptr;
-	TArray<AFGBuildable*> BuildableArray;
+	TSet<FSBuildable> BuildableSet;
+	TMap<FSBuildable, int> BuildableMark;
+	FSBuildable Anchor;
 
-	UPROPERTY(SaveGame)
+	//TArray<AFGBuildable*> BuildableArray;
+
+	//UPROPERTY(SaveGame)
 	TSet<AFGBuildable*> Set;
 
-	UPROPERTY(SaveGame)
+	//UPROPERTY(SaveGame)
 	TMap<AFGBuildable*, int> Mark;
 
-	UPROPERTY(SaveGame)
+	//UPROPERTY(SaveGame)
 	AFGBuildable* AnchorSave = nullptr;
 	
 	UTextBlock* SetItemFeedback = nullptr;

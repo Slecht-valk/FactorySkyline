@@ -22,10 +22,26 @@ void FSInventory::AddResource(FSInventory* Inventory, int Multiplier)
 void FSInventory::AddResource(UFSDesign* Design, int Multiplier)
 {
 	if (!Design) return;
-	for (TWeakObjectPtr<AFGBuildable> BuildablePtr : Design->BuildableSet) {
-		AFGBuildable* Buildable = BuildablePtr.Get();
-		if (Buildable) this->AddResource(Buildable, Multiplier);
+	
+	for (FSBuildable Buildable : Design->BuildableSet) {
+		if (Buildable.Buildable) {
+			AFGBuildable* Buildableptr = Buildable.Buildable;
+			this->AddResource(Buildableptr, Multiplier);
+		}
+		else {
+
+			//if (!Buildable) return;
+			TSubclassOf< class UFGRecipe > Recipe = SplineHologramFactory->GetRecipeFromClass(Buildable.BuildableClass);
+			//if (!Recipe) Recipe = Buildable->GetBuiltWithRecipe();
+			if (!Recipe) return;
+
+			//TODO: Figure out why GetDismantleRefundReturnsMultiplier() gives millions
+			//this->AddResource(UFGRecipe::GetIngredients(Recipe), Buildable->GetDismantleRefundReturnsMultiplier() * Multiplier);
+			this->AddResource(UFGRecipe::GetIngredients(Recipe), 1 * Multiplier);
+
+		}
 	}
+	
 }
 
 void FSInventory::AddResource(UFGInventoryComponent* InventoryComponent, int Multiplier)
@@ -50,10 +66,19 @@ void FSInventory::AddResource(AFGBuildable* Buildable, int Multiplier)
 	this->AddResource(UFGRecipe::GetIngredients(Recipe), 1 * Multiplier);
 }
 
-void FSInventory::AddResourceCheckRecipe(AFGBuildable* Buildable, int Multiplier)
+void FSInventory::AddResourceCheckRecipe(FSBuildable Buildable, int Multiplier)
 {
-	if (!Buildable) return;
-	TSubclassOf< class UFGRecipe > Recipe = Buildable->GetBuiltWithRecipe();
+	TSubclassOf< class UFGRecipe > Recipe = nullptr;
+	if (Buildable.Buildable) {
+		Recipe = Buildable.Buildable->GetBuiltWithRecipe();
+	}
+	else {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Buildable.BuildableClass);
+	}
+	
+	
+	//if (!Buildable) return;
+	//TSubclassOf< class UFGRecipe > Recipe = Buildable->GetBuiltWithRecipe();
 	if (!Recipe) return;
 
 	//TODO: Figure out why GetDismantleRefundReturnsMultiplier() gives millions

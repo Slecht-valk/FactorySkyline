@@ -21,6 +21,6 @@ public:
 	virtual void ApplyConnection(AFGBuildable* Buildable, UFGConnectionComponent* SFC, UFGConnectionComponent* TFC, const FSTransformOperator& TransformOperator, bool Force);
 	virtual void ApplyConnection(AFGBuildable* Buildable);
 	virtual FSBuildableType GetType() const;
-	virtual void GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
+	virtual void GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
 	
 };

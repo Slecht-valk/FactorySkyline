@@ -13,6 +13,9 @@
 #include "Equipment/FGBuildGun.h"
 #include "Equipment/FGEquipment.h"
 #include "Buildables/FGBuildableLightsControlPanel.h"
+
+#include "FGLightweightBuildableBlueprintLibrary.h"
+
 #include "FSBuilder.generated.h"
 
 class UFSSyncBuild;
@@ -87,6 +90,10 @@ public:
 	UObject* FSCtrl = nullptr;
 	UObject* SkylineUI = nullptr;
 
+	AFGBuildable* TemporaryBuildable = nullptr;
+	int32 Temporaryindex = 0;
+	FRuntimeBuildableInstanceData* TemporaryData = nullptr;
+
 	UPROPERTY()
 	UFSBuildableOperator* AnchorOperator;
 
@@ -121,10 +128,13 @@ public:
 	virtual void Load();
 	virtual void Unload();
 	virtual void PreWork();
-	virtual bool DoWork(float TimeLimitParam);
+	virtual void DoWork();
 	void StepA();
 	void StepB();
 	void StepC();
+	void StartDoWorkTimer(float TimeInterval);
+	void DoWorkTimerCallback();
+	UFGRailroadTrackConnectionComponent* DuplicateSceneComponent(UObject* Outer, UFGRailroadTrackConnectionComponent* Original);
 
 	virtual int GetTotal();
 	virtual int GetCurrent();
@@ -139,8 +149,8 @@ public:
 	TArray<AFGBuildableLightsControlPanel*> LightsControlPanelNewList;
 	TArray<AFGBuildableLightSource*> LightSourceNewList;
 
-	TSet< TWeakObjectPtr<AFGBuildable> > BuildableSet;
-	TWeakObjectPtr<AFGBuildable> Anchor;
+	TSet< FSBuildable > BuildableSet;
+	FSBuildable Anchor;
 
 	UFSDesign* NewDesign = nullptr;
 	TWeakObjectPtr<UFSDesignMenu> CurrentDesignMenu;
@@ -151,11 +161,12 @@ public:
 	FSTransformOperator FSTransform;
 	UFSOperatorFactory* OperatorFactory;
 
-	TArray<TWeakObjectPtr<AFGBuildable> > List;
+	TArray<FSBuildable > List;
 	float TimeLimit;
 	FSTime Time;
 	int Step;
 	int Index;
 	int Total;
 	int Current;
+	FTimerHandle TimerHandle_DoWork;
 };

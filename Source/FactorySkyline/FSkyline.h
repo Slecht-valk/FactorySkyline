@@ -83,6 +83,8 @@ public:
 	UPROPERTY()
 	UFSAdaptiveUtil* AdaptiveUtil = nullptr;
 
+	void Connect(AFGBuildable* selfCA);
+
 	
 	/** Helper to spawn subsystems. */
 	template< class C >

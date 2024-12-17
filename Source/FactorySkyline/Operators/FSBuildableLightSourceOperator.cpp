@@ -69,12 +69,22 @@ AFGBuildable* UFSBuildableLightSourceOperator::CreateCopy(const FSTransformOpera
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
+	FTransform Transform;
 
-	
-	AFGBuildableLightSource* SourceBuildableLightsControlPanel = Cast<AFGBuildableLightSource>(Source);
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildableLightSource* SourceBuildableLightsControlPanel = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceBuildableLightsControlPanel = Cast<AFGBuildableLightSource>(Source.Buildable);
+	}
+
 	AFGBuildableLightSource* BuildableLightsControlPanel = Cast<AFGBuildableLightSource>(Buildable);
 
 
@@ -93,14 +103,22 @@ AFGBuildable* UFSBuildableLightSourceOperator::CreateCopy(const FSTransformOpera
 	BuildableLightsControlPanel->OnRep_IsEnabled();
 	//BuildableLightsControlPanel->mFixtureAngle = SourceBuildableLightsControlPanel->mFixtureAngle;
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+	
+	if (Source.Buildable) {
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
 	
-
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;

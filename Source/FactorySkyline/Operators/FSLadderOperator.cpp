@@ -8,14 +8,22 @@
 
 AFGHologram* UFSLadderOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	RelativeTransform = Source->GetTransform();
+	//RelativeTransform = Source->GetTransform();
+
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
 
 	AFGHologram* Hologram = CreateHologram();
 	if (!Hologram) return nullptr;
 	AFGLadderHologram* LadderHologram = Cast<AFGLadderHologram>(Hologram);
 	if (!LadderHologram) return Hologram;
 
-	AFGBuildableLadder* SourceLadder = Cast<AFGBuildableLadder>(Source);
+	AFGBuildableLadder* SourceLadder = nullptr;
+
+	if (Source.Buildable) {
+		SourceLadder = Cast<AFGBuildableLadder>(Source.Buildable);
+	}
 	
 	LadderHologram->mTargetSegmentHeight = SourceLadder->mNumSegments;
 	for (int i = 1; i < SourceLadder->mNumSegments; i++) {
@@ -27,14 +35,29 @@ AFGHologram* UFSLadderOperator::HologramCopy(FTransform& RelativeTransform)
 
 AFGBuildable* UFSLadderOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildableLadder* SourceLadder = Cast<AFGBuildableLadder>(Source);
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildableLadder* SourceLadder = nullptr;
+	
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceLadder = Cast<AFGBuildableLadder>(Source.Buildable);
+	}
+
 	AFGBuildableLadder* TargetLadder = Cast<AFGBuildableLadder>(Buildable);
-
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	
+	TSubclassOf<UFGRecipe> Recipe;
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -42,27 +65,31 @@ AFGBuildable* UFSLadderOperator::CreateCopy(const FSTransformOperator& Transform
 	//Buildable->SetBuildingID(Source->GetBuildingID());
 	TargetLadder->SetNumSegments(SourceLadder->mNumSegments);
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;
 }
 
-void UFSLadderOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSLadderOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	AFGBuildableLadder* Ladder = Cast<AFGBuildableLadder>(Buildable);
-	if (Ladder) {
-		TArray<FOverlapResult> Result;
-		FCollisionShape Shape;
-		FTransform Transform = Ladder->GetTransform();
-		FVector Loc = Transform.GetLocation();
-		Loc.Z += Ladder->mMeshHeight * Ladder->mNumSegments / 2.0;
-		Shape.SetBox(FVector3f(10.0f, 10.0f, Ladder->mMeshHeight * Ladder->mNumSegments / 2.0 + 50.0f));
-		World->OverlapMultiByChannel(Result, Loc, Transform.GetRotation(), ECollisionChannel::ECC_Visibility, Shape);
-				
-		for (FOverlapResult& Res : Result) {
-			AFGBuildable* Buildable = Cast<AFGBuildable>(Res.GetActor());
-			if (Buildable) List.Add(Buildable);
+	if (Buildable->Buildable) {
+		AFGBuildableLadder* Ladder = Cast<AFGBuildableLadder>(Buildable->Buildable);
+		if (Ladder) {
+			TArray<FOverlapResult> Result;
+			FCollisionShape Shape;
+			FTransform Transform = Ladder->GetTransform();
+			FVector Loc = Transform.GetLocation();
+			Loc.Z += Ladder->mMeshHeight * Ladder->mNumSegments / 2.0;
+			Shape.SetBox(FVector3f(10.0f, 10.0f, Ladder->mMeshHeight * Ladder->mNumSegments / 2.0 + 50.0f));
+			World->OverlapMultiByChannel(Result, Loc, Transform.GetRotation(), ECollisionChannel::ECC_Visibility, Shape);
+
+			for (FOverlapResult& Res : Result) {
+				AFGBuildable* Buildable = Cast<AFGBuildable>(Res.GetActor());
+				if (Buildable) List.Add(Buildable);
+			}
 		}
 	}
 }

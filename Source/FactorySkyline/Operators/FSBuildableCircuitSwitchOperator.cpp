@@ -69,21 +69,42 @@ AFGBuildable* UFSBuildableCircuitSwitchOperator::CreateCopy(const FSTransformOpe
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildableCircuitSwitch* SourceBuildableCircuitSwitch = Cast<AFGBuildableCircuitSwitch>(Source);
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildableCircuitSwitch* SourceBuildableCircuitSwitch = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceBuildableCircuitSwitch = Cast<AFGBuildableCircuitSwitch>(Source.Buildable);
+	}
+
 	AFGBuildableCircuitSwitch* BuildableCircuitSwitch = Cast<AFGBuildableCircuitSwitch>(Buildable);
 
 	BuildableCircuitSwitch->SetSwitchOn(SourceBuildableCircuitSwitch->IsSwitchOn());
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+
+	if (Source.Buildable) {
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;

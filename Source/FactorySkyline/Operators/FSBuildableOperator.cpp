@@ -37,6 +37,7 @@
 #include "FactorySkyline/Operators/FSWallOperator.h"
 #include "FactorySkyline/Operators/FSWireOperator.h"
 
+#include "FactorySkyline/Operators/FSBuildablePriorityPowerSwitchOperator.h"
 #include "FactorySkyline/Operators/FSBuildablePassThroughOperator.h"
 #include "FactorySkyline/Operators/FSBuildableBeamOperator.h"
 #include "FactorySkyline/Operators/FSBuildableSignOperator.h"
@@ -46,6 +47,8 @@
 #include "FactorySkyline/Operators/FSBuildableRailroadSignalOperator.h"
 #include "FactorySkyline/Operators/FSBuildableFloodlightOperator.h"
 #include "FactorySkyline/Operators/FSBuildableLightSourceOperator.h"
+#include "Buildables/FGBuildablePriorityPowerSwitch.h"
+#include "FGBuildableBeam.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Buildables/FGBuildableLightsControlPanel.h"
 #include "Buildables/FGBuildableCircuitSwitch.h"
@@ -110,7 +113,16 @@ using namespace std;
 
 AFGHologram* UFSBuildableOperator::CreateHologram()
 {
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
+	TSubclassOf<UFGRecipe> Recipe;
+	//TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+	else {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.BuildableClass);
+	}
+
 	if (!Recipe) return nullptr;
 	AFGHologram* Hologram = AFGHologram::SpawnHologramFromRecipe(Recipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer());
 
@@ -128,6 +140,12 @@ AFGHologram* UFSBuildableOperator::CreateHologram()
 	Hit.FaceIndex = -1;
 
 	//if (Hologram) Hologram->SetHologramLocationAndRotation(Hit);
+
+	FTransform trans;
+
+	Hologram->SetActorHiddenInGame(false);
+
+	Hologram->FinishSpawning(trans);
 
 	return Hologram;
 }
@@ -148,26 +166,88 @@ void UFSBuildableOperator::UpdateHologramState(const FHitResult& Hit, AFGHologra
 
 AFGHologram* UFSBuildableOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	RelativeTransform = Source->GetTransform();
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
+	else {
+		RelativeTransform = Source.Transform;
+	}
 	return CreateHologram();
 }
 
 AFGBuildable* UFSBuildableOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
 	//std::this_thread::sleep_for(std::chrono::nanoseconds(10000000));
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+	else {
+		Transform = TransformOperator.Transform(Source.Transform);
+
+		//RelativeVector = TransformOperator.SourceTransform.InverseTransformPositionNoScale(Source.Transform.GetLocation());
+		//RelativeRotation = TransformOperator.SourceTransform.InverseTransformRotation(Source.Transform.GetRotation());
+
+		//FTransform NewTransform(TransformOperator.TargetTransform.TransformRotation(RelativeRotation),
+			//TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source.Transform.GetScale3D());
+
+		//Transform = NewTransform;
+	}
+
+	if (TemporaryBuildable) {
+		Transform = Source.Transform;
+	}
+
 	//FTransform Transform = FTransform ();
 
-	sourceClass = Source->GetClass();
+	//sourceClass = Source->GetClass();
+
+	if (Source.Buildable) {
+		sourceClass = Source.Buildable->GetClass();
+	}
+	else {
+		sourceClass = Source.BuildableClass;
+	}
+
 	Buildable = nullptr;
 
 	//TSubclassOf< UFGRecipe > ConveyorPoleRecipe = LoadClass<UFGRecipe>(this, TEXT("/Game/FactoryGame/Recipes/Buildings/Foundations/Recipe_Foundation_8x1_01.Recipe_Foundation_8x1_01_C"));
 	//try {
-		Buildable = BuildableSubsystem->BeginSpawnBuildable(sourceClass, Source->GetTransform());
-		Buildable->FinishSpawning(Transform);
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(sourceClass, Transform);
+	}
+	else {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(sourceClass, Transform);
+
+		//Buildable->TogglePendingDismantleMaterial(true);
+		//Buildable->SetIsPendingDismantleRemoval(true);
+		//Buildable->mIsLightweightTemporary = 1;
+		//TArray< FInstanceHandle* > arr;
+		//Buildable->SetIsLightweightTemporary(arr, 10000);
+		//AFSkyline* FSkylin = AFSkyline::Get(this);
+
+		//AFGBuildableSubsystem* sub = AFGBuildableSubsystem::Get(FSkylin->World);
+		//sub->OnDesignerBuildableSpawned(Buildable);
+	}
+
+	/*
+	AFGBuildableRailroadStation* TargetStation = Cast<AFGBuildableRailroadStation>(Buildable);
+
+	if (TargetStation) {
+		TargetStation->SetupRailroadTrack();
+		TargetStation->OnRep_RailroadTrack();
+
+	}
+	*/
+
+		//Buildable->FinishSpawning(Transform);
 
 		//if (Buildable == nullptr) return nullptr;
-
+	//fgcheck(Buildable);
 	//}
 	//catch (exception& e) {
 		//cout << "Standard exception: " << e.what() << endl;
@@ -250,15 +330,68 @@ AFGBuildable* UFSBuildableOperator::CreateCopy(const FSTransformOperator& Transf
 
 	//Buildable->mColorSlot = Source->mColorSlot;
 	//uint8 color = Buildable->mColorSlot;
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+
+	TSubclassOf<UFGRecipe> Recipe;
+	//Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
+	
+	if (Source.Buildable) {
+		sourceClass = Source.Buildable->GetClass();
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+	else {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.BuildableClass);
+	}
+	
+	
+	if (!Recipe) {
+		if (Source.Buildable) {
+			Recipe = Source.Buildable->GetBuiltWithRecipe();
+		}
+	}
+	if (!Recipe) return nullptr;
+	Buildable->SetBuiltWithRecipe(Recipe);
+
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+
+		/*
+		AFSkyline* FSkyline = AFSkyline::Get(this);
+
+		FActorSpawnParameters* parameters = new FActorSpawnParameters();
+
+		(AMyActor*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AMyActor::StaticClass(), Transform, *parameters);
+		*/
+
+
+	}
+
+	if (!Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.RuntimeData.CustomizationData);
+	}
+
+	if (TemporaryBuildable) {
+		Buildable->mIsLightweightTemporary = 1;
+		Buildable->mIsStaleLightweightTemporary = 1;
+	}
+
+	// we set this so can use some features such as undo by being able to more easily keep track of the buildable for this session
+	// this of course won't keep the buildable in this once you for example save and reload but its a good way to use per session for undoing features
+	Buildable->mManagedByLightweightBuildableSubsystem = 0;
 
 	Buildable->FinishSpawning(Transform);
+
+	//AFSkyline* FSkylin = AFSkyline::Get(this);
+
+	//AFGBuildableSubsystem* sub = AFGBuildableSubsystem::Get(FSkylin->World);
+	//sub->OnDesignerBuildableSpawned(Buildable);
 
 	UFGFactoryLegsComponent* Legs = Buildable->FindComponentByClass<UFGFactoryLegsComponent>();
 	if (Legs) {
 		TArray< FFeetOffset > feetOffset = Legs->TraceFeetOffsets(Transform, Buildable);
 		Legs->SetFeetOffsets(feetOffset);
-		Legs->RecreateLegs();
+
+		// TODO DO WE NEED A ALTERNATIVE TO THIS?
+		//Legs->RecreateLegs();
 	}
 
 	/*
@@ -273,19 +406,22 @@ AFGBuildable* UFSBuildableOperator::CreateCopy(const FSTransformOperator& Transf
 		}
 	}*/
 	//this->firstBuild = true;
+
 	return Buildable;
 }
 
 void UFSBuildableOperator::UpdateInternelConnection(AFGBuildable* Buildable)
 {
-	TArray<UActorComponent*> SourceComponent = Source->GetComponentsByClass(UFGConnectionComponent::StaticClass());
-	TArray<UActorComponent*> TargetComponent = Buildable->GetComponentsByClass(UFGConnectionComponent::StaticClass());
-	for (UActorComponent* SourceConnection : SourceComponent) {
-		UFGConnectionComponent* SFC = Cast<UFGConnectionComponent>(SourceConnection);
-		for (UActorComponent* TargetConnection : TargetComponent) {
-			UFGConnectionComponent* TFC = Cast<UFGConnectionComponent>(TargetConnection);
-			if (SFC && TFC && SFC->GetName().Equals(TFC->GetName(), ESearchCase::Type::IgnoreCase)) {
-				this->InternalConnectionMapping->Add(SFC, TFC);
+	if (Source.Buildable) {
+		TArray<UActorComponent*> SourceComponent = Source.Buildable->K2_GetComponentsByClass(UFGConnectionComponent::StaticClass());
+		TArray<UActorComponent*> TargetComponent = Buildable->K2_GetComponentsByClass(UFGConnectionComponent::StaticClass());
+		for (UActorComponent* SourceConnection : SourceComponent) {
+			UFGConnectionComponent* SFC = Cast<UFGConnectionComponent>(SourceConnection);
+			for (UActorComponent* TargetConnection : TargetComponent) {
+				UFGConnectionComponent* TFC = Cast<UFGConnectionComponent>(TargetConnection);
+				if (SFC && TFC && SFC->GetName().Equals(TFC->GetName(), ESearchCase::Type::IgnoreCase)) {
+					this->InternalConnectionMapping->Add(SFC, TFC);
+				}
 			}
 		}
 	}
@@ -297,11 +433,13 @@ void UFSBuildableOperator::ApplyConnection(AFGBuildable* Buildable, UFGConnectio
 
 void UFSBuildableOperator::ApplyConnection(AFGBuildable* Buildable, const FSTransformOperator& TransformOperator, bool Force)
 {
-	TArray<UActorComponent*> SourceComponent = Source->GetComponentsByClass(UFGConnectionComponent::StaticClass());
-	for (UActorComponent* SourceConnection : SourceComponent) if (!Cast<UFGPowerConnectionComponent>(SourceConnection)) {
-		UFGConnectionComponent* SFC = Cast<UFGConnectionComponent>(SourceConnection);
-		UFGConnectionComponent* TFC = ConnectionMapping<UFGConnectionComponent>(SFC);
-		if (SFC && TFC) ApplyConnection(Buildable, SFC, TFC, TransformOperator, Force);
+	if (Source.Buildable) {
+		TArray<UActorComponent*> SourceComponent = Source.Buildable->K2_GetComponentsByClass(UFGConnectionComponent::StaticClass());
+		for (UActorComponent* SourceConnection : SourceComponent) if (!Cast<UFGPowerConnectionComponent>(SourceConnection)) {
+			UFGConnectionComponent* SFC = Cast<UFGConnectionComponent>(SourceConnection);
+			UFGConnectionComponent* TFC = ConnectionMapping<UFGConnectionComponent>(SFC);
+			if (SFC && TFC) ApplyConnection(Buildable, SFC, TFC, TransformOperator, Force);
+		}
 	}
 }
 
@@ -315,7 +453,7 @@ FSBuildableType UFSBuildableOperator::GetType() const
 	return FSBuildableType::Building;
 }
 
-void UFSBuildableOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSBuildableOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
 }
 
@@ -339,20 +477,51 @@ void UFSOperatorFactory::Init()
 	this->BuildableService = FSkyline->BuildableService;
 }
 
-UFSBuildableOperator* UFSOperatorFactory::AcquireOperator(AFGBuildable* Buildable)
+UFSBuildableOperator* UFSOperatorFactory::AcquireOperator(FSBuildable* Buildable)
 {
 	if (!Buildable) return nullptr;
 
-	UFSBuildableOperator** Ptr = Map.Find(Buildable->GetClass());
-	UFSBuildableOperator* Result;
+	UFSBuildableOperator* Result = nullptr;
+
+	//UFSBuildableOperator** Ptr = Map.Find(Buildable->GetClass());
+
+	UFSBuildableOperator** Ptr = nullptr;
+
+	if (Buildable) {
+		if (Buildable->Buildable) {
+			Ptr = Map.Find(Buildable->Buildable->GetClass());
+		}
+		else {
+			
+			// we need to use a generic operator that supports abstracts because we don't know exactly what kinds of buildables might be them
+			// so we can't safely use the class in this case
+			//Ptr = Map.Find(Buildable->BuildableClass);
+
+			if (AbstractOperator != nullptr) {
+				Ptr = &AbstractOperator;
+			}
+			else {
+			}
+		}
+	}
 
 	if (Ptr) {
 		Result = *Ptr;
-		Result->LoadBuildable(Buildable);
+		Result->LoadBuildable(*Buildable);
 	}
 	else {
-		Result = CreateOperator(Buildable);
-		Map.Add(Buildable->GetClass(), Result);
+		if (Buildable) {
+			if (Buildable->Buildable) {
+				Result = CreateOperator(Buildable);
+				Map.Add(Buildable->Buildable->GetClass(), Result);
+			}
+			else {
+				Result = CreateOperator(Buildable);
+
+				// because the abstracts don't operate on buildable class we don't need to add it to a map array for them
+				//Map.Add(Buildable->BuildableClass, Result);
+			}
+		}
 	}
 
 	Result->BuildableMapping = BuildableMapping;
@@ -363,14 +532,27 @@ UFSBuildableOperator* UFSOperatorFactory::AcquireOperator(AFGBuildable* Buildabl
 	return Result;
 }
 
-UFSBuildableOperator* UFSOperatorFactory::CreateOperator(AFGBuildable* Buildable)
+UFSBuildableOperator* UFSOperatorFactory::CreateOperator(FSBuildable* Buildable)
 {
-	UFSBuildableOperator* Result = CreateEmptyOperator(Buildable->GetClass());
+	//UFSBuildableOperator* Result = CreateEmptyOperator(Buildable->GetClass());
+
+	UFSBuildableOperator* Result = nullptr;
+
+	if (Buildable) {
+		if (Buildable->Buildable) {
+			Result = CreateEmptyOperator(Buildable->Buildable->GetClass());
+		}
+		else {
+			//Result = CreateEmptyOperator(Buildable->BuildableClass);
+			Result = NewObject <UFSBuildableOperator>(this);
+		}
+	}
+
 	if (!Result) return nullptr;
 
 	InitOperator(Result);
 
-	Result->LoadBuildable(Buildable);
+	Result->LoadBuildable(*Buildable);
 
 	return Result;
 }
@@ -410,6 +592,9 @@ UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 		return NewObject <UFSBuildableBeamOperator>(this);
 	}
 	*/
+	if (Buildable->IsChildOf<AFGBuildablePriorityPowerSwitch>()) {
+		return NewObject <UFSBuildablePriorityPowerSwitchOperator>(this);
+	}
 	if (Buildable->IsChildOf<AFGBuildableBeam>()) {
 		return NewObject <UFSBuildableBeamOperator>(this);
 	}
@@ -465,6 +650,16 @@ UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 		}
 		return NewObject<UFSConveyorOperator>(this)->SetUnknown();
 	}
+	if (Buildable->IsChildOf<AFGBuildableConveyorAttachment>()) {
+		if (Buildable->IsChildOf<AFGBuildableSplitterSmart>()) {
+			if (Check(Buildable, "Build_ConveyorAttachmentSplitterSmart_C")) return NewObject<UFSConveyorSmartSplitterOperator>(this);
+			if (Check(Buildable, "Build_ConveyorAttachmentSplitterProgrammable_C")) return NewObject<UFSConveyorSmartSplitterOperator>(this);
+			return NewObject<UFSConveyorSmartSplitterOperator>(this)->SetUnknown();
+		}
+		if (Check(Buildable, "Build_ConveyorAttachmentMerger_C")) return NewObject<UFSConveyorAttachmentOperator>(this);
+		if (Check(Buildable, "Build_ConveyorAttachmentSplitter_C")) return NewObject<UFSConveyorAttachmentOperator>(this);
+		return NewObject<UFSConveyorAttachmentOperator>(this)->SetUnknown();
+	}
 	if (Buildable->IsChildOf<AFGBuildableFactory>()) {
 		if (Buildable->IsChildOf<AFGBuildableManufacturer>()) {
 			if (Check(Buildable, "Build_SmelterMk1_C")) return NewObject<UFSManufacturerOperator>(this);
@@ -483,16 +678,6 @@ UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 			if (Check(Buildable, "Build_GeneratorGeoThermal_C")) return NewObject<UFSGeneratorOperator>(this);
 			if (Check(Buildable, "Build_GeneratorNuclear_C")) return NewObject<UFSGeneratorOperator>(this);
 			return NewObject<UFSGeneratorOperator>(this)->SetUnknown();
-		}
-		if (Buildable->IsChildOf<AFGBuildableConveyorAttachment>()) {
-			if (Buildable->IsChildOf<AFGBuildableSplitterSmart>()) {
-				if (Check(Buildable, "Build_ConveyorAttachmentSplitterSmart_C")) return NewObject<UFSConveyorSmartSplitterOperator>(this);
-				if (Check(Buildable, "Build_ConveyorAttachmentSplitterProgrammable_C")) return NewObject<UFSConveyorSmartSplitterOperator>(this);
-				return NewObject<UFSConveyorSmartSplitterOperator>(this)->SetUnknown();
-			}
-			if (Check(Buildable, "Build_ConveyorAttachmentMerger_C")) return NewObject<UFSConveyorAttachmentOperator>(this);
-			if (Check(Buildable, "Build_ConveyorAttachmentSplitter_C")) return NewObject<UFSConveyorAttachmentOperator>(this);
-			return NewObject<UFSConveyorAttachmentOperator>(this)->SetUnknown();
 		}
 		if (Buildable->IsChildOf<AFGBuildableResourceExtractor>()) {
 			if (CheckContains(Buildable, "Build_MinerMk")) return NewObject<UFSResourceExtractorOperator>(this);
@@ -595,8 +780,8 @@ UFSBuildableOperator* UFSOperatorFactory::CreateEmptyOperator(UClass* Buildable)
 		return NewObject<UFSRailroadTrackOperator>(this)->SetUnknown();
 	}
 	if (Buildable->IsChildOf<AFGBuildableRailroadSwitchControl>()) {
-		//if (Check(Buildable, "Build_RailroadSwitchControl_C")) return NewObject<UFSRailroadSwitchOperator>(this);
-		return NewObject<UFSRailroadSwitchOperator>(this)->SetUnknown();
+		if (Check(Buildable, "Build_RailroadSwitchControl_C")) return NewObject<UFSRailroadSwitchOperator>(this);
+		//return NewObject<UFSRailroadSwitchOperator>(this)->SetUnknown();
 	}
 
 	if (Check(Buildable, "Build_FoundationPassthrough_Lift_C") || Check(Buildable, "Build_FoundationPassthrough_Pipe_C")) {
@@ -849,7 +1034,9 @@ AFGConveyorLiftHologram* UFSSplineHologramFactory::CreateLiftHologram(AFGBuildab
 	ConveyorLiftHologram->mConnectionComponents[1] = Connection1;
 
 	ConveyorLiftHologram->mTopTransform = ConveyorLift->mTopTransform;
-	ConveyorLiftHologram->OnPendingConstructionHologramCreated_Implementation(ConveyorLiftHologram);
+
+	//TODO DO WE NEED A ALTERNATIVE HERE?
+	//ConveyorLiftHologram->OnPendingConstructionHologramCreated_Implementation(ConveyorLiftHologram);
 
 	return ConveyorLiftHologram;
 }

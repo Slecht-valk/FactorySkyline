@@ -13,6 +13,8 @@
 #include<chrono>
 #include<thread>
 
+struct FSBuildable;
+
 #include "FSSelectService.generated.h"
 
 class FSConnectSelect : public FNonAbandonableTask
@@ -32,7 +34,7 @@ public:
 
 	void Search_Positive();
 	void Search_Nagetive();
-	bool BFS_Nagetive(TWeakObjectPtr<AFGBuildable> StartPtr, TArray<TWeakObjectPtr<AFGBuildable> >& Result);
+	bool BFS_Nagetive(FSBuildable StartPtr, TArray<FSBuildable >& Result);
 
 	UWorld* World;
 	UFSOperatorFactory* OperatorFactory = nullptr;
@@ -48,12 +50,12 @@ public:
 
 	FSBuildableType SearchType;
 
-	TWeakObjectPtr<AFGBuildable> StartNode;
-	TSet< TWeakObjectPtr<AFGBuildable> > Select;
-	TMap< TWeakObjectPtr<AFGBuildable>, int> Mark;
+	FSBuildable StartNode;
+	TSet<FSBuildable> Select;
+	TMap<FSBuildable, int> Mark;
 
-	TArray< TWeakObjectPtr<AFGBuildable> > Result;
-	TArray<TWeakObjectPtr<AFGBuildable> > Stack;
+	TArray<FSBuildable> Result;
+	TArray<FSBuildable> Stack;
 
 	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FSConnectSelect, STATGROUP_ThreadPoolAsyncTasks); }
 
@@ -73,8 +75,8 @@ public:
 	void RefreshRecipe();
 
 	bool Ready();
-	bool GetLastResult(TArray< TWeakObjectPtr<AFGBuildable> >*& Result);
-	bool SubmitConnectSelectTask(UFSDesign* Design, AFGBuildable* Buildable, int SelectType);
+	bool GetLastResult(TArray<FSBuildable>*& Result);
+	bool SubmitConnectSelectTask(UFSDesign* Design, FSBuildable* Buildable, int SelectType);
 	void TerminalCurrentTask();
 
 	virtual void BeginDestroy();

@@ -7,21 +7,37 @@
 
 AFGBuildable* UFSPumpOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildablePipelinePump* SourcePump = Cast<AFGBuildablePipelinePump>(Source);
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildablePipelinePump* SourcePump = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourcePump = Cast<AFGBuildablePipelinePump>(Source.Buildable);
+	}
+
 	AFGBuildablePipelinePump* TargetPump = Cast<AFGBuildablePipelinePump>(Buildable);
-
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
 	//TODO:
 	//Buildable->SetBuildingID(Source->GetBuildingID());
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	TargetPump->mDefaultFlowLimit = SourcePump->mDefaultFlowLimit;

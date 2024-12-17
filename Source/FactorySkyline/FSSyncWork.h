@@ -16,7 +16,7 @@ class FACTORYSKYLINE_API UFSSyncWork : public UObject
 public:
 	virtual void Load();
 	virtual void Unload();
-	virtual bool DoWork(float TimeLimit);
+	virtual void DoWork();
 
 	virtual int GetTotal();
 	virtual int GetCurrent();

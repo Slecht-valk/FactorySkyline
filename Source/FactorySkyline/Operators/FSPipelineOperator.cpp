@@ -6,20 +6,28 @@
 #include "Buildables/FGBuildablePipeHyper.h"
 #include "Hologram/FGPipelineHologram.h"
 //#include "FGInstancedSplineMesh.h"
-#include "FGInstancedSplineMeshComponent.h"
+//#include "FGInstancedSplineMeshComponent.h"
 #include "FGPipeConnectionComponent.h"
 
 
 AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	RelativeTransform = Source->GetTransform();
+	//RelativeTransform = Source->GetTransform();
+
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
 
 	AFGHologram* Hologram = CreateHologram();
 	if (!Hologram) return nullptr;
 	AFGPipelineHologram* PipelineHologram = Cast<AFGPipelineHologram>(Hologram);
 	if (!PipelineHologram) return Hologram;
 
-	AFGBuildablePipeBase* SourcePipe = Cast<AFGBuildablePipeBase>(Source);
+	AFGBuildablePipeBase* SourcePipe = nullptr;
+
+	if (Source.Buildable) {
+		SourcePipe = Cast<AFGBuildablePipeBase>(Source.Buildable);
+	}
 	//SML::Logging::info(*Hologram->GetFullName());
 
 	FHitResult Hit;
@@ -38,7 +46,7 @@ AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 	PipelineHologram->SetHologramLocationAndRotation(Hit);
 	PipelineHologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 
-	UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(SourcePipe->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
+	//UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(SourcePipe->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
 	USplineMeshComponent* SplineMeshComponent = nullptr;
 
 	TSet<UActorComponent*> Set = PipelineHologram->GetComponents();
@@ -89,7 +97,10 @@ AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 	}
 	splineHologram->mSplineData = TargetData;
 
-	Hologram->OnPendingConstructionHologramCreated_Implementation(Hologram);
+	splineHologram->OnRep_SplineData();
+
+	// TODO WE NEED A ALTERNATIVE TO THIS?
+	//Hologram->OnPendingConstructionHologramCreated_Implementation(Hologram);
 
 
 	return PipelineHologram;
@@ -97,18 +108,36 @@ AFGHologram* UFSPipelineOperator::HologramCopy(FTransform& RelativeTransform)
 
 AFGBuildable* UFSPipelineOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
-	FVector RelativeVector = TransformOperator.SourceTransform.InverseTransformPositionNoScale(Source->GetTransform().GetLocation());
-	FQuat RelativeRotation = TransformOperator.SourceTransform.InverseTransformRotation(Source->GetTransform().GetRotation());
+	FVector RelativeVector;
+	FQuat RelativeRotation;
+
+	if (Source.Buildable) {
+		RelativeVector = TransformOperator.SourceTransform.InverseTransformPositionNoScale(Source.Buildable->GetTransform().GetLocation());
+		RelativeRotation = TransformOperator.SourceTransform.InverseTransformRotation(Source.Buildable->GetTransform().GetRotation());
+	}
+
 	FQuat Rotation = TransformOperator.TargetTransform.TransformRotation(RelativeRotation);
 
-	FTransform Transform = FTransform(FRotator::ZeroRotator, TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source->GetTransform().GetScale3D());
+	FTransform Transform;
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildablePipeBase* SourcePipeline = Cast<AFGBuildablePipeBase>(Source);
+	if (Source.Buildable) {
+		Transform = FTransform(FRotator::ZeroRotator, TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source.Buildable->GetTransform().GetScale3D());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildablePipeBase* SourcePipeline = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourcePipeline = Cast<AFGBuildablePipeBase>(Source.Buildable);
+	}
+
 	AFGBuildablePipeBase* TargetPipeline = Cast<AFGBuildablePipeBase>(Buildable);
-
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -124,7 +153,9 @@ AFGBuildable* UFSPipelineOperator::CreateCopy(const FSTransformOperator& Transfo
 		TargetPipeline->mSplineData.Add(NewPointData);
 	}
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;
@@ -143,11 +174,11 @@ void UFSPipelineOperator::ApplyConnection(AFGBuildable* Buildable, UFGConnection
 			Connection = this->ConnectionMapping<UFGPipeConnectionComponentBase>(SourceComponent->GetConnection());
 			if (!Connection) {
 				FTransform Transform = TransformOperator.Transform(SourceComponent->GetConnection()->GetComponentTransform());
-				Connection = UFGPipeConnectionComponentBase::FindCompatibleOverlappingConnection(TargetComponent, Transform.GetLocation(), 50.0f, TargetComponent);
+				Connection = UFGPipeConnectionComponentBase::FindCompatibleOverlappingConnection(TargetComponent, Transform.GetLocation(), nullptr, 50.0f);
 			}
 		}
 		if (!Connection && Force) {
-			Connection = UFGPipeConnectionComponentBase::FindCompatibleOverlappingConnection(TargetComponent, TargetComponent->GetComponentTransform().GetLocation(), 50.0f, TargetComponent);
+			Connection = UFGPipeConnectionComponentBase::FindCompatibleOverlappingConnection(TargetComponent, TargetComponent->GetComponentTransform().GetLocation(), nullptr, 50.0f);
 		}
 		if (Connection && Connection != TargetComponent && !Connection->IsConnected() && TargetComponent->CanConnectTo(Connection))
 			TargetComponent->SetConnection(Connection);
@@ -156,7 +187,12 @@ void UFSPipelineOperator::ApplyConnection(AFGBuildable* Buildable, UFGConnection
 
 void UFSPipelineOperator::ApplyConnection(AFGBuildable* Buildable)
 {
-	AFGBuildablePipeBase* Source = Cast<AFGBuildablePipeBase>(this->Source);
+	AFGBuildablePipeBase* Source = nullptr;
+
+	if (this->Source.Buildable) {
+		Source = Cast<AFGBuildablePipeBase>(this->Source.Buildable);
+	}
+
 	AFGBuildablePipeBase* Target = Cast<AFGBuildablePipeBase>(Buildable);
 
 	UFGPipeConnectionComponentBase* SourceInput = Source->GetConnection0();
@@ -167,7 +203,7 @@ void UFSPipelineOperator::ApplyConnection(AFGBuildable* Buildable)
 	if (!TargetInput->IsConnected() && SourceInput->IsConnected()) {
 		UFGPipeConnectionComponentBase* Connection = this->ConnectionMapping<UFGPipeConnectionComponentBase>(SourceInput->GetConnection());
 		if (!Connection) {
-			Connection = UFGPipeConnectionComponentBase::FindCompatibleOverlappingConnection(TargetInput, TargetInput->GetComponentTransform().GetLocation(), 50.0f, TargetInput);
+			Connection = UFGPipeConnectionComponentBase::FindCompatibleOverlappingConnection(TargetInput, TargetInput->GetComponentTransform().GetLocation(), nullptr, 50.0f);
 		}
 		if (Connection && Connection != TargetInput && !Connection->IsConnected() && TargetInput->CanConnectTo(Connection))
 			TargetInput->SetConnection(Connection);
@@ -176,7 +212,7 @@ void UFSPipelineOperator::ApplyConnection(AFGBuildable* Buildable)
 	if (!TargetOutput->IsConnected() && SourceOutput->IsConnected()) {
 		UFGPipeConnectionComponentBase* Connection = this->ConnectionMapping<UFGPipeConnectionComponentBase>(SourceOutput->GetConnection());
 		if (!Connection) {
-			Connection = UFGPipeConnectionComponentBase::FindCompatibleOverlappingConnection(TargetOutput, TargetOutput->GetComponentTransform().GetLocation(), 50.0f, TargetOutput);
+			Connection = UFGPipeConnectionComponentBase::FindCompatibleOverlappingConnection(TargetOutput, TargetOutput->GetComponentTransform().GetLocation(), nullptr, 50.0f);
 		}
 		if (Connection && Connection != TargetOutput && !Connection->IsConnected() && TargetOutput->CanConnectTo(Connection))
 			TargetOutput->SetConnection(Connection);
@@ -188,15 +224,17 @@ FSBuildableType UFSPipelineOperator::GetType() const
 	return FSBuildableType::Factory;
 }
 
-void UFSPipelineOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSPipelineOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	TArray<UActorComponent*> TargetComponent = Buildable->GetComponentsByClass(UFGConnectionComponent::StaticClass());
-	for (UActorComponent* TargetConnection : TargetComponent)
-		if (Cast<UFGPipeConnectionComponentBase>(TargetConnection)) {
-			UFGPipeConnectionComponentBase* TFC = Cast<UFGPipeConnectionComponentBase>(TargetConnection);
-			if (TFC->GetConnection()) {
-				AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
-				if (Connection) List.Add(Connection);
+	if (Buildable->Buildable) {
+		TArray<UActorComponent*> TargetComponent = Buildable->Buildable->K2_GetComponentsByClass(UFGConnectionComponent::StaticClass());
+		for (UActorComponent* TargetConnection : TargetComponent)
+			if (Cast<UFGPipeConnectionComponentBase>(TargetConnection)) {
+				UFGPipeConnectionComponentBase* TFC = Cast<UFGPipeConnectionComponentBase>(TargetConnection);
+				if (TFC->GetConnection()) {
+					AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
+					if (Connection) List.Add(Connection);
+				}
 			}
-		}
+	}
 }

@@ -5,17 +5,26 @@
 #include "Hologram/FGRailroadTrackHologram.h"
 #include "Buildables/FGBuildableRailroadTrack.h"
 #include "Buildables/FGBuildableRailroadStation.h"
-#include "FGInstancedSplineMeshComponent.h"
+//#include "FGInstancedSplineMeshComponent.h"
 #include "FGRailroadSubsystem.h"
 
 
 AFGHologram* UFSRailroadTrackOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	RelativeTransform = Source->GetTransform();
+	//RelativeTransform = Source->GetTransform();
+
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
+
 	AFGRailroadTrackHologram* Hologram = Cast<AFGRailroadTrackHologram>(CreateHologram());
 	if (!Hologram) return nullptr;
 
-	AFGBuildableRailroadTrack* Track = Cast<AFGBuildableRailroadTrack>(Source);
+	AFGBuildableRailroadTrack* Track;
+
+	if (Source.Buildable) {
+		Track = Cast<AFGBuildableRailroadTrack>(Source.Buildable);
+	}
 
 	FHitResult Hit;
 	//Hit.Actor = nullptr;
@@ -33,7 +42,7 @@ AFGHologram* UFSRailroadTrackOperator::HologramCopy(FTransform& RelativeTransfor
 	Hologram->SetHologramLocationAndRotation(Hit);
 	Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 
-	UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(Track->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
+	//UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(Track->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
 	USplineMeshComponent* SplineMeshComponent = nullptr;
 
 	TSet<UActorComponent*> Set = Hologram->GetComponents();
@@ -67,7 +76,12 @@ AFGHologram* UFSRailroadTrackOperator::HologramCopy(FTransform& RelativeTransfor
 
 	AFGSplineHologram* splineHologram = Cast<AFGSplineHologram>(Hologram);
 	
-	AFGBuildableRailroadTrack* SourceTrack = Cast<AFGBuildableRailroadTrack>(Source);
+	AFGBuildableRailroadTrack* SourceTrack = nullptr;
+
+	if (Source.Buildable) {
+		SourceTrack = Cast<AFGBuildableRailroadTrack>(Source.Buildable);
+	}
+
 	TArray< FSplinePointData > SourceData = SourceTrack->mSplineData;
 	TArray< FSplinePointData > TargetData = splineHologram->mSplineData;
 
@@ -81,23 +95,43 @@ AFGHologram* UFSRailroadTrackOperator::HologramCopy(FTransform& RelativeTransfor
 		TargetData.Add(NewPointData);
 	}
 	splineHologram->mSplineData = TargetData;
+
+	splineHologram->OnRep_SplineData();
 	
-	Hologram->OnPendingConstructionHologramCreated_Implementation(Hologram);
+	//TODO DO WE NEED A ALTERNATIVE TO THIS?
+	//Hologram->OnPendingConstructionHologramCreated_Implementation(Hologram);
 
 	return Hologram;
 }
 
 AFGBuildable* UFSRailroadTrackOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
-	FVector RelativeVector = TransformOperator.SourceTransform.InverseTransformPositionNoScale(Source->GetTransform().GetLocation());
-	FQuat RelativeRotation = TransformOperator.SourceTransform.InverseTransformRotation(Source->GetTransform().GetRotation());
+	FVector RelativeVector;
+	FQuat RelativeRotation;
+
+	if (Source.Buildable) {
+		RelativeVector = TransformOperator.SourceTransform.InverseTransformPositionNoScale(Source.Buildable->GetTransform().GetLocation());
+		RelativeRotation = TransformOperator.SourceTransform.InverseTransformRotation(Source.Buildable->GetTransform().GetRotation());
+	}
+
 	FQuat Rotation = TransformOperator.TargetTransform.TransformRotation(RelativeRotation);
 
-	FTransform Transform = FTransform(FRotator::ZeroRotator, TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source->GetTransform().GetScale3D());
+	//FTransform Transform = FTransform(FRotator::ZeroRotator, TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source->GetTransform().GetScale3D());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
+	FTransform Transform;
 
-	AFGBuildableRailroadTrack* SourceTrack = Cast<AFGBuildableRailroadTrack>(Source);
+	if (Source.Buildable) {
+		Transform = FTransform(FRotator::ZeroRotator, TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source.Buildable->GetTransform().GetScale3D());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildableRailroadTrack* SourceTrack = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceTrack = Cast<AFGBuildableRailroadTrack>(Source.Buildable);
+	}
+
 	AFGBuildableRailroadTrack* TargetTrack = Cast<AFGBuildableRailroadTrack>(Buildable);
 
 	TargetTrack->mSplineData.Reset();
@@ -108,16 +142,20 @@ AFGBuildable* UFSRailroadTrackOperator::CreateCopy(const FSTransformOperator& Tr
 		NewPointData.LeaveTangent = Rotation.RotateVector(PointData.LeaveTangent);
 		TargetTrack->mSplineData.Add(NewPointData);
 	}
-
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
 	//TODO:
 	//Buildable->SetBuildingID(Source->GetBuildingID());
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	AFGRailroadSubsystem* RailroadSubsystem = AFGRailroadSubsystem::Get(this);
@@ -151,7 +189,13 @@ void UFSRailroadTrackOperator::ApplyConnection(AFGBuildable* Buildable, UFGConne
 			if (Result.Num()) Connection = Result[0];
 		}
 		if (Connection && Connection != TargetComponent && !Connection->IsConnected()) {
+
+			// don't know why this was originally setup to only set one connection, aka switches and multiple track connected together didnt work properly
+
 			TargetComponent->AddConnection(Connection);
+			for (int i = 0; i < Result.Num(); i++) {
+				//TargetComponent->AddConnection(Result[i]);
+			}
 			AFGRailroadSubsystem* RailroadSubsystem = AFGRailroadSubsystem::Get(this);
 			RailroadSubsystem->RemoveTrack(TargetTrack);
 			RailroadSubsystem->AddTrack(TargetTrack);
@@ -165,7 +209,12 @@ void UFSRailroadTrackOperator::ApplyConnection(AFGBuildable* Buildable, UFGConne
 
 void UFSRailroadTrackOperator::ApplySettingsTo(AFGBuildable* Buildable)
 {
-	AFGBuildableRailroadTrack* SourceTrack = Cast<AFGBuildableRailroadTrack>(Source);
+	AFGBuildableRailroadTrack* SourceTrack;
+
+	if (Source.Buildable) {
+		SourceTrack = Cast<AFGBuildableRailroadTrack>(Source.Buildable);
+	}
+
 	AFGBuildableRailroadTrack* TargetTrack = Cast<AFGBuildableRailroadTrack>(Buildable);
 
 	AFGRailroadSubsystem* RailroadSubsystem = AFGRailroadSubsystem::Get(this);
@@ -178,20 +227,22 @@ FSBuildableType UFSRailroadTrackOperator::GetType() const
 	return FSBuildableType::Rail;
 }
 
-void UFSRailroadTrackOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSRailroadTrackOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	TArray<UActorComponent*> TargetComponent = Buildable->GetComponentsByClass(UFGConnectionComponent::StaticClass());
-	for (UActorComponent* TargetConnection : TargetComponent)
-		if (Cast<UFGRailroadTrackConnectionComponent>(TargetConnection)) {
-			UFGRailroadTrackConnectionComponent* TFC = Cast<UFGRailroadTrackConnectionComponent>(TargetConnection);
-			TArray<UFGRailroadTrackConnectionComponent*> Connections = TFC->GetConnections();
-			for (UFGRailroadTrackConnectionComponent* Component : Connections) {
-				//AFGBuildable* Connection = Cast<AFGBuildable>(Component->GetAttachmentRootActor());
-				AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
-				if (Connection) List.Add(Connection);
+	if (Buildable->Buildable) {
+		TArray<UActorComponent*> TargetComponent = Buildable->Buildable->K2_GetComponentsByClass(UFGConnectionComponent::StaticClass());
+		for (UActorComponent* TargetConnection : TargetComponent)
+			if (Cast<UFGRailroadTrackConnectionComponent>(TargetConnection)) {
+				UFGRailroadTrackConnectionComponent* TFC = Cast<UFGRailroadTrackConnectionComponent>(TargetConnection);
+				TArray<UFGRailroadTrackConnectionComponent*> Connections = TFC->GetConnections();
+				for (UFGRailroadTrackConnectionComponent* Component : Connections) {
+					//AFGBuildable* Connection = Cast<AFGBuildable>(Component->GetAttachmentRootActor());
+					AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
+					if (Connection) List.Add(Connection);
+				}
+				if (TFC->GetStation()) List.Add(TFC->GetStation());
 			}
-			if (TFC->GetStation()) List.Add(TFC->GetStation());
-		}
+	}
 }
 
 
@@ -204,7 +255,9 @@ void UFSRailroadTrackOperator::FindOverlappingConnections(TArray<UFGRailroadTrac
 			float DistSqr = (Component->GetComponentLocation() - Loc).SizeSquared();
 			if (DistSqr < RadiusSqr) {
 				AFGBuildableRailroadTrack* Track = Cast<AFGBuildableRailroadTrack>(Component->GetAttachmentRootActor());
-				if (Track && !Track->IsPendingKillOrUnreachable()) Result.Add(Component);
+				if (Track && !Track->IsPendingKillOrUnreachable()) {
+					Result.Add(Component);
+				}
 			}
 		}
 	}

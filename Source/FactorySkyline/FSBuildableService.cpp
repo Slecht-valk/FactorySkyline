@@ -5,6 +5,10 @@
 #include "FSkyline.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+
+//#include "Kismet/GameplayStatics.h"
+
 
 void UFSBuildableService::Init()
 {
@@ -183,7 +187,7 @@ void KDTree::QueryNearest(const Float3D& Pos, float& Dist, AFGBuildable*& Builda
 }
 
 
-void KDTree2D::BuildTree(const TSet<TWeakObjectPtr<AFGBuildable>>& BuildableSet, APlayerController * Player)
+void KDTree2D::BuildTree(const TSet<TWeakObjectPtr<AFGBuildable>>& BuildableSet, APlayerController* Player)
 {
 	FVector2D ScreenPosition;
 	FVector2D ScreenSize = UWidgetLayoutLibrary::GetViewportSize(Player);
@@ -192,6 +196,9 @@ void KDTree2D::BuildTree(const TSet<TWeakObjectPtr<AFGBuildable>>& BuildableSet,
 
 	Data.Empty();
 	Tree.Empty();
+
+	// TODO WE NEED TO DO THIS LOGIC DIFFERENTLY
+
 	for (TWeakObjectPtr<AFGBuildable> Buildable : BuildableSet) if (Buildable.Get())
 		if (UGameplayStatics::ProjectWorldToScreen(Player, Buildable.Get()->GetActorLocation(), ScreenPosition)) {
 			if (Reset) return;
@@ -204,7 +211,6 @@ void KDTree2D::BuildTree(const TSet<TWeakObjectPtr<AFGBuildable>>& BuildableSet,
 				Entry.Loc.Pos[1] = y;
 			}
 		}
-
 	Int2D Box[2];
 	Box[0].Pos[0] = Box[0].Pos[1] = 0;
 	Box[1].Pos[0] = SizeX;

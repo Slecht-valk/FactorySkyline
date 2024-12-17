@@ -5,7 +5,7 @@
 #include "Buildables/FGBuildable.h"
 #include "Buildables/FGBuildableConveyorBelt.h"
 //#include "FGInstancedSplineMesh.h"
-#include "FGInstancedSplineMeshComponent.h"
+//#include "FGInstancedSplineMeshComponent.h"
 #include "FactorySkyline/FSkyline.h"
 
 
@@ -13,10 +13,22 @@ AFGHologram* UFSConveyorBeltOperator::HologramCopy(FTransform& RelativeTransform
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
-	RelativeTransform = Source->GetTransform();
+	FVector RelativeVector = RelativeTransform.GetLocation();
+	FQuat RelativeRotation = RelativeTransform.GetRotation();
+
+	//RelativeTransform = Source->GetTransform();
 	//AFGHologram* Hologram = CreateHologram();
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
+
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+
 	if (!Recipe) return nullptr;
 	AFGHologram* Hologram = AFGHologram::SpawnHologramFromRecipe(Recipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer());
 
@@ -24,7 +36,11 @@ AFGHologram* UFSConveyorBeltOperator::HologramCopy(FTransform& RelativeTransform
 	AFGConveyorBeltHologram* ConveyorBeltHologram = Cast<AFGConveyorBeltHologram>(Hologram);
 	if (!ConveyorBeltHologram) return Hologram;
 
-	AFGBuildableConveyorBelt* SourceBelt = Cast<AFGBuildableConveyorBelt>(Source);
+	AFGBuildableConveyorBelt* SourceBelt = nullptr;
+
+	if (Source.Buildable) {
+		SourceBelt = Cast<AFGBuildableConveyorBelt>(Source.Buildable);
+	}
 
 	FHitResult Hit;
 	//Hit.Actor = nullptr;
@@ -40,10 +56,15 @@ AFGHologram* UFSConveyorBeltOperator::HologramCopy(FTransform& RelativeTransform
 	Hit.FaceIndex = -1;
 
 	//Hologram->SetHologramLocationAndRotation(Hit);
-	Hologram->SetActorTransform(Source->GetTransform());
+	//Hologram->SetActorTransform(Source->GetTransform());
+
+	if (Source.Buildable) {
+		Hologram->SetActorTransform(Source.Buildable->GetTransform());
+	}
+
 	Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 
-	UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(SourceBelt->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
+	//UFGInstancedSplineMeshComponent* SourceComponent = Cast<UFGInstancedSplineMeshComponent>(SourceBelt->GetComponentByClass(UFGInstancedSplineMeshComponent::StaticClass()));
 	USplineMeshComponent* SplineMeshComponent = nullptr;
 	
 	TSet<UActorComponent*> Set = Hologram->GetComponents();
@@ -74,7 +95,12 @@ AFGHologram* UFSConveyorBeltOperator::HologramCopy(FTransform& RelativeTransform
 	}
 	splineHologram->mSplineData = TargetData;
 
-	ConveyorBeltHologram->OnPendingConstructionHologramCreated_Implementation(ConveyorBeltHologram);
+	splineHologram->OnRep_SplineData();
+	//splineHologram->UpdateSplineComponent();
+	//splineHologram->UpdateClearanceData();
+
+	// TODO DO WE NEED A ALTERNATIVE TO THIS?
+	//ConveyorBeltHologram->OnPendingConstructionHologramCreated_Implementation(ConveyorBeltHologram);
 
 	return Hologram;
 }
@@ -102,19 +128,43 @@ AFGBuildable* UFSConveyorBeltOperator::CreateCopy(const FSTransformOperator& Tra
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
-	FVector RelativeVector = TransformOperator.SourceTransform.InverseTransformPositionNoScale(Source->GetTransform().GetLocation());
-	FQuat RelativeRotation = TransformOperator.SourceTransform.InverseTransformRotation(Source->GetTransform().GetRotation());
+	FVector RelativeVector;
+	FQuat RelativeRotation;
+
+	if (Source.Buildable) {
+		RelativeVector = TransformOperator.SourceTransform.InverseTransformPositionNoScale(Source.Buildable->GetTransform().GetLocation());
+		RelativeRotation = TransformOperator.SourceTransform.InverseTransformRotation(Source.Buildable->GetTransform().GetRotation());
+	}
+
 	FQuat Rotation = TransformOperator.TargetTransform.TransformRotation(RelativeRotation);
 
-	FTransform Transform = FTransform(FRotator::ZeroRotator, TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source->GetTransform().GetScale3D());
+	//FTransform Transform = FTransform(FRotator::ZeroRotator, TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source->GetTransform().GetScale3D());
 
-	AFGBuildableConveyorBelt* SourceConveyorBelt = Cast<AFGBuildableConveyorBelt>(Source);
+	FTransform Transform;
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
+	if (Source.Buildable) {
+		Transform = FTransform(FRotator::ZeroRotator, TransformOperator.TargetTransform.TransformPositionNoScale(RelativeVector), Source.Buildable->GetTransform().GetScale3D());
+	}
+
+	AFGBuildableConveyorBelt* SourceConveyorBelt = nullptr;
+	AFGBuildable* Buildable = nullptr;
+
+	if (Source.Buildable) {
+		SourceConveyorBelt = Cast<AFGBuildableConveyorBelt>(Source.Buildable);
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+	}
+
 	AFGBuildableConveyorBelt* TargetConveyorBelt = Cast<AFGBuildableConveyorBelt>(Buildable);
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+
+	if (Source.Buildable) {
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -133,7 +183,9 @@ AFGBuildable* UFSConveyorBeltOperator::CreateCopy(const FSTransformOperator& Tra
 		TargetData->Add(NewPointData);
 	}
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	this->BuildableSubsystem->RemoveConveyorFromBucket(TargetConveyorBelt);

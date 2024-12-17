@@ -24,7 +24,7 @@ void UFSBuildableRailroadSignalOperator::UpdateHologramState(const FHitResult& H
 
 	FVector HologramLocation = Hologram->GetTransform().GetLocation();
 
-	for (UActorComponent* Connection : Actor->GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass())) {
+	for (UActorComponent* Connection : Actor->K2_GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass())) {
 		UFGFactoryConnectionComponent* FactoryConnection = Cast<UFGFactoryConnectionComponent>(Connection);
 		if (FactoryConnection) {
 			if (HitConnection == nullptr) HitConnection = FactoryConnection;
@@ -49,14 +49,34 @@ AFGBuildable* UFSBuildableRailroadSignalOperator::CreateCopy(const FSTransformOp
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildableRailroadSignal* SourceBuildableRailroadSignal = Cast<AFGBuildableRailroadSignal>(Source);
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildableRailroadSignal* SourceBuildableRailroadSignal = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceBuildableRailroadSignal = Cast<AFGBuildableRailroadSignal>(Source.Buildable);
+	}
+
 	AFGBuildableRailroadSignal* BuildableRailroadSignal = Cast<AFGBuildableRailroadSignal>(Buildable);
 
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+
+	if (Source.Buildable) {
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -71,7 +91,9 @@ AFGBuildable* UFSBuildableRailroadSignalOperator::CreateCopy(const FSTransformOp
 		BuildableRailroadSignal->mGuardedConnections.Add(Connection1);
 	}
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 

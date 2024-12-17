@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/Button.h"
 #include "Blueprint/UserWidget.h"
 #include "FSSelectRect.generated.h"
 

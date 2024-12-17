@@ -23,7 +23,7 @@ void UFSConveyorLiftOperator::UpdateHologramState(const FHitResult& Hit, AFGHolo
 
 	FVector HologramLocation = Hologram->GetTransform().GetLocation();
 
-	for (UActorComponent* Connection : Actor->GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass())) {
+	for (UActorComponent* Connection : Actor->K2_GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass())) {
 		UFGFactoryConnectionComponent* FactoryConnection = Cast<UFGFactoryConnectionComponent>(Connection);
 		if (FactoryConnection) {
 			if (HitConnection == nullptr) HitConnection = FactoryConnection;
@@ -41,24 +41,43 @@ void UFSConveyorLiftOperator::UpdateHologramState(const FHitResult& Hit, AFGHolo
 
 AFGHologram* UFSConveyorLiftOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	return SplineHologramFactory->CreateLiftHologram(Cast<AFGBuildableConveyorLift>(Source), RelativeTransform);
+	if (Source.Buildable) {
+		return SplineHologramFactory->CreateLiftHologram(Cast<AFGBuildableConveyorLift>(Source.Buildable), RelativeTransform);
+	}
+	return nullptr;
 }
 
 AFGBuildable* UFSConveyorLiftOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildableConveyorLift* SourceConveyorLift = Cast<AFGBuildableConveyorLift>(Source);
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildableConveyorLift* SourceConveyorLift = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceConveyorLift = Cast<AFGBuildableConveyorLift>(Source.Buildable);
+	}
+
 	AFGBuildableConveyorLift* TargetConveyorLift = Cast<AFGBuildableConveyorLift>(Buildable);
 
 	TargetConveyorLift->mSnappedPassthroughs.Add(nullptr);
 	TargetConveyorLift->mSnappedPassthroughs.Add(nullptr);
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -154,7 +173,10 @@ AFGBuildable* UFSConveyorLiftOperator::CreateCopy(const FSTransformOperator& Tra
 	bottomPassThrough = topPassThrough = nullptr;
 
 	FSkyline->AdaptiveUtil->CopyConveyorLiftAttribute(SourceConveyorLift, TargetConveyorLift);
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 

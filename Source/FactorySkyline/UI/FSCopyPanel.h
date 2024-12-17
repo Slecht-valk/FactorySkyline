@@ -30,6 +30,9 @@ public:
 	UFUNCTION()
 	void onStartCopy();
 
+	UFUNCTION()
+	void CopyToBpDesigner();
+
 	void Init();
 	void Load(UFSDesign* Design);
 
@@ -43,6 +46,9 @@ public:
 	class UButton* StartCopyButton;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UButton* CopyToBpDesignerButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UTextBlock* SetItemStatus;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
@@ -51,5 +57,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	class UCheckBox* CheckBoxFullPreview;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UEditableText* VectorQ;
+
 	UFSDesign* Design = nullptr;
+
 };

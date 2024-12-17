@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/Image.h"
 #include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
 #include "Components/TextBlock.h"
 #include "Components/EditableText.h"
 #include "Components/CanvasPanel.h"

@@ -382,3 +382,13 @@ public:
 	virtual void InitEntry(UFSButtonWidget* Entry);
 	virtual void InitItem();
 };
+
+UCLASS()
+class FACTORYSKYLINE_API UFSUseDefaultHologramMenu : public UFSSwitchMenu
+{
+	GENERATED_BODY()
+public:
+
+	virtual void InitEntry(UFSButtonWidget* Entry);
+	virtual void InitItem();
+};

@@ -29,6 +29,9 @@ void UFSStatusPanel::Load(UFSDesign* Design)
 	FSkyline->SplineHologramFactory->Load();
 
 	Mapping.Reset();
+
+	// TODO NEED TO REWORK THIS
+	/*
 	for (TWeakObjectPtr<AFGBuildable> Ptr : Design->BuildableSet) {
 		AFGBuildable* Buildable = Ptr.Get();
 		if (Buildable) {
@@ -37,6 +40,7 @@ void UFSStatusPanel::Load(UFSDesign* Design)
 			else Mapping.Add(Buildable->GetClass(), 1);
 		}
 	}
+	*/
 
 	EntryList.Reset();
 	for (TPair<TSubclassOf< class AFGBuildable >, int> Pair : Mapping) {

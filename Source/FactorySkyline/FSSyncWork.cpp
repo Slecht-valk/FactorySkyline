@@ -11,9 +11,9 @@ void UFSSyncWork::Unload()
 {
 }
 
-bool UFSSyncWork::DoWork(float TimeLimit)
+void UFSSyncWork::DoWork()
 {
-	return false;
+	//return false;
 }
 
 int UFSSyncWork::GetTotal()

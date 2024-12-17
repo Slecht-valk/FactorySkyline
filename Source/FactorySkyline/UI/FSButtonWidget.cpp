@@ -169,10 +169,11 @@ void UFSButtonWidget::SetTextPadding(float x)
 
 void UFSButtonWidget::SetTextHorizontalAlignment(EHorizontalAlignment InHorizontalAlignment)
 {
+	// TODO FIX
 	if (MenuText->Slot) {
-		UHorizontalBoxSlot* HorizontalBoxSlot = Cast<UHorizontalBoxSlot>(MenuText->Slot);
-		if (HorizontalBoxSlot) {
-			HorizontalBoxSlot->SetHorizontalAlignment(InHorizontalAlignment);
+		UHorizontalBoxSlot* horizontalBoxSlot = Cast<UHorizontalBoxSlot>(MenuText->Slot);
+		if (horizontalBoxSlot) {
+			horizontalBoxSlot->SetHorizontalAlignment(InHorizontalAlignment);
 		}
 	}
 }

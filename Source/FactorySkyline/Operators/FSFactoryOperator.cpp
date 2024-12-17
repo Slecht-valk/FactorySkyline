@@ -20,11 +20,11 @@ void UFSFactoryOperator::ApplyConnection(AFGBuildable* Buildable, UFGConnectionC
 			Connection = this->ConnectionMapping<UFGFactoryConnectionComponent>(SourceComponent->GetConnection());
 			if (!Connection) {
 				FTransform Transform = TransformOperator.Transform(SourceComponent->GetConnection()->GetComponentTransform());
-				Connection = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(TargetComponent, Transform.GetLocation(), 50.0f);
+				Connection = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(TargetComponent, Transform.GetLocation(), nullptr, 50.0f);
 			}
 		}
 		if (!Connection && Force) {
-			Connection = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(TargetComponent, TargetComponent->GetComponentTransform().GetLocation(), 50.0f);
+			Connection = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(TargetComponent, TargetComponent->GetComponentTransform().GetLocation(), nullptr, 50.0f);
 		}
 		if (Connection && !Connection->IsConnected() && TargetComponent->CanConnectTo(Connection))
 			TargetComponent->SetConnection(Connection);
@@ -33,10 +33,20 @@ void UFSFactoryOperator::ApplyConnection(AFGBuildable* Buildable, UFGConnectionC
 
 void UFSFactoryOperator::ApplySettingsTo(AFGBuildable* Buildable)
 {
-	AFGBuildableFactory* SourceFactory = Cast<AFGBuildableFactory>(Source);
+	AFGBuildableFactory* SourceFactory = nullptr;
+
+	if (Source.Buildable) {
+		SourceFactory = Cast<AFGBuildableFactory>(Source.Buildable);
+	}
+
 	AFGBuildableFactory* TargetFactory = Cast<AFGBuildableFactory>(Buildable);
 
-	TargetFactory->SetIsProductionPaused(SourceFactory->IsProductionPaused());
+	//fgcheck(Source);
+	//fgcheck(Buildable);
+
+	if (SourceFactory) {
+		TargetFactory->SetIsProductionPaused(SourceFactory->IsProductionPaused());
+	}
 }
 
 FSBuildableType UFSFactoryOperator::GetType() const
@@ -44,22 +54,24 @@ FSBuildableType UFSFactoryOperator::GetType() const
 	return FSBuildableType::Factory;
 }
 
-void UFSFactoryOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSFactoryOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	TArray<UActorComponent*> TargetComponent = Buildable->GetComponentsByClass(UFGConnectionComponent::StaticClass());
-	for (UActorComponent* TargetConnection : TargetComponent)
-		if (Cast<UFGFactoryConnectionComponent>(TargetConnection)) {
-			UFGFactoryConnectionComponent* TFC = Cast<UFGFactoryConnectionComponent>(TargetConnection);
-			if (TFC->GetConnection()) {
-				AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
-				if (Connection) List.Add(Connection);
+	if (Buildable->Buildable) {
+		TArray<UActorComponent*> TargetComponent = Buildable->Buildable->K2_GetComponentsByClass(UFGConnectionComponent::StaticClass());
+		for (UActorComponent* TargetConnection : TargetComponent)
+			if (Cast<UFGFactoryConnectionComponent>(TargetConnection)) {
+				UFGFactoryConnectionComponent* TFC = Cast<UFGFactoryConnectionComponent>(TargetConnection);
+				if (TFC->GetConnection()) {
+					AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
+					if (Connection) List.Add(Connection);
+				}
 			}
-		}
-		else if (Cast<UFGPipeConnectionComponentBase>(TargetConnection)) {
-			UFGPipeConnectionComponentBase* TPC = Cast<UFGPipeConnectionComponentBase>(TargetConnection);
-			if (TPC->GetConnection()) {
-				AFGBuildable* Connection = Cast<AFGBuildable>(TPC->GetConnection()->GetAttachmentRootActor());
-				if (Connection) List.Add(Connection);
+			else if (Cast<UFGPipeConnectionComponentBase>(TargetConnection)) {
+				UFGPipeConnectionComponentBase* TPC = Cast<UFGPipeConnectionComponentBase>(TargetConnection);
+				if (TPC->GetConnection()) {
+					AFGBuildable* Connection = Cast<AFGBuildable>(TPC->GetConnection()->GetAttachmentRootActor());
+					if (Connection) List.Add(Connection);
+				}
 			}
-		}
+	}
 }

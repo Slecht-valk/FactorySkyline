@@ -20,6 +20,6 @@ class FACTORYSKYLINE_API UFSFoundationOperator : public UFSBuildingOperator
 public:
 
 	virtual void UpdateHologramState(const FHitResult& Hit, AFGHologram* Hologram, bool& ShouldShow, bool& Valid);
-	virtual void GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
+	virtual void GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
 
 };

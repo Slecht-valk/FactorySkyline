@@ -9,6 +9,6 @@ FSBuildableType UFSTowerOperator::GetType() const
 	return FSBuildableType::Building;
 }
 
-void UFSTowerOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSTowerOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
 }

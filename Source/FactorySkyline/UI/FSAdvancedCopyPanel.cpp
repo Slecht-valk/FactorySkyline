@@ -182,7 +182,7 @@ void UFSAdvancedCopyPanel::onClipboard()
 void UFSAdvancedCopyPanel::SetCircleFeedback()
 {
 	AFSkyline* Skyline = AFSkyline::Get(this);
-	CircleCenter = Skyline->FSCtrl->CurrentFocusBuilding;
+	CircleCenter = Skyline->FSCtrl->CurrentFocusBuilding.Buildable;
 	if (!CircleCenter.Get()) return;
 	if (!Skyline->FSCtrl->Repeat.Ready) return;
 

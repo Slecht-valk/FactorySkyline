@@ -57,7 +57,7 @@ bool UFSConnectSelectService::Ready()
 	return this->ConnectSelect->IsReady();
 }
 
-bool UFSConnectSelectService::GetLastResult(TArray<TWeakObjectPtr<AFGBuildable> >*& Result)
+bool UFSConnectSelectService::GetLastResult(TArray<FSBuildable>*& Result)
 {
 	if (!this->ConnectSelect->IsReady()) return false;
 	if (this->ConnectSelect->GetResult) return false;
@@ -66,7 +66,7 @@ bool UFSConnectSelectService::GetLastResult(TArray<TWeakObjectPtr<AFGBuildable> 
 	return true;
 }
 
-bool UFSConnectSelectService::SubmitConnectSelectTask(UFSDesign* Design, AFGBuildable* Buildable, int SelectType)
+bool UFSConnectSelectService::SubmitConnectSelectTask(UFSDesign* Design, FSBuildable* Buildable, int SelectType)
 {
 	if (!ConnectSelect->IsReady()) return false;
 	if (SelectType != 1 && SelectType != 2) return false;
@@ -74,10 +74,27 @@ bool UFSConnectSelectService::SubmitConnectSelectTask(UFSDesign* Design, AFGBuil
 	ConnectSelect->Result.Empty();
 	ConnectSelect->Stack.Empty();
 
-	ConnectSelect->Select = Design->BuildableSet;
-	ConnectSelect->Mark = Design->BuildableMark;
+	// TODO REWORK THIS
+	//ConnectSelect->Select = Design->BuildableSet;
 
-	ConnectSelect->StartNode = Buildable;
+	//ConnectSelect->Mark = *Design->BuildableMark;
+
+	// The new map that will use FSBuildable directly
+	TMap<FSBuildable, int> Mark;
+
+	// Iterate over BuildableMark and add the dereferenced FSBuildable to Mark
+	for (TPair<FSBuildable, int>& Pair : Design->BuildableMark)
+	{
+		FSBuildable* ptr = &Pair.Key;
+		// Dereference the FSBuildable pointer and insert it into the new map
+		if (ptr != nullptr)  // Ensure pointer is valid
+		{
+			Mark.Add(Pair.Key, Pair.Value);
+		}
+	}
+	ConnectSelect->Mark = Mark;
+
+	ConnectSelect->StartNode = *Buildable;
 	ConnectSelect->SearchType = OperatorFactory->GetType(Buildable);
 
 	ConnectSelect->TaskType = SelectType;
@@ -204,9 +221,9 @@ bool FSConnectSelect::IsReady()
 void FSConnectSelect::Search_Positive()
 {
 	if (Select.Contains(StartNode)) return;
-	TArray<TWeakObjectPtr<AFGBuildable> > Array;
+	TArray<FSBuildable > Array;
 
-	for (TPair< TWeakObjectPtr<AFGBuildable>, int>&Pair : Mark)
+	for (TPair< FSBuildable, int>&Pair : Mark)
 		if (Pair.Value == 0) Select.Add(Pair.Key);
 
 	Stack.Add(StartNode);
@@ -214,16 +231,18 @@ void FSConnectSelect::Search_Positive()
 	for (int i = 0; i < Stack.Num(); i++) {
 		if (ForceStop) break;
 
-		AFGBuildable* Buildable = Stack[i].Get();
+		FSBuildable* Buildable = &Stack[i];
 		if (Buildable) {
-			Result.Add(Buildable);
+			Result.Add(Stack[i]);
 			//SML::Logging::info(*Buildable->GetFullName());
 
 			Array.Empty(128);
-			OperatorFactory->GetSelectConnectList(Buildable, Array);
 
-			for (TWeakObjectPtr<AFGBuildable>& Ptr : Array) {
-				AFGBuildable* Next = Ptr.Get();
+			// REWORK THIS, DO WE NEED THIS?
+			//OperatorFactory->GetSelectConnectList(Buildable, Array);
+
+			for (FSBuildable& Ptr : Array) {
+				FSBuildable* Next = &Ptr;
 
 				if (Next && !Select.Contains(Ptr) && OperatorFactory->GetType(Next) == SearchType) {
 					Select.Add(Ptr);
@@ -234,28 +253,30 @@ void FSConnectSelect::Search_Positive()
 	}
 }
 
-bool FSConnectSelect::BFS_Nagetive(TWeakObjectPtr<AFGBuildable> StartPtr, TArray<TWeakObjectPtr<AFGBuildable> >& Result)
+bool FSConnectSelect::BFS_Nagetive(FSBuildable StartPtr, TArray<FSBuildable >& Result)
 {
 	Stack.Empty();
 	Stack.Add(StartPtr);
-	TArray<TWeakObjectPtr<AFGBuildable> > Array;
+	TArray<FSBuildable > Array;
 	for (int i = 0; i < Stack.Num(); i++) {
 		if (ForceStop) break;
 
-		AFGBuildable* Buildable = Stack[i].Get();
+		FSBuildable* Buildable = &Stack[i];
 		if (Buildable) {
-			Result.Add(Buildable);
+			Result.Add(Stack[i]);
 
 			Array.Empty(128);
-			OperatorFactory->GetSelectConnectList(Buildable, Array);
 
-			for (TWeakObjectPtr<AFGBuildable>& Ptr : Array) {
-				AFGBuildable* Next = Ptr.Get();
+			// REWORK THIS, DO WE NEED THIS?
+			//OperatorFactory->GetSelectConnectList(Buildable, Array);
+
+			for (FSBuildable& Ptr : Array) {
+				FSBuildable* Next = &Ptr;
 
 				if (Next && Select.Contains(Ptr) && OperatorFactory->GetType(Next) == SearchType) {
 					int* p = Mark.Find(Ptr);
 					if (p && *p == 2) {
-						for (TWeakObjectPtr<AFGBuildable>& Nage : Stack) {
+						for (FSBuildable& Nage : Stack) {
 							int *q = Mark.Find(Nage);
 							if (q) *q = 2;
 							else Mark.Add(Nage, 2);
@@ -279,17 +300,19 @@ void FSConnectSelect::Search_Nagetive()
 	if (!Select.Contains(StartNode)) return;
 	Select.Remove(StartNode);
 
-	AFGBuildable* Buildable = StartNode.Get();
+	FSBuildable* Buildable = &StartNode;
 	if (!Buildable) return;
 
 	Result.Add(StartNode);
-	TArray<TWeakObjectPtr<AFGBuildable> > Array;
-	OperatorFactory->GetSelectConnectList(Buildable, Array);
+	TArray<FSBuildable > Array;
 
-	for (TWeakObjectPtr<AFGBuildable>& Ptr : Array) {
-		AFGBuildable* Buildable = Ptr.Get();
-		if (Buildable && Select.Contains(Buildable) && !Mark.Find(Buildable) && OperatorFactory->GetType(Buildable) == SearchType) {
-			TArray<TWeakObjectPtr<AFGBuildable> > BfsResult;
+	// REWORK DO WE NEED THIS?
+	//OperatorFactory->GetSelectConnectList(Buildable, Array);
+
+	for (FSBuildable& Ptr : Array) {
+		FSBuildable* Buildable = &Ptr;
+		if (Buildable && Select.Contains(Ptr) && !Mark.Find(Ptr) && OperatorFactory->GetType(Buildable) == SearchType) {
+			TArray<FSBuildable > BfsResult;
 			Mark.Add(Ptr, 1);
 			if (BFS_Nagetive(Ptr, BfsResult)) Result.Append(BfsResult);
 		}
@@ -463,17 +486,23 @@ void FSRectSelect::Build()
 	Nagetive.Empty();
 	BuildableSet.Empty();
 
-	for (TActorIterator<AFGBuildable>It(World); It; ++It) {
-		AFGBuildable* Buildable = *It;
+	// TODO REWORK THIS
+	
+	for (TObjectIterator<AFGBuildable>It; It; ++It) {
+		AFGBuildable* BuildableActor = *It;
+		FSBuildable Buildable;
+		Buildable.Buildable = BuildableActor;
 		if (LeftClick) {
+
 			if (!Design->IsElementSelected(Buildable))
-				BuildableSet.Add(Buildable);
+				BuildableSet.Add(BuildableActor);
 		}
 		else {
 			if (Design->IsElementSelected(Buildable))
-				BuildableSet.Add(Buildable);
+				BuildableSet.Add(BuildableActor);
 		}
 	}
+	
 	Tree.BuildTree(BuildableSet, FGController);
 }
 

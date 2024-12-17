@@ -11,7 +11,12 @@ void UFSTrainPlatformCargoOperator::ApplySettingsTo(AFGBuildable* Buildable)
 {
 	Super::ApplySettingsTo(Buildable);
 
-	AFGBuildableTrainPlatformCargo* SourcePlatform = Cast<AFGBuildableTrainPlatformCargo>(Source);
+	AFGBuildableTrainPlatformCargo* SourcePlatform = nullptr;
+
+	if (Source.Buildable) {
+		SourcePlatform = Cast<AFGBuildableTrainPlatformCargo>(Source.Buildable);
+	}
+
 	AFGBuildableTrainPlatformCargo* TargetPlatform = Cast<AFGBuildableTrainPlatformCargo>(Buildable);
 
 	TargetPlatform->mIsInLoadMode = SourcePlatform->mIsInLoadMode;

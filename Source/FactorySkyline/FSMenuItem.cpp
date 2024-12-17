@@ -669,6 +669,7 @@ void UFSTookitMenu::InitItem()
 	//AddChild(Cast<UFSMenuItem>(NewObject<UFSThirdPersonViewMenu>(this)));
 	AddChild(Cast<UFSMenuItem>(NewObject<UFSInfiniteAmmoMenu>(this)));
 	AddChild(Cast<UFSMenuItem>(NewObject<UFSDontSaveAnythingMenu>(this)));
+	AddChild(Cast<UFSMenuItem>(NewObject<UFSUseDefaultHologramMenu>(this)));
 }
 
 UFSMenuEntryBase* UFSFoundationIConstructMenu::ConstructEntry()
@@ -866,3 +867,15 @@ void UFSDontSaveAnythingMenu::InitItem()
 	this->AttributeName = "DontSaveAnything";
 	Super::InitItem();
 }
+
+void UFSUseDefaultHologramMenu::InitEntry(UFSButtonWidget* Entry)
+{
+	Entry->MenuText->SetText(FText::FromString(TEXT("Use Default Hologram")));
+}
+
+void UFSUseDefaultHologramMenu::InitItem()
+{
+	this->AttributeName = "UseDefaultHologram";
+	Super::InitItem();
+}
+

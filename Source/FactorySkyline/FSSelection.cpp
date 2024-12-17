@@ -9,7 +9,9 @@
 #include "FSBuildableService.h"
 #include "FGFactorySettings.h"
 #include "FGProductionIndicatorInstanceComponent.h"
-#include "Components/ProxyInstancedStaticMeshComponent.h"
+
+//TODO DOES THIS NEED A REPLACEMENT?
+//#include "Components/ProxyInstancedStaticMeshComponent.h"
 
 #include "Buildables/FGBuildablePowerPole.h"
 #include "Buildables/FGBuildableWire.h"
@@ -24,10 +26,16 @@
 #include "FGRecipeManager.h"
 #include "AbstractInstanceManager.h"
 
+//#include "AbstractInstance/public/InstanceData.h"
+//#include "../../../Plugins/AbstractInstance/Source/AbstractInstance/Public/InstanceData.h"
+
 #include "Buildables/FGBuildableBlueprintDesigner.h"
+#include "Equipment/FGBuildGunDismantle.h"
 
 #include <iostream>
 #include <string>
+
+#include "Kismet/BlueprintFunctionLibrary.h"
 
 #include "FSHologramService.h"
 
@@ -102,245 +110,430 @@ void UFSSelection::Init()
 	}*/
 }
 
-void UFSSelection::Select(AFGBuildable* Buildable)
+void UFSSelection::Select(FSBuildable Buildable)
 {
-	if (Design->IsElementSelected(Buildable)) {
-		Design->RemoveElement(Buildable);
-		Design->BuildableMark.Add(Buildable, 0);
+	AFSkyline* FSkylin = AFSkyline::Get(this);
+	//TSubclassOf< class UFGBuildGunStateDismantle > state = FSkylin->FSCtrl->FGBuildGun->mDismantleStateClass;
 
-		/*
-		FSMaterialHandle** handleHolder = SelectedMap.Find(Buildable);
-		if (handleHolder) {
-			FSMaterialHandle handle = **handleHolder;
-			if (handle.hologramVariation) {
-				//Buildable->ToggleInstanceVisibility(true);
-				//SelectedMap.Remove(Buildable);
-				//ActorList.Remove(Buildable);
-				//return;
-			}
-		}
-		*/
+	/*
+	UFGBuildGunStateDismantle* dismantleState = FSkylin->FSCtrl->FGBuildGun->mDismantleStateClass.GetDefaultObject();
+	//FSkylin->FSCtrl->FGBuildGun->GotoDismantleState();
+	FSkylin->FSCtrl->GetPlayer()->SetOverrideEquipment(FSkylin->FSCtrl->FGBuildGun);
+	AFGEquipment* Equipment = FSkylin->FSCtrl->GetPlayer()->GetEquipmentInSlot(EEquipmentSlot::ES_ARMS);
+	FSkylin->FSCtrl->GetPlayer()->EquipEquipment(FSkylin->FSCtrl->FGBuildGun);
+	FSkylin->FSCtrl->FGBuildGun->Equip(FSkylin->FSCtrl->GetPlayer());
+	FSkylin->FSCtrl->FGBuildGun->GotoStateInternal(EBuildGunState::BGS_DISMANTLE);
+	//dismantleState->BeginState_Implementation();
+	*/
 
-		DisableHightLight(Buildable);
-		if (Buildable->GetClass()->IsChildOf<AFGBuildableWidgetSign>()) {
-			AFGBuildableWidgetSign* BuildableSign = Cast<AFGBuildableWidgetSign>(Buildable);
-			BuildableSign->PasteSettings_Implementation(BuildableSign->CopySettings_Implementation());
-		}
-		
-		if (Buildable->GetName().Contains("Build_PowerPole")) {
-			AFGBuildablePowerPole* PowerPole = Cast<AFGBuildablePowerPole>(Buildable);
-			if (!PowerPole) return;
-			UFGPowerConnectionComponent* ConnectionComponent = PowerPole->GetPowerConnection(0);
-			if (!ConnectionComponent) return;
+	//Design->AddElement(Buildable);
+	//Design->BuildableMark.Add(Buildable, 1);
 
-			TArray<AFGBuildableWire*> ConnectionWires;
-			ConnectionComponent->GetWires(ConnectionWires);
+	//UFGBuildGunStateDismantle* NewDismantleState = NewObject<UFGBuildGunStateDismantle>();
 
-			for (AFGBuildableWire* TargetWire : ConnectionWires) {
-				AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
-				Design->RemoveElement(Wire);
-				Design->BuildableMark.Add(Wire, 0);
-				DisableHightLight(Wire);
-			}
-		}
+	//FSkylin->FSCtrl->FGBuildGun->mDismantleStateClass = UFGBuildGunStateDismantle::StaticClass();
 
-		if (Buildable->GetName().Contains("Build_LightsControlPanel") || Cast<AFGBuildableCircuitSwitch>(Buildable)) {
-			//AFGBuildableLightsControlPanel* lightControl = Cast<AFGBuildableLightsControlPanel>(Buildable);
-			AFGBuildableCircuitBridge* bridge = Cast<AFGBuildableCircuitBridge>(Buildable);
-			TArray<UFGCircuitConnectionComponent*> connections = bridge->mConnections;
-			
-			for (int i = 0; i < connections.Num(); i++) {
-				UFGCircuitConnectionComponent* connection = connections[i];
-				TArray<AFGBuildableWire*> ConnectionWires;
-				connection->GetWires(ConnectionWires);
+	/*
+	FSkylin->FSCtrl->FGBuildGun->GotoDismantleState();
 
-				for (AFGBuildableWire* TargetWire : ConnectionWires) {
-					AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
-					Design->RemoveElement(Wire);
-					Design->BuildableMark.Add(Wire, 0);
-					DisableHightLight(Wire);
-				}
-			}
-			
-		}
+	UFGBuildGunStateDismantle* dismantleState = FSkylin->FSCtrl->FGBuildGun->mDismantleStateClass.GetDefaultObject();
 
-		if (Cast<AFGBuildableLightSource>(Buildable) || Cast<AFGBuildablePowerStorage>(Buildable)) {
-			TArray<UActorComponent*> ReplicatedComponents = Buildable->ReplicatedComponents;
-			for (int i = 0; i < ReplicatedComponents.Num(); i++) {
-				if (Cast< UFGPowerConnectionComponent>(ReplicatedComponents[i])) {
-					UFGPowerConnectionComponent* ConnectionComponent;
-					ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[i]);
-					if (!ConnectionComponent) return;
+	fgcheck(dismantleState);
 
-					TArray<AFGBuildableWire*> ConnectionWires;
-					ConnectionComponent->GetWires(ConnectionWires);
+	//dismantleState->OnStartDismantle();
 
-					for (AFGBuildableWire* TargetWire : ConnectionWires) {
-						AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
-						Design->RemoveElement(Wire);
-						Design->BuildableMark.Add(Wire, 0);
-						DisableHightLight(Wire);
-					}
-				}
-			}
-			/*
-			if (ReplicatedComponents.Num() >= 2) {
-				UFGPowerConnectionComponent* ConnectionComponent;
-				ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[1]);
-				if (Cast<AFGBuildablePowerStorage>(Buildable)) {
-					ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[0]);
-				}
-					if (!ConnectionComponent) return;
+	Buildable->SetMarkedForDismantle();
+	Buildable->TogglePendingDismantleMaterial(true);
 
-					TArray<AFGBuildableWire*> ConnectionWires;
-					ConnectionComponent->GetWires(ConnectionWires);
+	dismantleState->SetMultiDismantleState(true);
+	dismantleState->mCurrentlySelectedActor = Cast<AActor>(Buildable);
+	dismantleState->AddPendingDismantleActor(Cast<AActor>(Buildable));
+	dismantleState->UpdateHighlightedActors();
 
-					for (AFGBuildableWire* TargetWire : ConnectionWires) {
-						AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
-						Design->AddElement(Wire);
-						Design->BuildableMark.Add(Wire, 1);
-						EnableHightLight(Wire, SelectMaterial);
-					}
+	FSkylin->FSCtrl->GetPlayer()->GetOutline()->ShowDismantlePendingMaterial(Cast<AActor>(Buildable));
 
-			}
-			*/
-		}
-
-		if (Buildable->GetName().Contains("Build_ConveyorLiftMk")) {
-			if (Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[0]) {
-				Design->RemoveElement(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[0]);
-				Design->BuildableMark.Add(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[0], 0);
-				DisableHightLight(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[0]);
-			}
-			if (Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[1]) {
-				Design->RemoveElement(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[1]);
-				Design->BuildableMark.Add(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[1], 0);
-				DisableHightLight(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[1]);
-			}
-		}
-
-		//SML::Logging::info(TEXT("Remove "), *Buildable->GetName());
+	//FSkylin->FSCtrl->GetPlayer()->GetOutline()->ShowOutline(Buildable, EOutlineColor::OC_HOLOGRAM);
+	TArray<AActor*> NewArr;
+	for (AFGBuildable* Build : Design->BuildableArray) {
+		NewArr.Add(Build);
 	}
-	else {
-	    //Buildable->ToggleInstanceVisibility(false);
-		bool foundCustomSelection = false;
-		// see if we are selecting a passThrough
-		if (Buildable->GetName().Contains("Build_FoundationPassthrough_Lift")) {
-			// for passThroughs we need to determine if they have connections to them because we use the lift operators to make them instead
-			bool attachedLifts = Cast<AFGBuildablePassthrough>(Buildable)->HasAnyAttachedBuildings();
-			if (attachedLifts) {
-				//foundCustomSelection = true;
-			}
+
+	FSkylin->FSCtrl->GetPlayer()->GetOutline()->ShowDismantlePendingMaterial(NewArr);
+	*/
+
+	//FSkylin->FSCtrl->GetPlayer()->GetOutline()->ShowMultiActorOutline(NewArr, EOutlineColor::OC_HOLOGRAM);
+
+	// fatal error crash
+	//dismantleState->SetMultiDismantleState(true);
+
+	//dismantleState->AddPendingDismantleActor(Cast<AActor>(Buildable));
+
+	// passes so static class is assigned
+	//fgcheck(FSkylin->FSCtrl->FGBuildGun->mDismantleStateClass);
+
+	//state->AddPendingDismantleActor(Cast<AActor>(Buildable));
+
+	//FSkylin->FSCtrl->FGBuildGun->GotoState(EBuildGunState::BGS_DISMANTLE);
+
+	//UFGBuildGunStateDismantle* state = Cast< UFGBuildGunStateDismantle>(FSkylin->FSCtrl->FGBuildGun->mDismantleStateClass);
+
+	//crashes
+	//state->mCurrentlySelectedActor = Cast<AActor>(Buildable);
+
+	//FSkylin->FSCtrl->FGBuildGun->GotoState(EBuildGunState::BGS_DISMANTLE);
+
+	//fgcheck(state);
+
+	// crashes
+	//state->OnStartDismantle();
+
+	// crashes
+	//state->SetMultiDismantleState(true);
+
+	// crashes
+	//state->AddPendingDismantleActor(Cast<AActor>(Buildable));
+
+	//for (AFGBuildable* Build : Design->BuildableArray) {
+		//state->AddPendingDismantleActor(Build);
+	//}
+
+	//return;
+
+	/*
+	AFSkyline* FSkylin = AFSkyline::Get(this);
+	FSkylin->FSCtrl->GetPlayer()->GetOutline()->ShowOutline(Buildable, EOutlineColor::OC_HOLOGRAM);
+	TArray<AActor*> NewArr;
+	for (AFGBuildable* Build : Design->BuildableArray) {
+		NewArr.Add(Build);
+	}
+	FSkylin->FSCtrl->GetPlayer()->GetOutline()->ShowMultiActorOutline(NewArr, EOutlineColor::OC_HOLOGRAM);
+
+	return;
+	*/
+	
+	if (!Buildable.Buildable) {
+		if (Design->IsElementSelected(Buildable)) {
+			Design->RemoveElement(Buildable);
+			Design->BuildableMark.Add(Buildable, 0);
+			DisableHightLight(Buildable);
 		}
-
-		if (Buildable->GetName().Contains("Build_PowerPole")) {
-			foundCustomSelection = true;
-
-			Design->AddElement(Buildable);
-			Design->BuildableMark.Add(Buildable, 1);
-			EnableHightLight(Buildable, SelectMaterial);
-
-			AFGBuildablePowerPole* PowerPole = Cast<AFGBuildablePowerPole>(Buildable);
-			if (!PowerPole) return;
-			UFGPowerConnectionComponent* ConnectionComponent = PowerPole->GetPowerConnection(0);
-			if (!ConnectionComponent) return;
-
-			TArray<AFGBuildableWire*> ConnectionWires;
-			ConnectionComponent->GetWires(ConnectionWires);
-
-			for (AFGBuildableWire* TargetWire : ConnectionWires) {
-				AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
-				Design->AddElement(Wire);
-				Design->BuildableMark.Add(Wire, 1);
-				EnableHightLight(Wire, SelectMaterial);
-			}
-		}
-
-		if (Buildable->GetName().Contains("Build_LightsControlPanel") || Cast<AFGBuildableCircuitSwitch>(Buildable)) {
-			AFGBuildableLightsControlPanel* lightControl = Cast<AFGBuildableLightsControlPanel>(Buildable);
-			AFGBuildableCircuitBridge* bridge = Cast<AFGBuildableCircuitBridge>(Buildable);
-			TArray<UFGCircuitConnectionComponent*> connections = bridge->mConnections;
-			//lightControl->OnLightControlPanelStateChanged.Broadcast(true);
-			//lightControl->mDidFirstTimeUse = true;
-
-			for (int i = 0; i < connections.Num(); i++) {
-				UFGCircuitConnectionComponent* connection = connections[i];
-				TArray<AFGBuildableWire*> ConnectionWires;
-				connection->GetWires(ConnectionWires);
-
-				for (AFGBuildableWire* TargetWire : ConnectionWires) {
-					AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
-					Design->AddElement(Wire);
-					Design->BuildableMark.Add(Wire, 1);
-					EnableHightLight(Wire);
-				}
-			}
-
-		}
-
-		if (Cast<AFGBuildableLightSource>(Buildable) || Cast<AFGBuildablePowerStorage>(Buildable)) {
-			TArray<UActorComponent*> ReplicatedComponents = Buildable->ReplicatedComponents;
-			for (int i = 0; i < ReplicatedComponents.Num(); i++) {
-				if (Cast< UFGPowerConnectionComponent>(ReplicatedComponents[i])) {
-					UFGPowerConnectionComponent* ConnectionComponent;
-					ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[i]);
-					if (!ConnectionComponent) return;
-
-					TArray<AFGBuildableWire*> ConnectionWires;
-					ConnectionComponent->GetWires(ConnectionWires);
-
-					for (AFGBuildableWire* TargetWire : ConnectionWires) {
-						AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
-						Design->AddElement(Wire);
-						Design->BuildableMark.Add(Wire, 1);
-						EnableHightLight(Wire, SelectMaterial);
-					}
-				}
-			}
-			/*
-			if (ReplicatedComponents.Num() >= 2) {
-				UFGPowerConnectionComponent* ConnectionComponent;
-				ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[1]);
-				if (Cast<AFGBuildablePowerStorage>(Buildable)) {
-					ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[0]);
-				}
-					if (!ConnectionComponent) return;
-
-					TArray<AFGBuildableWire*> ConnectionWires;
-					ConnectionComponent->GetWires(ConnectionWires);
-
-					for (AFGBuildableWire* TargetWire : ConnectionWires) {
-						AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
-						Design->AddElement(Wire);
-						Design->BuildableMark.Add(Wire, 1);
-						EnableHightLight(Wire, SelectMaterial);
-					}
-
-			}
-			*/
-		}
-
-		if (Buildable->GetName().Contains("Build_ConveyorLiftMk")) {
-			if (Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[0]) {
-				Design->AddElement(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[0]);
-				Design->BuildableMark.Add(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[0], 1);
-				EnableHightLight(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[0], SelectMaterial);
-			}
-			if (Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[1]) {
-				Design->AddElement(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[1]);
-				Design->BuildableMark.Add(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[1], 1);
-				EnableHightLight(Cast<AFGBuildableConveyorLift>(Buildable)->mSnappedPassthroughs[1], SelectMaterial);
-			}
-		}
-
-		if (!foundCustomSelection) {
+		else {
 			Design->AddElement(Buildable);
 			Design->BuildableMark.Add(Buildable, 1);
 			EnableHightLight(Buildable, SelectMaterial);
 		}
+	} else {
 
-		//SML::Logging::info(TEXT("Add "), *Buildable->GetName(), TEXT(" "), *Buildable->GetTransform().ToString());
+		if (Design->IsElementSelected(Buildable)) {
+			Design->RemoveElement(Buildable);
+			Design->BuildableMark.Add(Buildable, 0);
+
+			/*
+			FSMaterialHandle** handleHolder = SelectedMap.Find(Buildable);
+			if (handleHolder) {
+				FSMaterialHandle handle = **handleHolder;
+				if (handle.hologramVariation) {
+					//Buildable->ToggleInstanceVisibility(true);
+					//SelectedMap.Remove(Buildable);
+					//ActorList.Remove(Buildable);
+					//return;
+				}
+			}
+			*/
+
+			DisableHightLight(Buildable);
+			if (Buildable.Buildable->GetClass()->IsChildOf<AFGBuildableWidgetSign>()) {
+				AFGBuildableWidgetSign* BuildableSign = Cast<AFGBuildableWidgetSign>(Buildable.Buildable);
+				BuildableSign->PasteSettings_Implementation(BuildableSign->CopySettings_Implementation());
+			}
+
+			if (Buildable.Buildable->GetName().Contains("Build_PowerPole")) {
+				AFGBuildablePowerPole* PowerPole = Cast<AFGBuildablePowerPole>(Buildable.Buildable);
+				if (!PowerPole) return;
+				UFGPowerConnectionComponent* ConnectionComponent = PowerPole->GetPowerConnection(0);
+				if (!ConnectionComponent) return;
+
+				TArray<AFGBuildableWire*> ConnectionWires;
+				ConnectionComponent->GetWires(ConnectionWires);
+
+				for (AFGBuildableWire* TargetWire : ConnectionWires) {
+					AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+					FSBuildable Buildable;
+					Buildable.Buildable = Wire;
+					Design->RemoveElement(Buildable);
+					Design->BuildableMark.Add(Buildable, 0);
+
+					//FSBuildable Buildable;
+					//Buildable.Buildable = Wire;
+					DisableHightLight(Buildable);
+				}
+			}
+
+			if (Buildable.Buildable->GetName().Contains("Build_LightsControlPanel") || Cast<AFGBuildableCircuitSwitch>(Buildable.Buildable)) {
+				//AFGBuildableLightsControlPanel* lightControl = Cast<AFGBuildableLightsControlPanel>(Buildable);
+				AFGBuildableCircuitBridge* bridge = Cast<AFGBuildableCircuitBridge>(Buildable.Buildable);
+				TArray<UFGCircuitConnectionComponent*> connections = bridge->mConnections;
+
+				for (int i = 0; i < connections.Num(); i++) {
+					UFGCircuitConnectionComponent* connection = connections[i];
+					TArray<AFGBuildableWire*> ConnectionWires;
+					connection->GetWires(ConnectionWires);
+
+					for (AFGBuildableWire* TargetWire : ConnectionWires) {
+						AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+						FSBuildable Buildable;
+						Buildable.Buildable = Wire;
+						Design->RemoveElement(Buildable);
+						Design->BuildableMark.Add(Buildable, 0);
+
+						//FSBuildable Buildable;
+						//Buildable.Buildable = Wire;
+						DisableHightLight(Buildable);
+					}
+				}
+
+			}
+
+			if (Cast<AFGBuildableLightSource>(Buildable.Buildable) || Cast<AFGBuildablePowerStorage>(Buildable.Buildable)) {
+				TArray<UActorComponent*> ReplicatedComponents = Buildable.Buildable->ReplicatedComponents;
+				for (int i = 0; i < ReplicatedComponents.Num(); i++) {
+					if (Cast< UFGPowerConnectionComponent>(ReplicatedComponents[i])) {
+						UFGPowerConnectionComponent* ConnectionComponent;
+						ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[i]);
+						if (!ConnectionComponent) return;
+
+						TArray<AFGBuildableWire*> ConnectionWires;
+						ConnectionComponent->GetWires(ConnectionWires);
+
+						for (AFGBuildableWire* TargetWire : ConnectionWires) {
+							AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+							FSBuildable Buildable;
+							Buildable.Buildable = Wire;
+							Design->RemoveElement(Buildable);
+							Design->BuildableMark.Add(Buildable, 0);
+
+							//FSBuildable Buildable;
+							//Buildable.Buildable = Wire;
+							DisableHightLight(Buildable);
+						}
+					}
+				}
+				/*
+				if (ReplicatedComponents.Num() >= 2) {
+					UFGPowerConnectionComponent* ConnectionComponent;
+					ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[1]);
+					if (Cast<AFGBuildablePowerStorage>(Buildable)) {
+						ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[0]);
+					}
+						if (!ConnectionComponent) return;
+
+						TArray<AFGBuildableWire*> ConnectionWires;
+						ConnectionComponent->GetWires(ConnectionWires);
+
+						for (AFGBuildableWire* TargetWire : ConnectionWires) {
+							AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+							Design->AddElement(Wire);
+							Design->BuildableMark.Add(Wire, 1);
+							EnableHightLight(Wire, SelectMaterial);
+						}
+
+				}
+				*/
+			}
+
+			if (Buildable.Buildable->GetName().Contains("Build_ConveyorLiftMk")) {
+				if (Cast<AFGBuildableConveyorLift>(Buildable.Buildable)->mSnappedPassthroughs[0]) {
+					FSBuildable Buildable;
+					Buildable.Buildable = Cast<AFGBuildableConveyorLift>(Buildable.Buildable)->mSnappedPassthroughs[0];
+					Design->RemoveElement(Buildable);
+					Design->BuildableMark.Add(Buildable, 0);
+
+					DisableHightLight(Buildable);
+				}
+				if (Cast<AFGBuildableConveyorLift>(Buildable.Buildable)->mSnappedPassthroughs[1]) {
+					FSBuildable Buildable;
+					Buildable.Buildable = Cast<AFGBuildableConveyorLift>(Buildable.Buildable)->mSnappedPassthroughs[1];
+					Design->RemoveElement(Buildable);
+					Design->BuildableMark.Add(Buildable, 0);
+
+					DisableHightLight(Buildable);
+				}
+			}
+
+			//SML::Logging::info(TEXT("Remove "), *Buildable->GetName());
+		}
+		else {
+			//Buildable->ToggleInstanceVisibility(false);
+			bool foundCustomSelection = false;
+			// see if we are selecting a passThrough
+			if (Buildable.Buildable->GetName().Contains("Build_FoundationPassthrough_Lift")) {
+				// for passThroughs we need to determine if they have connections to them because we use the lift operators to make them instead
+
+				/* DEPRECATED CHECK, TODO NEED THIS ACTUALLY FOR ANYTHING?
+				bool attachedLifts = Cast<AFGBuildablePassthrough>(Buildable)->HasAnyAttachedBuildings();
+				if (attachedLifts) {
+					//foundCustomSelection = true;
+				}
+				*/
+			}
+
+			if (Buildable.Buildable->GetName().Contains("Build_PowerPole")) {
+				foundCustomSelection = true;
+
+				Design->AddElement(Buildable);
+				Design->BuildableMark.Add(Buildable, 1);
+
+
+				EnableHightLight(Buildable, SelectMaterial);
+
+				AFGBuildablePowerPole* PowerPole = Cast<AFGBuildablePowerPole>(Buildable.Buildable);
+				if (!PowerPole) return;
+				UFGPowerConnectionComponent* ConnectionComponent = PowerPole->GetPowerConnection(0);
+				if (!ConnectionComponent) return;
+
+				TArray<AFGBuildableWire*> ConnectionWires;
+				ConnectionComponent->GetWires(ConnectionWires);
+
+				for (AFGBuildableWire* TargetWire : ConnectionWires) {
+					AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+
+					FSBuildable Buildable;
+					Buildable.Buildable = Wire;
+					Design->AddElement(Buildable);
+					Design->BuildableMark.Add(Buildable, 1);
+
+					EnableHightLight(Buildable, SelectMaterial);
+				}
+			}
+
+			if (Buildable.Buildable->GetName().Contains("Build_LightsControlPanel") || Cast<AFGBuildableCircuitSwitch>(Buildable.Buildable)) {
+				AFGBuildableLightsControlPanel* lightControl = Cast<AFGBuildableLightsControlPanel>(Buildable.Buildable);
+				AFGBuildableCircuitBridge* bridge = Cast<AFGBuildableCircuitBridge>(Buildable.Buildable);
+				TArray<UFGCircuitConnectionComponent*> connections = bridge->mConnections;
+				//lightControl->OnLightControlPanelStateChanged.Broadcast(true);
+				//lightControl->mDidFirstTimeUse = true;
+
+				for (int i = 0; i < connections.Num(); i++) {
+					UFGCircuitConnectionComponent* connection = connections[i];
+					TArray<AFGBuildableWire*> ConnectionWires;
+					connection->GetWires(ConnectionWires);
+
+					for (AFGBuildableWire* TargetWire : ConnectionWires) {
+						AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+
+						FSBuildable Buildable;
+						Buildable.Buildable = Wire;
+						Design->AddElement(Buildable);
+						Design->BuildableMark.Add(Buildable, 1);
+
+						EnableHightLight(Buildable);
+					}
+				}
+
+			}
+
+			if (Cast<AFGBuildableLightSource>(Buildable.Buildable) || Cast<AFGBuildablePowerStorage>(Buildable.Buildable)) {
+				TArray<UActorComponent*> ReplicatedComponents = Buildable.Buildable->ReplicatedComponents;
+				for (int i = 0; i < ReplicatedComponents.Num(); i++) {
+					if (Cast< UFGPowerConnectionComponent>(ReplicatedComponents[i])) {
+						UFGPowerConnectionComponent* ConnectionComponent;
+						ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[i]);
+						if (!ConnectionComponent) return;
+
+						TArray<AFGBuildableWire*> ConnectionWires;
+						ConnectionComponent->GetWires(ConnectionWires);
+
+						for (AFGBuildableWire* TargetWire : ConnectionWires) {
+							AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+
+							FSBuildable Buildable;
+							Buildable.Buildable = Wire;
+							Design->AddElement(Buildable);
+							Design->BuildableMark.Add(Buildable, 1);
+
+							EnableHightLight(Buildable, SelectMaterial);
+						}
+					}
+				}
+				/*
+				if (ReplicatedComponents.Num() >= 2) {
+					UFGPowerConnectionComponent* ConnectionComponent;
+					ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[1]);
+					if (Cast<AFGBuildablePowerStorage>(Buildable)) {
+						ConnectionComponent = Cast< UFGPowerConnectionComponent>(ReplicatedComponents[0]);
+					}
+						if (!ConnectionComponent) return;
+
+						TArray<AFGBuildableWire*> ConnectionWires;
+						ConnectionComponent->GetWires(ConnectionWires);
+
+						for (AFGBuildableWire* TargetWire : ConnectionWires) {
+							AFGBuildable* Wire = Cast<AFGBuildable>(TargetWire);
+							Design->AddElement(Wire);
+							Design->BuildableMark.Add(Wire, 1);
+							EnableHightLight(Wire, SelectMaterial);
+						}
+
+				}
+				*/
+			}
+
+			if (Buildable.Buildable->GetName().Contains("Build_ConveyorLiftMk")) {
+
+				if (Cast<AFGBuildableConveyorLift>(Buildable.Buildable)->mSnappedPassthroughs[0]) {
+					FSBuildable Buildable;
+					Buildable.Buildable = Cast<AFGBuildableConveyorLift>(Buildable.Buildable)->mSnappedPassthroughs[0];
+					Design->AddElement(Buildable);
+					Design->BuildableMark.Add(Buildable, 1);
+
+					EnableHightLight(Buildable, SelectMaterial);
+				}
+				if (Cast<AFGBuildableConveyorLift>(Buildable.Buildable)->mSnappedPassthroughs[1]) {
+					FSBuildable Buildable;
+					Buildable.Buildable = Cast<AFGBuildableConveyorLift>(Buildable.Buildable)->mSnappedPassthroughs[1];
+					Design->AddElement(Buildable);
+					Design->BuildableMark.Add(Buildable, 1);
+
+					EnableHightLight(Buildable, SelectMaterial);
+				}
+			}
+
+			if (Buildable.Buildable->GetClass()->IsChildOf<AFGBuildablePipeBase>()) {
+				AFGBuildablePipeline* pipeBuildable = Cast<AFGBuildablePipeline>(Buildable.Buildable);
+
+				// because pipes are more of a special remove case as they can also have a seperate buildable attached to them that needs to be removed as well otherwise
+				// it'll linger in the world
+				if (pipeBuildable) {
+					AFGBuildablePipelineFlowIndicator* Indicator = pipeBuildable->GetFlowIndicator();
+					if (Indicator) {
+						//IFGDismantleInterface::Execute_Dismantle(Indicator);
+
+						/*
+						FSBuildable Buildable;
+						Buildable.Buildable = Cast<AFGBuildable>(Indicator);
+						Design->AddElement(Buildable);
+						Design->BuildableMark.Add(Buildable, 1);
+
+						EnableHightLight(Buildable, SelectMaterial);
+						*/
+
+					}
+				}
+
+			}
+
+			if (!foundCustomSelection) {
+				Design->AddElement(Buildable);
+				Design->BuildableMark.Add(Buildable, 1);
+				EnableHightLight(Buildable, SelectMaterial);
+			}
+
+			//SML::Logging::info(TEXT("Add "), *Buildable->GetName(), TEXT(" "), *Buildable->GetTransform().ToString());
+		}
+
 	}
+
+
 
 	//AFSkyline* FSkyline = AFSkyline::Get(this);
 	//FSkyline->FSCtrl->GetPlayer()->GetOutline()->ShowOutline(Buildable, EOutlineColor::OC_HOLOGRAM);
@@ -373,7 +566,7 @@ void UFSSelection::Select(AFGBuildable* Buildable)
 	FActorSpawnParameters* parameters = new FActorSpawnParameters();
 
 	FTransform cubeTransform = FTransform();
-	FTransform BuildableTransform = Buildable->GetTransform();
+	FTransform BuildableTransform = Buildable.Buildable->GetTransform();
 	FVector BuildablePoint = BuildableTransform.GetTranslation();
 	cubeTransform.SetTranslation(BuildablePoint);
 
@@ -440,7 +633,8 @@ void UFSSelection::Select(AFGBuildable* Buildable)
 		}
 	}
 
-	
+	// TODO REWORK THIS DO WE STILL NEED?
+	/*
 	for (TObjectIterator<AFGBuildable> Worker; Worker; ++Worker) {
 		AFGBuildable* buildablePtr = *Worker;
 
@@ -462,41 +656,18 @@ void UFSSelection::Select(AFGBuildable* Buildable)
 						if (InstanceHandles[i]->GetHandleID() == instances[q]) {
 							Design->AddElement(buildablePtr);
 							Design->BuildableMark.Add(buildablePtr, 1);
-							EnableHightLight(buildablePtr, SelectMaterial);
+
+							FSBuildable Buildable;
+							Buildable.Buildable = buildablePtr;
+							EnableHightLight(Buildable, SelectMaterial);
 							foundCollision = true;
 							break;
 						}
 					}
-
-					/*
-					for (int q = 0; q < instances.Num(); q++) {
-
-						FVector SmallScale = FVector(KINDA_SMALL_NUMBER);
-
-						FTransform T;
-						InstanceHandles[i]->GetInstanceComponent()->GetInstanceTransform(instances[q], T);
-						FVector Scale;
-						Scale = T.GetScale3D();
-						T.SetScale3D(SmallScale);
-
-						InstanceHandles[i]->GetInstanceComponent()->UpdateInstanceTransform(instances[q], T, false, true, false);
-						InstanceHandles[i]->GetInstanceComponent()->MarkRenderTransformDirty();
-					}
-					*/
 				}
 
 				if (foundCollision) break;
 
-				// selects all foundations
-				/*
-				FBoxSphereBounds bounds2 = InstanceHandles[i]->GetInstanceComponent()->Bounds;
-				bool Overlap = FBoxSphereBounds::BoxesIntersect(bounds1, bounds2);
-				if (Overlap) {
-					Design->AddElement(buildablePtr);
-					Design->BuildableMark.Add(buildablePtr, 1);
-					EnableHightLight(buildablePtr, SelectMaterial);
-				}
-				*/
 			}
 		} else {
 			FBoxSphereBounds bounds2 = buildablePtr->GetRootComponent()->Bounds;
@@ -504,21 +675,14 @@ void UFSSelection::Select(AFGBuildable* Buildable)
 			if (Overlap) {
 				Design->AddElement(buildablePtr);
 				Design->BuildableMark.Add(buildablePtr, 1);
-				EnableHightLight(buildablePtr, SelectMaterial);
+
+				FSBuildable Buildable;
+				Buildable.Buildable = buildablePtr;
+				EnableHightLight(Buildable, SelectMaterial);
 			}
 		}
-
-		/*
-		FBoxSphereBounds bounds2 = buildablePtr->GetRootComponent()->Bounds;
-		bool Overlap = FBoxSphereBounds::BoxesIntersect(bounds1, bounds2);
-		if (Overlap) {
-			Design->AddElement(buildablePtr);
-			Design->BuildableMark.Add(buildablePtr, 1);
-			EnableHightLight(buildablePtr, SelectMaterial);
-		}
-		*/
 	}
-	
+	*/
 
 }
 
@@ -526,6 +690,8 @@ bool UFSSelection::ConnectSelect(AFGBuildable* Buildable)
 {
 	if (!ConnectSelectService->Ready()) return false;
 
+	// TODO REWORK THIS
+	/*
 	if (Design->IsElementSelected(Buildable)) {
 		if (ConnectSelectService->SubmitConnectSelectTask(Design, Buildable, 2)) {
 			LastSelectMode = 2;
@@ -538,6 +704,7 @@ bool UFSSelection::ConnectSelect(AFGBuildable* Buildable)
 			return true;
 		}
 	}
+	*/
 	return false;
 }
 
@@ -545,29 +712,34 @@ bool UFSSelection::ConnectSelectCheckReady()
 {
 	if (!ConnectSelectService->Ready()) return false;
 
-	TArray<TWeakObjectPtr<AFGBuildable> >* Result;
+	TArray<FSBuildable>* Result;
 	if (!ConnectSelectService->GetLastResult(Result)) return false;
+
+	//TArray<FSBuildable*> Result;
+
 
 	if (Result->Num() == 0) return true; //some error
 
 	SetAutoRebuildTreeAll(false);
 
 	if (LastSelectMode == 1) {
-		for (TWeakObjectPtr<AFGBuildable>& Ptr : *Result) {
-			AFGBuildable* Buildable = Ptr.Get();
-			if (Buildable) {
-				EnableHightLight(Buildable, SelectMaterial);
-				Design->BuildableSet.Add(Buildable);
+		for (FSBuildable& Ptr : *Result) {
+			//AFGBuildable* Buildable = Ptr.Get();
+			if (Ptr != BuildableEmpty) {
+				EnableHightLight(Ptr, SelectMaterial);
+				Design->BuildableSet.Add(Ptr);
 			}
 		}
 		Design->BuildableMark.Add((*Result)[0], 2);
 	}
 	else {
-		for (TWeakObjectPtr<AFGBuildable>& Ptr : *Result) {
-			AFGBuildable* Buildable = Ptr.Get();
-			if (Buildable) {
-				DisableHightLight(Buildable);
-				Design->BuildableSet.Remove(Buildable);
+		for (FSBuildable& Ptr : *Result) {
+			//AFGBuildable* Buildable = Ptr.Get();
+			if (&Ptr) {
+				//FSBuildable Buildable;
+				//Buildable.Buildable = Ptr.Get();
+				DisableHightLight(Ptr);
+				Design->BuildableSet.Remove(Ptr);
 			}
 		}
 		Design->BuildableMark.Add((*Result)[0], 0);
@@ -604,8 +776,10 @@ bool UFSSelection::RectSelectCheckReady()
 	SetAutoRebuildTreeAll(false);
 
 	for (TWeakObjectPtr<AFGBuildable>& Ptr : *Positive) {
-		AFGBuildable* Buildable = Ptr.Get();
-		if (Buildable) {
+		//AFGBuildable* Buildable = Ptr.Get();
+		if (Ptr.Get()) {
+			FSBuildable Buildable;
+			Buildable.Buildable = Ptr.Get();
 			EnableHightLight(Buildable, SelectMaterial);
 		}
 		int *Value = RectSelectBuffer.Find(Ptr);
@@ -614,7 +788,9 @@ bool UFSSelection::RectSelectCheckReady()
 	}
 
 	for (TWeakObjectPtr<AFGBuildable>& Ptr : *Nagetive) {
-		AFGBuildable* Buildable = Ptr.Get();
+		//AFGBuildable* Buildable = Ptr.Get();
+		FSBuildable Buildable;
+		Buildable.Buildable = Ptr.Get();
 		DisableHightLight(Buildable);
 		int* Value = RectSelectBuffer.Find(Ptr);
 		if (!Value) RectSelectBuffer.Add(Ptr, -1);
@@ -636,6 +812,9 @@ void UFSSelection::RectSelectExit(bool Valid)
 {
 	RectSelectService->TerminalCurrentTask();
 	if (Valid) {
+
+		// TODO REWORK THIS
+		/*
 		for (TPair<TWeakObjectPtr<AFGBuildable>, int>& Pair : RectSelectBuffer) {
 			AFGBuildable* Buildable = Pair.Key.Get();
 			if (!Buildable) continue;
@@ -647,21 +826,32 @@ void UFSSelection::RectSelectExit(bool Valid)
 				Design->AddElement(Buildable);
 			}
 		}
+		*/
 	}
 	else {
 		SetAutoRebuildTreeAll(false);
+
+		// TODO REWORK THIS
+		/*
 		for (TPair<TWeakObjectPtr<AFGBuildable>, int>& Pair : RectSelectBuffer) {
-			AFGBuildable* Buildable = Pair.Key.Get();
-			if (Pair.Value == -1 && Buildable) {
-				if (Buildable == Design->Anchor.Get()) {
+			//AFGBuildable* Buildable = Pair.Key.Get();
+			if (Pair.Value == -1 && Pair.Key.Get()) {
+				if (Pair.Key.Get() == Design->Anchor.Get()) {
+					FSBuildable Buildable;
+					Buildable.Buildable = Pair.Key.Get();
 					EnableHightLight(Buildable, FocusMaterial);
-				}
-				else {
+				} else {
+					FSBuildable Buildable;
+					Buildable.Buildable = Pair.Key.Get();
 					EnableHightLight(Buildable, SelectMaterial);
 				}
+			} else if (Pair.Value == 1) {
+				FSBuildable Buildable;
+				Buildable.Buildable = Pair.Key.Get();
+				DisableHightLight(Buildable);
 			}
-			else if (Pair.Value == 1) DisableHightLight(Buildable);
 		}
+		*/
 		SetAutoRebuildTreeAll(true);
 	}
 	RectSelectBuffer.Empty();
@@ -672,7 +862,7 @@ void UFSSelection::Load(UFSDesign* Design)
 	this->Design = Design;
 	ActorMaterialCache.Empty();
 	DynamicInstanceSet.Empty();
-	CurrentFocus = nullptr;
+	CurrentFocus = FSBuildable();
 }
 
 void UFSSelection::LoadSelect(UFSDesign* Design)
@@ -686,12 +876,24 @@ void UFSSelection::LoadSelect(UFSDesign* Design)
 
 	//SetAutoRebuildTreeAll(false);
 	
-	for (TWeakObjectPtr<AFGBuildable> BuildablePtr : Design->BuildableSet) if (BuildablePtr.Get()) {
-		EnableHightLight(BuildablePtr.Get());
+
+	// TODO REWORK THIS
+	
+	if (!Design->BuildableSet.IsEmpty()) {
+		for (FSBuildable BuildablePtr : Design->BuildableSet) {
+			//if (BuildablePtr.Get()) {
+			//FSBuildable Buildable;
+			//Buildable.Buildable = BuildablePtr.Get();
+			EnableHightLight(BuildablePtr);
+		}
+
+		if (Design->Anchor != BuildableEmpty) {
+			//FSBuildable Buildable;
+			//Buildable.Buildable = Design->Anchor.Get();
+			EnableHightLight(Design->Anchor, this->FocusMaterial);
+		}
 	}
-	if (Design->Anchor.Get()) {
-		EnableHightLight(Design->Anchor.Get(), this->FocusMaterial);
-	}
+	
 	
 	//SetAutoRebuildTreeAll(true);
 
@@ -700,7 +902,7 @@ void UFSSelection::LoadSelect(UFSDesign* Design)
 	//HologramService->Init();
 
 	ConnectSelectService->RefreshRecipe();
-	CurrentFocus = nullptr;
+	CurrentFocus = FSBuildable();
 }
 
 void UFSSelection::LoadSetAnchor(UFSDesign* Design)
@@ -712,12 +914,20 @@ void UFSSelection::LoadSetAnchor(UFSDesign* Design)
 	DynamicInstanceSet.Empty();
 
 	SetAutoRebuildTreeAll(false);
-	for (TWeakObjectPtr<AFGBuildable> BuildablePtr : Design->BuildableSet) if (BuildablePtr.Get()) {
-		EnableHightLight(BuildablePtr.Get());
+
+	// TODO REWORK THIS
+	
+	for (FSBuildable BuildablePtr : Design->BuildableSet) {
+		if (BuildablePtr != FSBuildable()) {
+			//FSBuildable Buildable;
+			//Buildable.Buildable = BuildablePtr.Get();
+			EnableHightLight(BuildablePtr);
+		}
 	}
+	
 	SetAutoRebuildTreeAll(true);
 
-	CurrentFocus = nullptr;
+	CurrentFocus = FSBuildable();
 }
 
 void UFSSelection::SetAutoRebuildTreeAll(bool Auto)
@@ -743,8 +953,8 @@ void UFSSelection::Unload()
 
 	ActorMaterialCache.Empty();
 	DynamicInstanceSet.Empty();
-	CurrentFocus = nullptr;
-	SelectedMap.Empty();
+	CurrentFocus = FSBuildable();
+	//SelectedMap.Empty();
 }
 
 void UFSSelection::BeginDestroy()
@@ -759,28 +969,28 @@ void UFSSelection::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-bool UFSSelection::IsHightLight(AFGBuildable* Buildable)
+bool UFSSelection::IsHightLight(FSBuildable Buildable)
 {
 	return ActorMaterialCache.Contains(Buildable);
 }
 
-void UFSSelection::EnableHightLight(AFGBuildable* Buildable)
+void UFSSelection::EnableHightLight(FSBuildable Buildable)
 {
 	FSActorMaterial& Cache = ActorMaterialCache.FindOrAdd(Buildable);
 	FSActorMaterial& Cache2 = ActorMaterialCache2.FindOrAdd(Buildable);
 	if (Cache.Init) return;
-	Cache.Buildable = Buildable;
+	Cache.Buildable = Buildable.Buildable;
 	EnableHightLight(Cache, Buildable, SelectMaterial);
 }
 
-void UFSSelection::EnableHightLight(AFGBuildable* Buildable, UMaterialInterface* Material)
+void UFSSelection::EnableHightLight(FSBuildable Buildable, UMaterialInterface* Material)
 {
-	FSActorMaterial& Cache = ActorMaterialCache.FindOrAdd(Buildable);
-	if (!Cache.Init) Cache.Buildable = Buildable;
+ 	FSActorMaterial& Cache = ActorMaterialCache.FindOrAdd(Buildable);
+	if (!Cache.Init) Cache.Buildable = Buildable.Buildable;
 	EnableHightLight(Cache, Buildable, Material);
-}
+}	
 
-void UFSSelection::HideHologram(AActor* Actor, FSelectedActorInfo& ActorInfo)
+void UFSSelection::HideHologram(AActor* Actor, FSActorMaterial& ActorInfo)
 {
 	USceneComponent* sceneComponent = Actor->GetRootComponent();
 	if (sceneComponent) {
@@ -797,10 +1007,10 @@ void UFSSelection::HideHologram(AActor* Actor, FSelectedActorInfo& ActorInfo)
 		//int max = components.Max();
 		if (buildable) {
 			if (!buildable->GetIsDismantled()) {
-				TInlineComponentArray<UMeshComponent*> MeshComps(Actor);
-				for (const auto& MeshComponent : MeshComps) {
+				//TInlineComponentArray<UMeshComponent*> MeshComps(Actor);
+				for (const auto& ActorComp : Actor->K2_GetComponentsByClass(UMeshComponent::StaticClass())) {
 					//for (auto& ActorComp : components) {
-						//auto MeshComponent = Cast<UMeshComponent>(ActorComp);
+					UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
 						//
 					if (MeshComponent) {
 						FString Name = MeshComponent->GetName();
@@ -865,7 +1075,7 @@ void UFSSelection::TestMethod(AFGBuildable* Buildable) {
 
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
-	FSelectedActorInfo Value = FSelectedActorInfo();
+	FSActorMaterial Value = FSActorMaterial();
 
 	InstanceHandles = Buildable->mInstanceHandles;
 	if (InstanceHandles.Num() > 0) {
@@ -900,7 +1110,14 @@ void UFSSelection::TestMethod(AFGBuildable* Buildable) {
 
 			//comp2->AddInstanceWorldSpace(InstanceTransform);
 
-			for (const auto& ActorComp : Value.HologramHelper->GetComponentsByClass(UMeshComponent::StaticClass())) {
+			//TArray<UActorComponent*> ActorComp;
+
+			//AHologramHelper* HologramHelper;
+			//ActorComp = HologramHelper->K2_GetComponentsByClass(UMeshComponent::StaticClass());
+
+			//ActorComp = Cast<AHologramHelper>(Value.HologramHelper).
+
+			for (const auto& ActorComp : Value.HologramHelper->K2_GetComponentsByClass(UMeshComponent::StaticClass())) {
 				UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
 				if (MeshComponent) {
 					int num = MeshComponent->GetNumMaterials();
@@ -959,17 +1176,51 @@ void UFSSelection::TestMethod(AFGBuildable* Buildable) {
 	}
 }
 
-void UFSSelection::EnableHightLight(FSActorMaterial& Cache, AFGBuildable* Buildable, UMaterialInterface* Material)
+UInstancedStaticMeshComponent* UFSSelection::MakeOutlineProxyMeshComponent(AActor* Buildable, UStaticMesh* StaticMesh) {
+
+	UInstancedStaticMeshComponent* OutlineProxyMeshComponent = NewObject<UInstancedStaticMeshComponent>(Buildable);
+
+	OutlineProxyMeshComponent->AttachToComponent(Buildable->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	OutlineProxyMeshComponent->SetStaticMesh(StaticMesh);
+	OutlineProxyMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Disable shadow, disable LODs and disable Nanite for meshes that have it enabled
+	//OutlineProxyMeshComponent->SetCastShadow(false);
+	//OutlineProxyMeshComponent->SetForcedLodModel(0);
+	//OutlineProxyMeshComponent->bDisallowNanite = true;
+
+	// Do not render the component in the main or depth pass, but render it in custom depth pass to show the outline
+	OutlineProxyMeshComponent->SetRenderInDepthPass(false);
+	OutlineProxyMeshComponent->SetRenderInMainPass(false);
+	//UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+
+	OutlineProxyMeshComponent->RegisterComponent();
+	return OutlineProxyMeshComponent;
+}
+
+void UFSSelection::EnableHightLight(FSActorMaterial& Cache, FSBuildable Buildable, UMaterialInterface* Material)
 {
 
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 	bool CacheExist = Cache.Init;
-	if (CacheExist && !Cache.Buildable.Get()) {
-		DisableHightLight(Buildable);
-		return;
+
+	if (Buildable.BuildableClass == nullptr) {
+		if (CacheExist && !Cache.Buildable.Get()) {
+			DisableHightLight(Buildable);
+			return;
+		}
 	}
-	bool initializeCacheSaved = false;
+	bool initializeCacheSaved = CacheExist;
+
+	bool UseDefaultOutline = false;
+
+	if (FSkyline->FSCtrl->Etc->GetBool("UseDefaultHologram")) {
+		UseDefaultOutline = false;
+	}
+
 	//initializeCacheSaved = SelectedMap.Contains(Buildable);
+
+	/*
 	for (TPair<AActor*, FSelectedActorInfo>& pair : SelectedMap) {
 		AActor* actor1 = pair.Key;
 		FString Name1 = actor1->GetName();
@@ -979,11 +1230,14 @@ void UFSSelection::EnableHightLight(FSActorMaterial& Cache, AFGBuildable* Builda
 			break;
 		}
 	}
+	*/
 
-	FSelectedActorInfo Value = FSelectedActorInfo();
+	//FSelectedActorInfo* handleHolder = SelectedMap.Find(Buildable);
+
+	//FSelectedActorInfo Value = FSelectedActorInfo();
 
 
-	ActorList.AddUnique(Buildable);
+	//ActorList.AddUnique(Buildable);
 
 	bool foundCustomStaticMesh = false;
 	float CustomAdjustment = 0;
@@ -991,108 +1245,755 @@ void UFSSelection::EnableHightLight(FSActorMaterial& Cache, AFGBuildable* Builda
 
 	//Manager = AAbstractInstanceManager::GetInstanceManager(FSkyline->World);
 
-	InstanceHandles = Buildable->mInstanceHandles;
+	//testBuildable = Buildable.Buildable;
+
+	//isValid = false;
+
+	//if (Buildable.Buildable.IsValid()) {
+	//	isValid = true;
+	//}
 
 
-	Data = Buildable->GetLightweightInstanceData();
-	TArray<FInstanceData> Instances;
+	if (!Buildable.Buildable) {
 
-	// works and stable only for simple things like foundations, doesnt work with lifts, etc yet
-	
-	if (InstanceHandles.Num() > 0) {
+		if (!initializeCacheSaved) {
+			if (!UseDefaultOutline) {
+				AFSkyline* FSkyline = AFSkyline::Get(this);
+				AAbstractInstanceManager* Manager = AAbstractInstanceManager::GetInstanceManager(FSkyline->World);
 
-		TArray<uint32> handleIDs;
-		TArray<UHierarchicalInstancedStaticMeshComponent*> copiedComponents;
+				FInstanceHandle Handle = Buildable.Handle;
 
-		
-		for (int i = 0; i < InstanceHandles.Num(); i++) {
-			
-			if (!initializeCacheSaved) {
+				AFGLightweightBuildableSubsystem* lightweightSubsystem;
 
-				handleIDs.Add(InstanceHandles[i]->GetHandleID());
+				lightweightSubsystem = AFGLightweightBuildableSubsystem::Get(FSkyline->World);
 
-				if (Value.HologramHelper == nullptr) {
-					Value.HologramHelper = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), Buildable->GetActorTransform(), *(new FActorSpawnParameters()));
+
+				/*
+				TSubclassOf< AFGBuildable > BuildableClass = Buildable.BuildableClass;
+				FMaterialPair& MaterialPair = AbstractMaterialMap.FindOrAdd(BuildableClass);
+
+
+				if (Material == SelectMaterial) {
+					if (!MaterialPair.SelectActor) {
+						FTransform ft;
+						MaterialPair.SelectActor = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), ft, *(new FActorSpawnParameters()));
+						FTransform InstanceTransform;
+						Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform, true);
+
+
+						UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = Handle.GetInstanceComponent();
+
+
+						comp2 = NewObject<UHierarchicalInstancedStaticMeshComponent>(MaterialPair.SelectActor);
+
+
+						FTransform InstanceRelativeTransform = Handle.GetInstanceComponent()->GetRelativeTransform();
+						const FTransform InstanceSpawnLocation = InstanceRelativeTransform * MaterialPair.SelectActor->GetActorTransform();
+
+						comp2->SetStaticMesh(Handle.GetInstanceComponent()->GetStaticMesh());
+
+						FInstanceData instanceData = FInstanceData();
+						instanceData.OverridenMaterials.Add(Material);
+
+						//comp2->OverrideMaterials = instanceData.OverridenMaterials;
+						comp2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						comp2->SetGenerateOverlapEvents(false);
+						comp2->SetMobility(Handle.GetInstanceComponent()->Mobility);
+						comp2->AttachToComponent(MaterialPair.SelectActor->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+						comp2->SetRelativeTransform(FTransform::Identity);
+						comp2->SetVisibility(true);
+						//comp2->NumCustomDataFloats = InstanceHandles[i]->GetInstanceComponent()->NumCustomDataFloats;
+						comp2->RegisterComponent();
+
+						FTransform InstanceTransform2;
+						Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform2, true);
+
+						comp2->AddInstance(InstanceTransform2, true);
+
+						MaterialPair.Selectcomp2 = comp2;
+
+						Handle.HideInstance(true);
+					}
+					else {
+
+						FTransform InstanceTransform2;
+						Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform2, true);
+
+						MaterialPair.Selectcomp2->AddInstance(InstanceTransform2, true);
+
+						Handle.HideInstance(true);
+
+					}
+				}
+				if (Material == FocusMaterial) {
+					if (!MaterialPair.FocusActor) {
+						FTransform ft;
+						MaterialPair.FocusActor = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), ft, *(new FActorSpawnParameters()));
+						FTransform InstanceTransform;
+						Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform, true);
+
+
+						UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = Handle.GetInstanceComponent();
+
+
+						comp2 = NewObject<UHierarchicalInstancedStaticMeshComponent>(MaterialPair.FocusActor);
+
+
+						FTransform InstanceRelativeTransform = Handle.GetInstanceComponent()->GetRelativeTransform();
+						const FTransform InstanceSpawnLocation = InstanceRelativeTransform * MaterialPair.FocusActor->GetActorTransform();
+
+						comp2->SetStaticMesh(Handle.GetInstanceComponent()->GetStaticMesh());
+
+						FInstanceData instanceData = FInstanceData();
+						instanceData.OverridenMaterials.Add(Material);
+
+						//comp2->OverrideMaterials = instanceData.OverridenMaterials;
+						comp2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						comp2->SetGenerateOverlapEvents(false);
+						comp2->SetMobility(Handle.GetInstanceComponent()->Mobility);
+						comp2->AttachToComponent(MaterialPair.FocusActor->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+						comp2->SetRelativeTransform(FTransform::Identity);
+						comp2->SetVisibility(true);
+						//comp2->NumCustomDataFloats = InstanceHandles[i]->GetInstanceComponent()->NumCustomDataFloats;
+						comp2->RegisterComponent();
+
+						FTransform InstanceTransform2;
+						Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform2, true);
+
+						comp2->AddInstance(InstanceTransform2, true);
+
+						MaterialPair.Focuscomp2 = comp2;
+
+						Handle.HideInstance(true);
+					}
+					else {
+
+						//FTransform InstanceTransform2;
+						//Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform2, true);
+
+						//MaterialPair.Focuscomp2->AddInstance(InstanceTransform2, true);
+
+						//Handle.HideInstance(true);
+
+						
+						//UHierarchicalInstancedStaticMeshComponent* HISMC = MaterialPair.Focuscomp2;
+						//AsyncTask(ENamedThreads::GameThread, [HISMC, InstanceTransform2, Buildable]() {
+							//HISMC->AddInstance(InstanceTransform2, true);
+							//FInstanceHandle Handle = Buildable.Handle;
+							//Handle.HideInstance(true);
+							//});
+						
+
+						
+						//UHierarchicalInstancedStaticMeshComponent* HISMC = MaterialPair.Focuscomp2;
+						//TArray<FTransform> Transforms;
+						//Transforms.Add(InstanceTransform2);
+						//TArray<FInstancedStaticMeshInstanceData>& InstanceData = HISMC->PerInstanceSMData;
+						//ParallelFor(Transforms.Num(), [&](int32 Index) {
+							//FTransform Transform = Transforms[Index];
+							//FInstancedStaticMeshInstanceData NewData;
+							//NewData.Transform = Transform.ToMatrixWithScale();
+							//InstanceData.Add(NewData);
+							//});
+						
+						//Handle.HideInstance(true);
+						//HISMC->UpdateInstanceBuffer();
+
+						//Handle.GetInstanceComponent()->SetCustomDataValue(Handle.GetHandleID(), 0, 0.0f, true);
+
+
+					}
+				}
+				*/
+
+				if (Cache.HologramHelper == nullptr) {
+					FTransform ft;
+					Cache.HologramHelper = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), ft, *(new FActorSpawnParameters()));
 				}
 
-				//comp2 = DuplicateObject <UHierarchicalInstancedStaticMeshComponent>(InstanceHandles[i]->GetInstanceComponent(), Manager);
-				comp2 = NewObject<UHierarchicalInstancedStaticMeshComponent>(Value.HologramHelper);
+				FTransform InstanceTransform;
+				Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform, true);
 
-				//comp2->ClearInstances();
+				if (!Cache.copiedComponents.Contains(Handle.GetInstanceComponent()->GetStaticMesh())) {
+
+
+					UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = Handle.GetInstanceComponent();
+
+
+					comp2 = NewObject<UHierarchicalInstancedStaticMeshComponent>(Cache.HologramHelper);
+
+
+					FTransform InstanceRelativeTransform = Handle.GetInstanceComponent()->GetRelativeTransform();
+					const FTransform InstanceSpawnLocation = InstanceRelativeTransform * Cache.HologramHelper->GetActorTransform();
+
+					comp2->SetStaticMesh(Handle.GetInstanceComponent()->GetStaticMesh());
+
+					FInstanceData instanceData = FInstanceData();
+					instanceData.OverridenMaterials.Add(Material);
+
+					comp2->OverrideMaterials = instanceData.OverridenMaterials;
+					comp2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					comp2->SetGenerateOverlapEvents(false);
+					comp2->SetMobility(Handle.GetInstanceComponent()->Mobility);
+					comp2->AttachToComponent(Cache.HologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+					comp2->SetRelativeTransform(FTransform::Identity);
+					comp2->SetVisibility(true);
+					//comp2->NumCustomDataFloats = InstanceHandles[i]->GetInstanceComponent()->NumCustomDataFloats;
+					comp2->RegisterComponent();
+
+					Cache.copiedComponents.Add(Handle.GetInstanceComponent()->GetStaticMesh(), comp2);
+
+				}
+
+
+
+				//}
+
+				FTransform InstanceTransform2;
+				Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform2, true);
+
+				//comp2->AddInstance(InstanceTransform2, true);
+
+				UStaticMesh* staticmesh = Handle.GetInstanceComponent()->GetStaticMesh();
+
+				//Cache.copiedComponents.Find(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())
+
+				UHierarchicalInstancedStaticMeshComponent* instance = *Cache.copiedComponents.Find(staticmesh);
+				instance->AddInstance(InstanceTransform, true);
+
+				//Cache.InstanceHandles.Add(Handle);
+				Cache.Handle = Handle;
+
+
+				Cache.Handle.HideInstance(true);
+			}
+			else {
+
+				Cache.UseDefaultOutline = UseDefaultOutline;
+
+				FInstanceHandle Handle = Buildable.Handle;
+
+				//FTransform InstanceTransform;
+				//Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform, true);
+
+				//if (!OutlineProxyData.Contains(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())) {
+
+				if (Cache.HologramHelper == nullptr) {
+					Cache.HologramHelper = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), Buildable.Transform, *(new FActorSpawnParameters()));
+				}
+
+				UInstancedStaticMeshComponent* OutlineProxyMeshComponent = this->MakeOutlineProxyMeshComponent(Cache.HologramHelper, Handle.GetInstanceComponent()->GetStaticMesh());
+
+				if (Material == SelectMaterial) {
+					UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+				}
+				if (Material == FocusMaterial) {
+					UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+				}
+
+				Cache.OutlineProxyData.Add(Handle.GetInstanceComponent()->GetStaticMesh(), OutlineProxyMeshComponent);
 
 				FTransform InstanceTransform;
-				InstanceHandles[i]->GetInstanceComponent()->GetInstanceTransform(InstanceHandles[i]->GetHandleID(), InstanceTransform, true);
-				FTransform InstanceRelativeTransform = InstanceHandles[i]->GetInstanceComponent()->GetRelativeTransform();
-				const FTransform InstanceSpawnLocation = InstanceRelativeTransform * Buildable->GetActorTransform();
-
-				FVector Translate = InstanceTransform.GetTranslation();
-				//std::string  str = TCHAR_TO_UTF8(*InstanceHandles[i]->GetInstanceComponent()->GetName());
-				std::string  str = TCHAR_TO_UTF8(*InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh()->GetName());
-				str.append("\n");
-				std::string  str2 = "x position:" + std::to_string(Translate.X) + " y position:" + std::to_string(Translate.Y) + " z position:" + std::to_string(Translate.Z);
-				str.append(str2);
-				str.append("\n");
+				Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform, true);
+				int32 instanceID = OutlineProxyMeshComponent->AddInstance(InstanceTransform, true);
 
 
-				std::wstring temp = std::wstring(str.begin(), str.end());
-				LPCWSTR wideString = temp.c_str();
-				OutputDebugStringW(wideString);
+				//Value.OutlineProxyData.FindChecked(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())->AddInstance(InstanceTransform, true);
+				//OutlineProxyMeshComponent->ClearInstances();
+				//OutlineProxyMeshComponent->RemoveInstance(instanceID);
+				//}
+
+			}
+			
+		}
+		else {
+			if (!Cache.UseDefaultOutline) {
+				for (TPair<UStaticMesh*, UHierarchicalInstancedStaticMeshComponent*>& Pair : Cache.copiedComponents) {
+					useNormalHologram = false;
+
+					TArray<UMaterialInterface*> OverridenMaterials;
+					OverridenMaterials.Add(Material);
+					Pair.Value->OverrideMaterials = OverridenMaterials;
+					Pair.Value->MarkRenderTransformDirty();
+
+					/*
+					for (const auto& ActorComp : Cache.HologramHelper->GetComponentsByClass(UMeshComponent::StaticClass())) {
+						UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+						if (MeshComponent) {
+							int num = MeshComponent->GetNumMaterials();
+							if (num) {
+								for (int i = 0; i < num; i++) {
+									MeshComponent->SetMaterial(i, Material);
+								}
+							}
+						}
+					}
+					*/
+				}
+			}
+			if (Cache.UseDefaultOutline) {
+				if (Cache.HologramHelper) {
+					for (const auto& ActorComp : Cache.HologramHelper->K2_GetComponentsByClass(UMeshComponent::StaticClass())) {
+						UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+						if (MeshComponent) {
+							if (Material == SelectMaterial) {
+								UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_HOLOGRAM);
+							}
+							if (Material == FocusMaterial) {
+								UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+							}
+						}
+					}
+				}
+			}
+		}
+
+			//
+	}//
+
+	if (Buildable.Buildable) {
+		InstanceHandles = Buildable.Buildable->mInstanceHandles;
 
 
-				InstanceCount.Add(comp2->GetInstanceCount());
+		//Data = Buildable.Buildable->GetLightweightInstanceData();
+		//TArray<FInstanceData> Instances;
 
-				// both of these dont work 100% of the time?
-				comp2->SetStaticMesh(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh());
-				//comp2->SetStaticMesh(Instances[i].StaticMesh);
+		//TODO IMPLEMENT UI TOGGLE to use this more optimized outline methods if the user wants
 
-				FInstanceData instanceData = FInstanceData();
+		// this is to handle outline holograms for buildables
 
-				instanceData.OverridenMaterials.Add(this->SelectMaterial);
+		if (!initializeCacheSaved) {
+			if (UseDefaultOutline) {
+				Cache.UseDefaultOutline = UseDefaultOutline;
 
-				comp2->OverrideMaterials = instanceData.OverridenMaterials;
-				comp2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-				comp2->SetGenerateOverlapEvents(false);
-				comp2->SetMobility(InstanceHandles[i]->GetInstanceComponent()->Mobility);
-				comp2->AttachToComponent(Value.HologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-				comp2->SetRelativeTransform(FTransform::Identity);
-				comp2->SetVisibility(true);
-				comp2->NumCustomDataFloats = InstanceHandles[i]->GetInstanceComponent()->NumCustomDataFloats;
-				comp2->RegisterComponent();
 
-				//comp2->AddInstance(InstanceTransform);
-				comp2->AddInstanceWorldSpace(InstanceTransform);
-
-				copiedComponents.Add(comp2);
-				Value.copiedComponents.Add(comp2);
-
-				for (const auto& ActorComp : Value.HologramHelper->GetComponentsByClass(UMeshComponent::StaticClass())) {
+				for (const auto& ActorComp : Buildable.Buildable->K2_GetComponentsByClass(UMeshComponent::StaticClass())) {
 					UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+
 					if (MeshComponent) {
-						int num = MeshComponent->GetNumMaterials();
-						if (num) {
-							for (int i = 0; i < num; i++) {
-								MeshComponent->SetMaterial(i, Material);
+
+						FString Name = MeshComponent->GetName();
+						if (!Buildable.Buildable->GetClass()->IsChildOf<AFGBuildableWire>()) {
+							if (Name.Contains(TEXT("FogPlane")) || Name.Contains(TEXT("Smoke")) || Name.Contains(TEXT("StaticMeshComponent"))) continue;
+						}
+						if (Material == SelectMaterial) {
+							UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_HOLOGRAM);
+						}
+						if (Material == FocusMaterial) {
+							UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+						}
+
+						const UFGColoredInstanceMeshProxy* MeshProxy = Cast<UFGColoredInstanceMeshProxy>(MeshComponent);
+						if (MeshProxy && MeshProxy->mInstanceHandle.IsInstanced())
+						{
+
+							//UInstancedStaticMeshComponent** InstancedStaticMeshComponent = OutlineProxyData.Find(MeshProxy->GetStaticMesh());
+
+							//if (!InstancedStaticMeshComponent) {
+
+							if (!CacheExist) {
+
+								if (Cache.HologramHelper == nullptr) {
+									Cache.HologramHelper = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), Buildable.Buildable->GetActorTransform(), *(new FActorSpawnParameters()));
+								}
+
+								UInstancedStaticMeshComponent* OutlineProxyMeshComponent = this->MakeOutlineProxyMeshComponent(Cache.HologramHelper, MeshProxy->GetStaticMesh());
+
+								if (Material == SelectMaterial) {
+									UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+								}
+								if (Material == FocusMaterial) {
+									UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+								}
+
+								Cache.OutlineProxyData.Add(MeshProxy->GetStaticMesh(), OutlineProxyMeshComponent);
+
+								int32 instanceID = OutlineProxyMeshComponent->AddInstance(MeshProxy->GetComponentTransform(), true);
+
+
+								//Value.OutlineProxyData.FindChecked(MeshProxy->GetStaticMesh())->AddInstance(MeshProxy->GetComponentTransform(), true);
+							}
+						}
+
+					}
+
+				}
+
+
+
+				if (InstanceHandles.Num() > 0) {
+					//for (int j = 0; j < 20; j++) {
+					for (int i = 0; i < InstanceHandles.Num(); i++) {
+
+						//if (!OutlineProxyData.Contains(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())) {
+
+						if (Cache.HologramHelper == nullptr) {
+							Cache.HologramHelper = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), Buildable.Buildable->GetActorTransform(), *(new FActorSpawnParameters()));
+						}
+
+						UInstancedStaticMeshComponent* OutlineProxyMeshComponent = this->MakeOutlineProxyMeshComponent(Cache.HologramHelper, InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh());
+
+						if (Material == SelectMaterial) {
+							UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+						}
+						if (Material == FocusMaterial) {
+							UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+						}
+
+						Cache.OutlineProxyData.Add(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh(), OutlineProxyMeshComponent);
+
+						FTransform InstanceTransform;
+						InstanceHandles[i]->GetInstanceComponent()->GetInstanceTransform(InstanceHandles[i]->GetHandleID(), InstanceTransform, true);
+						int32 instanceID = OutlineProxyMeshComponent->AddInstance(InstanceTransform, true);
+
+
+						//Value.OutlineProxyData.FindChecked(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())->AddInstance(InstanceTransform, true);
+						//OutlineProxyMeshComponent->ClearInstances();
+						//OutlineProxyMeshComponent->RemoveInstance(instanceID);
+						//}
+
+					}
+					//}
+				}
+
+
+			}
+		}
+		else {
+			//if (handleHolder) {
+			if (Cache.UseDefaultOutline) {
+
+				//FSkyline->FSCtrl->GetPlayer()->GetOutline()->HideActorOutline(Buildable);
+
+				for (const auto& ActorComp : Buildable.Buildable->K2_GetComponentsByClass(UMeshComponent::StaticClass())) {
+					UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+
+					if (MeshComponent) {
+
+						FString Name = MeshComponent->GetName();
+						if (!Buildable.Buildable->GetClass()->IsChildOf<AFGBuildableWire>()) {
+							if (Name.Contains(TEXT("FogPlane")) || Name.Contains(TEXT("Smoke")) || Name.Contains(TEXT("StaticMeshComponent"))) continue;
+						}
+						if (Material == SelectMaterial) {
+							UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_HOLOGRAM);
+						}
+						if (Material == FocusMaterial) {
+							UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+						}
+
+						const UFGColoredInstanceMeshProxy* MeshProxy = Cast<UFGColoredInstanceMeshProxy>(MeshComponent);
+						if (MeshProxy && MeshProxy->mInstanceHandle.IsInstanced()) {
+							if (CacheExist) {
+
+								UInstancedStaticMeshComponent* OutlineProxyMeshComponent = *Cache.OutlineProxyData.Find(MeshProxy->GetStaticMesh());;
+
+								if (Material == SelectMaterial) {
+									UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+								}
+								if (Material == FocusMaterial) {
+									UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+								}
+
+							}
+						}
+
+					}
+				}
+
+				/*
+				if (InstanceHandles.Num() > 0) {
+					for (int i = 0; i < InstanceHandles.Num(); i++) {
+
+						//if (!OutlineProxyData.Contains(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())) {
+
+						UInstancedStaticMeshComponent* OutlineProxyMeshComponent = *Cache.OutlineProxyData.Find((InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh()));
+						//UInstancedStaticMeshComponent* OutlineProxyMeshComponent = this->MakeOutlineProxyMeshComponent(Buildable, InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh());
+
+						if (Material == SelectMaterial) {
+							UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+						}
+						if (Material == FocusMaterial) {
+							UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+						}
+
+						//Value.OutlineProxyData.Add(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh(), OutlineProxyMeshComponent);
+
+						FTransform InstanceTransform;
+						InstanceHandles[i]->GetInstanceComponent()->GetInstanceTransform(InstanceHandles[i]->GetHandleID(), InstanceTransform, true);
+						int32 instanceID = OutlineProxyMeshComponent->AddInstance(InstanceTransform, true);
+
+
+						//Value.OutlineProxyData.FindChecked(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())->AddInstance(InstanceTransform, true);
+						//OutlineProxyMeshComponent->ClearInstances();
+						//OutlineProxyMeshComponent->RemoveInstance(instanceID);
+						//}
+					}
+				}
+				*/
+
+				if (Cache.HologramHelper) {
+					for (const auto& ActorComp : Cache.HologramHelper->K2_GetComponentsByClass(UMeshComponent::StaticClass())) {
+						UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+						if (MeshComponent) {
+							if (Material == SelectMaterial) {
+								UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_HOLOGRAM);
+							}
+							if (Material == FocusMaterial) {
+								UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
 							}
 						}
 					}
 				}
 
-				InstanceHandles[i]->HideInstance(true);
-				
-			} else {
-				
-				FSelectedActorInfo* handleHolder = SelectedMap.Find(Buildable);
-				if (handleHolder) {
-					//FSMaterialHandle handle = **handleHolder;
-					for (int i = 0; i < handleHolder->copiedComponents.Num(); i++) {
+				/*
+				for (TPair<UStaticMesh*, UInstancedStaticMeshComponent*>& Pair : Cache.OutlineProxyData) {
+					UInstancedStaticMeshComponent* OutlineProxyMeshComponent = Pair.Value;
+
+					if (Material == SelectMaterial) {
+						UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+					}
+					if (Material == FocusMaterial) {
+						UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_INVALIDHOLOGRAM);
+					}
+
+				}
+				*/
+			}
+			//}
+		}
+		//return;
+		/*
+		for (const auto& ActorComp : Buildable->GetComponentsByClass(UMeshComponent::StaticClass())) {
+			UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+
+			if (MeshComponent) {
+
+				FString Name = MeshComponent->GetName();
+				if (!Buildable->GetClass()->IsChildOf<AFGBuildableWire>()) {
+					if (Name.Contains(TEXT("FogPlane")) || Name.Contains(TEXT("Smoke")) || Name.Contains(TEXT("StaticMeshComponent"))) continue;
+				}
+
+				UFGBlueprintFunctionLibrary::ShowOutline(MeshComponent, EOutlineColor::OC_HOLOGRAM);
+
+				const UFGColoredInstanceMeshProxy* MeshProxy = Cast<UFGColoredInstanceMeshProxy>(MeshComponent);
+				if (MeshProxy && MeshProxy->mInstanceHandle.IsInstanced())
+				{
+
+					//UInstancedStaticMeshComponent** InstancedStaticMeshComponent = OutlineProxyData.Find(MeshProxy->GetStaticMesh());
+
+					//if (!InstancedStaticMeshComponent) {
+
+					if (!CacheExist) {
+
+						UInstancedStaticMeshComponent* OutlineProxyMeshComponent = NewObject<UInstancedStaticMeshComponent>(Buildable);
+
+						OutlineProxyMeshComponent->SetupAttachment(Buildable->GetRootComponent());
+						OutlineProxyMeshComponent->SetStaticMesh(MeshProxy->GetStaticMesh());
+						OutlineProxyMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+						// Disable shadow, disable LODs and disable Nanite for meshes that have it enabled
+						OutlineProxyMeshComponent->SetCastShadow(false);
+						OutlineProxyMeshComponent->SetForcedLodModel(0);
+						OutlineProxyMeshComponent->bDisallowNanite = true;
+
+						// Do not render the component in the main or depth pass, but render it in custom depth pass to show the outline
+						OutlineProxyMeshComponent->SetRenderInDepthPass(false);
+						OutlineProxyMeshComponent->SetRenderInMainPass(false);
+						UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+
+						OutlineProxyMeshComponent->RegisterComponent();
+						OutlineProxyData.Add(MeshProxy->GetStaticMesh(), OutlineProxyMeshComponent);
+
+						OutlineProxyData.FindChecked(MeshProxy->GetStaticMesh())->AddInstance(MeshProxy->GetComponentTransform(), true);
+					}
+					//} else {
+						//OutlineProxyData.FindChecked(MeshProxy->GetStaticMesh())->AddInstance(MeshProxy->GetComponentTransform(), true);
+					//}
+
+					//continue;
+				}
+
+			}
+
+		}
+		if (InstanceHandles.Num() > 0) {
+			for (int i = 0; i < InstanceHandles.Num(); i++) {
+
+				//if (!OutlineProxyData.Contains(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())) {
+
+					UInstancedStaticMeshComponent* OutlineProxyMeshComponent = NewObject<UInstancedStaticMeshComponent>(Buildable);
+
+					OutlineProxyMeshComponent->SetupAttachment(Buildable->GetRootComponent());
+					OutlineProxyMeshComponent->SetStaticMesh(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh());
+					OutlineProxyMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+					// Disable shadow, disable LODs and disable Nanite for meshes that have it enabled
+					OutlineProxyMeshComponent->SetCastShadow(false);
+					OutlineProxyMeshComponent->SetForcedLodModel(0);
+					OutlineProxyMeshComponent->bDisallowNanite = true;
+
+					// Do not render the component in the main or depth pass, but render it in custom depth pass to show the outline
+					OutlineProxyMeshComponent->SetRenderInDepthPass(false);
+					OutlineProxyMeshComponent->SetRenderInMainPass(false);
+					UFGBlueprintFunctionLibrary::ShowOutline(OutlineProxyMeshComponent, EOutlineColor::OC_HOLOGRAM);
+
+					OutlineProxyMeshComponent->RegisterComponent();
+					OutlineProxyData.Add(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh(), OutlineProxyMeshComponent);
+
+					FTransform InstanceTransform;
+					InstanceHandles[i]->GetInstanceComponent()->GetInstanceTransform(InstanceHandles[i]->GetHandleID(), InstanceTransform, true);
+
+					OutlineProxyData.FindChecked(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())->AddInstance(InstanceTransform, true);
+				//}
+
+			}
+		}
+		//return;
+		*/
+
+		/*
+		if (Buildable->Implements<UAbstractInstanceInterface>())
+		{
+			const FTransform ActorTransform = IAbstractInstanceInterface::Execute_GetLightweightInstanceActorTransform(Actor);
+
+			for (const FInstanceData& InstanceData : IAbstractInstanceInterface::Execute_GetActorLightweightInstanceData(Actor))
+			{
+				if (InstanceData.StaticMesh != nullptr)
+				{
+					// World transform is the actor transform with the relative instance transform applied on top
+					AddProxyOutlineMeshInstance(InstanceData.StaticMesh, InstanceData.RelativeTransform * ActorTransform);
+				}
+			}
+		}
+		*/
+
+
+		// works and stable only for simple things like foundations, doesnt work with lifts, etc yet
+
+		if (InstanceHandles.Num() > 0) {
+
+			//TArray<uint32> handleIDs;
+			//TArray<UHierarchicalInstancedStaticMeshComponent*> copiedComponents;
+
+
+			for (int i = 0; i < InstanceHandles.Num(); i++) {
+
+				if (!initializeCacheSaved) {
+
+					if (!UseDefaultOutline) {
+
+						//handleIDs.Add(InstanceHandles[i]->GetHandleID());
+
+						if (Cache.HologramHelper == nullptr) {
+							Cache.HologramHelper = (AHologramHelper*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AHologramHelper::StaticClass(), Buildable.Buildable->GetActorTransform(), *(new FActorSpawnParameters()));
+						}
+
+						FTransform InstanceTransform;
+						InstanceHandles[i]->GetInstanceComponent()->GetInstanceTransform(InstanceHandles[i]->GetHandleID(), InstanceTransform, true);
+
+						if (!Cache.copiedComponents.Contains(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())) {
+
+							//comp2 = DuplicateObject <UHierarchicalInstancedStaticMeshComponent>(InstanceHandles[i]->GetInstanceComponent(), Manager);
+							comp2 = NewObject<UHierarchicalInstancedStaticMeshComponent>(Cache.HologramHelper);
+
+							//comp2->ClearInstances();
+
+							//FTransform InstanceTransform;
+							//InstanceHandles[i]->GetInstanceComponent()->GetInstanceTransform(InstanceHandles[i]->GetHandleID(), InstanceTransform, true);
+
+							//std::string  str = TCHAR_TO_UTF8(*InstanceHandles[i]->GetInstanceComponent()->GetName());
+
+							//OutputDebugStringW(wideString);
+
+
+							//InstanceCount.Add(comp2->GetInstanceCount());
+
+							// both of these dont work 100% of the time?
+							comp2->SetStaticMesh(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh());
+							//comp2->SetStaticMesh(Instances[i].StaticMesh);
+
+							FInstanceData instanceData = FInstanceData();
+
+							instanceData.OverridenMaterials.Add(Material);
+
+							comp2->OverrideMaterials = instanceData.OverridenMaterials;
+							comp2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+							comp2->SetGenerateOverlapEvents(false);
+							comp2->SetMobility(InstanceHandles[i]->GetInstanceComponent()->Mobility);
+							comp2->AttachToComponent(Cache.HologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+							comp2->SetRelativeTransform(FTransform::Identity);
+							comp2->SetVisibility(true);
+							comp2->NumCustomDataFloats = InstanceHandles[i]->GetInstanceComponent()->NumCustomDataFloats;
+							comp2->RegisterComponent();
+
+							//comp2->AddInstance(InstanceTransform, true);
+							//comp2->AddInstanceWorldSpace(InstanceTransform);
+
+							//copiedComponents.Add(comp2);
+							//Cache.copiedComponents.Add(comp2);
+							Cache.copiedComponents.Add(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh(), comp2);
+
+						}
+
+						UStaticMesh* staticmesh = InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh();
+
+						//Cache.copiedComponents.Find(InstanceHandles[i]->GetInstanceComponent()->GetStaticMesh())
+
+						UHierarchicalInstancedStaticMeshComponent* instance = *Cache.copiedComponents.Find(staticmesh);
+						instance->AddInstance(InstanceTransform, true);
+
+						InstanceHandles[i]->HideInstance(true);
+					}
+
+				}
+				else {
+
+					//if (handleHolder) {
+						//FSMaterialHandle handle = **handleHolder;
+
+
+					//}
+
+
+
+				}
+			}
+
+			if (!initializeCacheSaved) {
+				if (!UseDefaultOutline) {
+
+					/*
+					for (const auto& ActorComp : Cache.HologramHelper->GetComponentsByClass(UMeshComponent::StaticClass())) {
+						UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+						if (MeshComponent) {
+							int num = MeshComponent->GetNumMaterials();
+							if (num) {
+								for (int i = 0; i < num; i++) {
+									MeshComponent->SetMaterial(i, Material);
+								}
+							}
+						}
+					}
+					*/
+
+				}
+			}
+			else {
+
+				if (!Cache.UseDefaultOutline) {
+					for (TPair<UStaticMesh*, UHierarchicalInstancedStaticMeshComponent*>& Pair : Cache.copiedComponents) {
 						useNormalHologram = false;
 
 						TArray<UMaterialInterface*> OverridenMaterials;
 						OverridenMaterials.Add(Material);
-						handleHolder->copiedComponents[i]->OverrideMaterials = OverridenMaterials;
-						handleHolder->copiedComponents[i]->MarkRenderTransformDirty();
+						Pair.Value->OverrideMaterials = OverridenMaterials;
+						Pair.Value->MarkRenderTransformDirty();
 
-						for (const auto& ActorComp : handleHolder->HologramHelper->GetComponentsByClass(UMeshComponent::StaticClass())) {
+						/*
+						for (const auto& ActorComp : Cache.HologramHelper->GetComponentsByClass(UMeshComponent::StaticClass())) {
 							UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
 							if (MeshComponent) {
 								int num = MeshComponent->GetNumMaterials();
@@ -1103,294 +2004,212 @@ void UFSSelection::EnableHightLight(FSActorMaterial& Cache, AFGBuildable* Builda
 								}
 							}
 						}
-
+						*/
 					}
+
 				}
-				
-				
-				
-			} 
-		}
-		
-	}
-
-
-	bool isInstanced = true;
-
-	if (Buildable->GetClass()->IsChildOf<AFGBuildableWidgetSign>()) {
-		isInstanced = useNormalHologram = true;
-	} else {
-		for (const auto& ActorComp : Buildable->GetComponentsByClass(UMeshComponent::StaticClass())) {
-
-			UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
-			//
-			if (MeshComponent) {
-
-				FString Name = MeshComponent->GetName();
-				if (!Buildable->GetClass()->IsChildOf<AFGBuildableWire>()) {
-					if (Name.Contains(TEXT("FogPlane")) || Name.Contains(TEXT("Smoke")) || Name.Contains(TEXT("StaticMeshComponent"))) continue;
-				}
-
-				if (!Name.Contains(TEXT("VisibilityMesh"))) {
-					//isInstanced = false;
-					//continue;
-				}
-
-				UFGColoredInstanceMeshProxy* MeshProxy = Cast<UFGColoredInstanceMeshProxy>(MeshComponent);
-
-				if (!initializeCacheSaved) {
-					FSavedMaterialInterfaces Value2 = FSavedMaterialInterfaces();
-					Value2.MaterialInterfaces = MeshComponent->GetMaterials();
-					Value.SavedMaterialInterfaces.Add(MeshComponent, Value2);
-				}
-
-				FSMeshMaterial* MeshMaterial = CacheExist ? nullptr : &Cache.MeshList.AddDefaulted_GetRef();
 
 				/*
-				if (!CacheExist) {
-					TArray< UMaterialInterface*> interfaces = MeshComponent->GetMaterials();
-					MeshMaterial->MaterialInterfaceList2 = interfaces;
+				for (const auto& ActorComp : Cache.HologramHelper->GetComponentsByClass(UMeshComponent::StaticClass())) {
+					UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+					if (MeshComponent) {
+						int num = MeshComponent->GetNumMaterials();
+						if (num) {
+							for (int i = 0; i < num; i++) {
+								MeshComponent->SetMaterial(i, Material);
+							}
+						}
+					}
 				}
 				*/
+			}
 
-				int num = MeshComponent->GetNumMaterials();
-				if (num) {
-					for (int i = 0; i < num; i++) {
-						MeshComponent->SetMaterial(i, Material);
-					}
-
-					//auto interfaces2Ptr = ActorInfo2.SavedMaterialInterfaces.Find(MeshComponent);
-					//auto interfaces2 = interfaces2Ptr;
-
-					// prototype one disable highlight as soon as it is set
-					//this passed
-					//FSMaterialHandle** comp = MaterialMapping2.Find(MeshComponent);
-					//FSMaterialHandle* comp2 = *comp;
-					//TArray < UMaterialInterface*> list = (*comp)->MaterialInterfaceList;
-					//int num2 = MeshMaterial->MaterialInterfaceList2.Num();
-					//for (int i = 0; i < num2; i++) {
-						// this works
-						//MeshComponent->SetMaterial(i, interfaces[i]);
-						//this works
-						//MeshComponent->SetMaterial(i, list[i]);
-						// this works
-						//MeshComponent->SetMaterial(i, MeshMaterial->MaterialInterfaceList2[i]);
-						// doesn't work
-						//MeshComponent->SetMaterial(i, interfaces2->MaterialInterfaces[i]);
-					//}
+		}
 
 
-					if (!CacheExist) {
-						MeshMaterial->MeshComponent = MeshComponent;
-						MeshMaterial->MeshProxy = MeshProxy;
-						MeshMaterial->MaterialInterfaceList.Empty();
-					}
-					if (MeshProxy && MeshProxy->mInstanceManager != nullptr) {
-						FSMaterialHandle** LocalCache = MaterialMapping.Find(MeshProxy);
-						if (LocalCache) {
-							RemoveInstance(MeshProxy, *LocalCache);
+		bool isInstanced = true;
+
+
+
+
+
+
+		if (Buildable.Buildable->GetClass()->IsChildOf<AFGBuildableWidgetSign>()) {
+			isInstanced = useNormalHologram = true;
+		}
+		else {
+			if (!UseDefaultOutline) {
+				for (const auto& ActorComp : Buildable.Buildable->K2_GetComponentsByClass(UMeshComponent::StaticClass())) {
+
+					UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+					//
+					if (MeshComponent) {
+
+						FString Name = MeshComponent->GetName();
+						if (!Buildable.Buildable->GetClass()->IsChildOf<AFGBuildableWire>()) {
+							if (Name.Contains(TEXT("FogPlane")) || Name.Contains(TEXT("Smoke")) || Name.Contains(TEXT("StaticMeshComponent"))) continue;
 						}
-						else {
-							RemoveInstance(MeshProxy, MeshProxy->mInstanceHandle.ColorIndex);
-						}
-						AddInstance(MeshProxy, Material);
-					}
-					else {
-						for (int i = 0; i < num; i++) {
-							if (!CacheExist) {
-								UMaterialInterface* Interface = MeshComponent->GetMaterial(i);
-								MeshMaterial->MaterialInterfaceList.Add(Interface);
 
-								UMaterialInstanceDynamic* Dynamic = Cast<UMaterialInstanceDynamic>(Interface);
-								if (Dynamic) DynamicInstanceSet.Add(Dynamic);
+						if (!Name.Contains(TEXT("VisibilityMesh"))) {
+							//isInstanced = false;
+							//continue;
+						}
+
+						UFGColoredInstanceMeshProxy* MeshProxy = Cast<UFGColoredInstanceMeshProxy>(MeshComponent);
+
+						if (!initializeCacheSaved) {
+							FSavedMaterialInterfaces Value2 = FSavedMaterialInterfaces();
+							Value2.MaterialInterfaces = MeshComponent->GetMaterials();
+							Cache.SavedMaterialInterfaces.Add(MeshComponent, Value2);
+						}
+
+						FSMeshMaterial* MeshMaterial = CacheExist ? nullptr : &Cache.MeshList.AddDefaulted_GetRef();
+
+						/*
+						if (!CacheExist) {
+							TArray< UMaterialInterface*> interfaces = MeshComponent->GetMaterials();
+							MeshMaterial->MaterialInterfaceList2 = interfaces;
+						}
+						*/
+
+						int num = MeshComponent->GetNumMaterials();
+						if (num) {
+							for (int i = 0; i < num; i++) {
+								MeshComponent->SetMaterial(i, Material);
 							}
-							//MeshComponent->SetMaterial(i, Material);
+
+							//auto interfaces2Ptr = ActorInfo2.SavedMaterialInterfaces.Find(MeshComponent);
+							//auto interfaces2 = interfaces2Ptr;
+
+							// prototype one disable highlight as soon as it is set
+							//this passed
+							//FSMaterialHandle** comp = MaterialMapping2.Find(MeshComponent);
+							//FSMaterialHandle* comp2 = *comp;
+							//TArray < UMaterialInterface*> list = (*comp)->MaterialInterfaceList;
+							//int num2 = MeshMaterial->MaterialInterfaceList2.Num();
+							//for (int i = 0; i < num2; i++) {
+								// this works
+								//MeshComponent->SetMaterial(i, interfaces[i]);
+								//this works
+								//MeshComponent->SetMaterial(i, list[i]);
+								// this works
+								//MeshComponent->SetMaterial(i, MeshMaterial->MaterialInterfaceList2[i]);
+								// doesn't work
+								//MeshComponent->SetMaterial(i, interfaces2->MaterialInterfaces[i]);
+							//}
+
+							
+							if (!CacheExist) {
+								MeshMaterial->MeshComponent = MeshComponent;
+								MeshMaterial->MeshProxy = MeshProxy;
+								MeshMaterial->MaterialInterfaceList.Empty();
+							}
+							if (MeshProxy && MeshProxy->mInstanceManager != nullptr) {
+								FSMaterialHandle** LocalCache = MaterialMapping.Find(MeshProxy);
+								if (LocalCache) {
+									RemoveInstance(MeshProxy, *LocalCache);
+								}
+								else {
+									RemoveInstance(MeshProxy, MeshProxy->mInstanceHandle.ColorIndex);
+								}
+								AddInstance(MeshProxy, Material);
+							}
+							else {
+								for (int i = 0; i < num; i++) {
+									if (!CacheExist) {
+										UMaterialInterface* Interface = MeshComponent->GetMaterial(i);
+										MeshMaterial->MaterialInterfaceList.Add(Interface);
+
+										UMaterialInstanceDynamic* Dynamic = Cast<UMaterialInstanceDynamic>(Interface);
+										if (Dynamic) DynamicInstanceSet.Add(Dynamic);
+									}
+									//MeshComponent->SetMaterial(i, Material);
+								}
+							}
+							
 						}
 					}
 				}
 			}
 		}
-	}
-	if (isInstanced && useNormalHologram) {
-		//Buildable->ToggleInstanceVisibility(false);
-		Value.hologramVariation = true;
-		
-		AFGHologram* Hologram = nullptr;
-		if (!initializeCacheSaved) {
-			Value.hologramVariation = true;
-			UFSBuildableOperator* BuildableOperator = FSkyline->OperatorFactory->AcquireOperator(Buildable);
-			FTransform RelativeTransformVar;
-			FSkyline->SplineHologramFactory->Load();
-			Hologram = BuildableOperator->HologramCopy(RelativeTransformVar);
-			Value.Hologram = Hologram;
-		} else {
-			FSelectedActorInfo* handleHolder = SelectedMap.Find(Buildable);
-			if (handleHolder) {
-				//FSMaterialHandle handle = **handleHolder;
-				if (handleHolder->Hologram == nullptr) {
-					//handle.Hologram->Destroy();
-					UFSBuildableOperator* BuildableOperator = FSkyline->OperatorFactory->AcquireOperator(Buildable);
+		if (isInstanced && useNormalHologram) {
+			//Buildable->ToggleInstanceVisibility(false);
+			Cache.hologramVariation = true;
+
+			AFGHologram* Hologram = nullptr;
+			if (!initializeCacheSaved) {
+				if (!UseDefaultOutline) {
+					Cache.hologramVariation = true;
+					UFSBuildableOperator* BuildableOperator = FSkyline->OperatorFactory->AcquireOperator(&Buildable);
 					FTransform RelativeTransformVar;
 					FSkyline->SplineHologramFactory->Load();
 					Hologram = BuildableOperator->HologramCopy(RelativeTransformVar);
-					handleHolder->Hologram = Hologram;
-				} else {
-					Hologram = handleHolder->Hologram;
+					Cache.Hologram = Hologram;
 				}
+			}
+			else {
+				//FSelectedActorInfo* handleHolder = SelectedMap.Find(Buildable);
+				//if (handleHolder) {
+				if (!Cache.UseDefaultOutline)
+					//FSMaterialHandle handle = **handleHolder;
+					if (Cache.Hologram == nullptr) {
+						//handle.Hologram->Destroy();
+						UFSBuildableOperator* BuildableOperator = FSkyline->OperatorFactory->AcquireOperator(&Buildable);
+						FTransform RelativeTransformVar;
+						FSkyline->SplineHologramFactory->Load();
+						Hologram = BuildableOperator->HologramCopy(RelativeTransformVar);
+						Cache.Hologram = Hologram;
+					}
+					else {
+						Hologram = Cache.Hologram;
+					}
 				//Value->Hologram = Hologram;
-				
+
 				//Hologram = handle.Hologram;
 				//Hologram = (*handleHolder)->Hologram;
+			//}
 			}
 
-		}
-		if (Hologram != nullptr) {
-			Hologram->SetActorHiddenInGame(false);
-			Hologram->SetActorTransform(Buildable->GetTransform());
-			if (Material == SelectMaterial) {
-				Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
-			}
-			if (Material == FocusMaterial) {
-				Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_ERROR);
-			}
-
-			FTransform HologramTransform = Buildable->GetTransform();
-			//HologramTransform.SetScale3D(FVector(1.01, 1.01, 1.01));
-			//HologramTransform.SetScale3D(FVector(1.005, 1.005, 1.005));
-			//HologramTransform.SetScale3D(FVector(1.0025, 1.0025, 1.0025));
-			//HologramTransform.SetScale3D(FVector(1.00125, 1.00125, 1.00125));
-			HologramTransform.SetScale3D(FVector(1.000625, 1.000625, 1.000625));
-			Hologram->SetActorTransform(HologramTransform);
-
-			TInlineComponentArray<UMeshComponent*> MeshComps(Hologram);
-			for (const auto& MeshComponent : MeshComps) {
-				int num = MeshComponent->GetNumMaterials();
-				if (num) {
-					for (int i = 0; i < num; i++) {
-						if (Material == FocusMaterial) {
-							//MeshComponent->SetMaterial(i, Material);
-						}
-					}
+			if (Hologram != nullptr) {
+				Hologram->SetActorHiddenInGame(false);
+				Hologram->SetActorTransform(Buildable.Buildable->GetTransform());
+				if (Material == SelectMaterial) {
+					Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 				}
-			}
-		}
-		
-	}
-
-	/*
-	FSelectedActorInfo* ActorInfo2 = SelectedMap.Find(Buildable);
-	if (ActorInfo2) {
-		FSelectedActorInfo ActorInfo3 = *ActorInfo2;
-		HideHologram(Buildable, ActorInfo3);
-	}
-	*/
-	/*
-	FSMaterialHandle** handleHolder = SelectedMap.Find(Buildable);
-	if (handleHolder) {
-		FSMaterialHandle handle = **handleHolder;
-		HideHologram(Buildable, handle);
-	}
-	*/
-	//FSMaterialHandle handle = **SelectedMap.Find(Buildable);
-	//HideHologram(Buildable, handle);
-
-	FString FullPathName = Buildable->GetPathName();
-	/*
-	if (FullPathName.Contains("Build_AssemblerMk1") || FullPathName.Contains("Build_ManufacturerMk1") || FullPathName.Contains("Build_OilRefinery") || FullPathName.Contains("Build_HadronCollider")) {
-		for (const auto& ActorComp : Buildable->GetComponentsByClass(UMeshComponent::StaticClass())) {
-			UMeshComponent* MeshComp = Cast<UMeshComponent>(ActorComp);
-			int Mats = MeshComp->GetNumMaterials();
-			if (Mats) {
-				for (int i = 0; i < Mats; i++) {
-					//MeshComp->SetMaterial(i, FSkyline->SelectedMaterial);
-					MeshComp->SetMaterial(i, SelectMaterial);
+				if (Material == FocusMaterial) {
+					Hologram->SetPlacementMaterialState(EHologramMaterialState::HMS_ERROR);
 				}
-				// turn off instancing if it's a special mesh
-				auto StaticMeshProxy = Cast<UProxyInstancedStaticMeshComponent>(MeshComp);
-				if (StaticMeshProxy) {
-					StaticMeshProxy->SetInstanced(false);
-				}else {
-					auto ColoredMeshProxy = Cast<UFGColoredInstanceMeshProxy>(MeshComp);
-					if (ColoredMeshProxy) {
-						ColoredMeshProxy->SetInstanced(true);
-						UFGColoredInstanceMeshProxy* MeshProxy = Cast<UFGColoredInstanceMeshProxy>(MeshComp);
-						if (MeshProxy) {
-							if (MeshProxy->mInstanceManager != nullptr) {
-								//AddInstance(MeshProxy, SelectMaterial);
+
+				FTransform HologramTransform = Buildable.Buildable->GetTransform();
+				//HologramTransform.SetScale3D(FVector(1.01, 1.01, 1.01));
+				//HologramTransform.SetScale3D(FVector(1.005, 1.005, 1.005));
+				//HologramTransform.SetScale3D(FVector(1.0025, 1.0025, 1.0025));
+				//HologramTransform.SetScale3D(FVector(1.00125, 1.00125, 1.00125));
+				HologramTransform.SetScale3D(FVector(1.000625, 1.000625, 1.000625));
+				Hologram->SetActorTransform(HologramTransform);
+
+				TInlineComponentArray<UMeshComponent*> MeshComps(Hologram);
+				for (const auto& MeshComponent : MeshComps) {
+					int num = MeshComponent->GetNumMaterials();
+					if (num) {
+						for (int i = 0; i < num; i++) {
+							if (Material == FocusMaterial) {
+								//MeshComponent->SetMaterial(i, Material);
 							}
 						}
-					} else {
-						auto ProdIndInst = Cast<UFGProductionIndicatorInstanceComponent>(MeshComp);
-						if (ProdIndInst) {
-							ProdIndInst->SetInstanced(true);
-						}
 					}
 				}
 			}
+
 		}
 	}
-	*/
-	
+
 
 	/*
-	for (UActorComponent* ActorComponent : Buildable->GetComponents()) {
-		UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComponent);
-		if (MeshComponent) {
-			FString Name = MeshComponent->GetName();
-			if (Name.Contains(TEXT("FogPlane")) || Name.Contains(TEXT("Smoke")) || Name.Contains(TEXT("StaticMeshComponent"))) continue;
-
-			UFGColoredInstanceMeshProxy* MeshProxy = Cast<UFGColoredInstanceMeshProxy>(MeshComponent);
-			int num = MeshComponent->GetNumMaterials();
-			if (num) {
-				FSMeshMaterial* MeshMaterial = CacheExist ? nullptr : &Cache.MeshList.AddDefaulted_GetRef();
-				if (!CacheExist) {
-					MeshMaterial->MeshComponent = MeshComponent;
-					MeshMaterial->MeshProxy = MeshProxy;
-					MeshMaterial->MaterialInterfaceList.Empty();
-				}
-				if (MeshProxy) {
-					FSMaterialHandle** LocalCache = MaterialMapping.Find(MeshProxy);
-					FText txt = Buildable->mDisplayName;
-					//std::string str2 = txt.ToString();
-					FString txt2 = txt.ToString();
-					if (LocalCache) {
-						// some temporary fixes here for handleID -1 issues, need to investigate this issue further
-						//if (MeshProxy->mInstanceHandle.HandleID != -1) {
-						if (!txt2.Contains(TEXT("Assembler")) & !txt2.Contains(TEXT("Manufacturer"))) {
-							RemoveInstance(MeshProxy, *LocalCache);
-						}
-					} else {
-						//if (MeshProxy->mInstanceHandle.HandleID != -1) {
-						if (!txt2.Contains(TEXT("Assembler")) & !txt2.Contains(TEXT("Manufacturer"))) {
-							RemoveInstance(MeshProxy, MeshProxy->mInstanceHandle.ColorIndex);
-						}
-					}
-					//if (MeshProxy->mInstanceHandle.HandleID != -1) {
-					if (!txt2.Contains(TEXT("Assembler")) & !txt2.Contains(TEXT("Manufacturer"))) {
-						AddInstance(MeshProxy, Material);
-					}
-				} else {
-					for (int i = 0; i < num; i++) {
-						if (!CacheExist) {
-							UMaterialInterface* Interface = MeshComponent->GetMaterial(i);
-							MeshMaterial->MaterialInterfaceList.Add(Interface);
-
-							UMaterialInstanceDynamic* Dynamic = Cast<UMaterialInstanceDynamic>(Interface);
-							if (Dynamic) DynamicInstanceSet.Add(Dynamic);
-						}
-						MeshComponent->SetMaterial(i, Material);
-					}
-				}
-				
-			}
-		}
-	}
-	*/
-
-
 	if (!initializeCacheSaved) {
 		SelectedMap.Add(Buildable, Value);
 	}
+	*/
 
 	Cache.Init = true;
 	//start deeper debugging here
@@ -1435,11 +2254,11 @@ void UFSSelection::EnableHightLight(FSActorMaterial& Cache, AFGBuildable* Builda
 	//end deeper debugging here
 }
 
-void UFSSelection::EnableHightLightFocus(AFGBuildable* Buildable)
+void UFSSelection::EnableHightLightFocus(FSBuildable Buildable)
 {
-	if (!Buildable) return;
+	if (Buildable == BuildableEmpty) return;
 	if (CurrentFocus != Buildable) {
-		if (CurrentFocus) DisableHightLightFocus();
+		if (CurrentFocus != BuildableEmpty) DisableHightLightFocus();
 		CurrentFocus = Buildable;
 	}
 	EnableHightLight(Buildable, FocusMaterial);
@@ -1447,72 +2266,114 @@ void UFSSelection::EnableHightLightFocus(AFGBuildable* Buildable)
 
 void UFSSelection::DisableHightLightFocus()
 {
-	if (!CurrentFocus) return;
+	if (CurrentFocus == BuildableEmpty) return;
 	if (Design->IsElementSelected(CurrentFocus)) {
 		if (CurrentFocus != Design->Anchor) {
 			EnableHightLight(CurrentFocus, SelectMaterial);
 		}
 	}
 	else DisableHightLight(CurrentFocus);
-	CurrentFocus = nullptr;
+	CurrentFocus = FSBuildable();
 }
 
-void UFSSelection::DisableHightLight(AFGBuildable* Buildable)
+void UFSSelection::DisableHightLight(FSBuildable Buildable)
 {
 	FSActorMaterial* Cache = ActorMaterialCache.Find(Buildable);
+	AFSkyline* FSkylin = AFSkyline::Get(this);
 
 	if (!Cache) return;
 
-	FString FullPathName = Buildable->GetPathName();
+	FString FullPathName = Buildable.Buildable->GetPathName();
 
 	//if (FullPathName.Contains("Build_AssemblerMk1") || FullPathName.Contains("Build_ManufacturerMk1") || FullPathName.Contains("Build_OilRefinery") || FullPathName.Contains("Build_HadronCollider")) {
 	//}
 	//else {
 
-	FSelectedActorInfo* handleHolder = SelectedMap.Find(Buildable);
-	if (handleHolder) {
+	//FSelectedActorInfo* handleHolder = SelectedMap.Find(Buildable);
+	//if (handleHolder) {
+		if (Cache->UseDefaultOutline) {
 
-		if (handleHolder->HologramHelper) {
-			handleHolder->HologramHelper->Destroy();
-			handleHolder->HologramHelper = nullptr;
-			for (int i = 0; i < handleHolder->copiedComponents.Num(); i++) {
-				handleHolder->copiedComponents[i]->ClearInstances();
+			// TODO NEED TO FIX THIS FOR DEFAULT OUTLINE LOGIC
+			//FSkylin->FSCtrl->GetPlayer()->GetOutline()->HideActorOutline(Buildable);
+
+			if (Cache->HologramHelper) {
+				Cache->HologramHelper->Destroy();
+				Cache->HologramHelper = nullptr;
 			}
 
-			InstanceHandles = Buildable->mInstanceHandles;
-			for (int i = 0; i < InstanceHandles.Num(); i++) {
-				InstanceHandles[i]->UnHideInstance(true);
+			for (TPair<UStaticMesh*, UInstancedStaticMeshComponent*>& Pair : Cache->OutlineProxyData) {
+				Pair.Value->ClearInstances();
+				Pair.Value->UnregisterComponent();
+				Pair.Value->DestroyComponent();
+				Pair.Value->FixGarbageOrPendingKillInternalObjectFlags(EInternalObjectFlags::Garbage);
+				Pair.Value->MarkAsGarbage();
+				//Pair.Key->MarkAsGarbage();
+				//Pair.Key = nullptr;
+				Pair.Value = nullptr;
 			}
+			Cache->OutlineProxyData.Empty();
 
 		} else {
+			if (Cache->HologramHelper) {
+				Cache->HologramHelper->Destroy();
+				Cache->HologramHelper = nullptr;
+				for (TPair<UStaticMesh*, UHierarchicalInstancedStaticMeshComponent*>& Pair : Cache->copiedComponents) {
+					Pair.Value->ClearInstances();
+				}
 
-			FSelectedActorInfo handle = *handleHolder;
-			//if (!handle.hologramVariation) {
-			HideHologram(Buildable, handle);
+				if (!Buildable.Buildable) {
+					//Buildable.Handle.UnHideInstance(true);
+					//Buildable.Handle.HideInstance(false);
 
-			if (Buildable->GetClass()->IsChildOf<AFGBuildableWidgetSign>()) {
-				AFGBuildableWidgetSign* BuildableSign = Cast<AFGBuildableWidgetSign>(Buildable);
-				BuildableSign->PasteSettings_Implementation(BuildableSign->CopySettings_Implementation());
-			}
-			//}
-			if (handle.hologramVariation) {
-				//Buildable->ToggleInstanceVisibility(true);
-				if (handle.Hologram) {
-					handle.Hologram->SetDisabled(true);
-					handle.Hologram->Destroy();
-					handle.Hologram = nullptr;
-					handleHolder->Hologram = nullptr;
-					//FSMaterialHandle* Value = new FSMaterialHandle();
-					//Value->Hologram = handle.Hologram;
-					//SelectedMap.Add(Buildable, Value);
+					Cache->Handle.UnHideInstance(true);
+				}
+
+				if (Buildable.Buildable) {
+					InstanceHandles = Buildable.Buildable->mInstanceHandles;
+					for (int i = 0; i < InstanceHandles.Num(); i++) {
+						InstanceHandles[i]->UnHideInstance(true);
+					}
+				}
+
+				// also regular meshes can exist with the same buildable with instancing as well so we need to do hologram logic for those meshes as well
+				if (Buildable.Buildable) {
+					FSActorMaterial& handle = *Cache;
+					HideHologram(Buildable.Buildable, handle);
+				}
+
+			} else {
+
+				FSActorMaterial& handle = *Cache;
+				//if (!handle.hologramVariation) {
+				if (Buildable.Buildable) {
+					HideHologram(Buildable.Buildable, handle);
+
+					if (Buildable.Buildable->GetClass()->IsChildOf<AFGBuildableWidgetSign>()) {
+						AFGBuildableWidgetSign* BuildableSign = Cast<AFGBuildableWidgetSign>(Buildable.Buildable);
+						BuildableSign->PasteSettings_Implementation(BuildableSign->CopySettings_Implementation());
+					}
+				}
+				//}
+				if (handle.hologramVariation) {
+					//Buildable->ToggleInstanceVisibility(true);
+					if (handle.Hologram) {
+						handle.Hologram->SetDisabled(true);
+						handle.Hologram->Destroy();
+						handle.Hologram = nullptr;
+						Cache->Hologram = nullptr;
+						//FSMaterialHandle* Value = new FSMaterialHandle();
+						//Value->Hologram = handle.Hologram;
+						//SelectedMap.Add(Buildable, Value);
+					}
 				}
 			}
 		}
 
-	}
-	SelectedMap.Remove(Buildable);
+	//}
 
-	ActorList.Remove(Buildable);
+	//SelectedMap.Remove(Buildable);
+
+	//ActorList.Remove(Buildable);
 
 	// partial work need another solution
 	/*
@@ -1622,21 +2483,28 @@ void UFSSelection::DisableHightLight(AFGBuildable* Buildable)
 
 		}
 		
+		//FSBuildable Buildable;
+
 		ActorMaterialCache.Remove(Buildable);
 		
 	//}
-	if (CurrentFocus == Buildable) CurrentFocus = nullptr;
+	if (CurrentFocus == Buildable) CurrentFocus = FSBuildable();
 }
 
 void UFSSelection::DisableAll()
 {
-	for (TPair<AActor*, FSelectedActorInfo>& pair : SelectedMap){
-		AActor* actor = pair.Key;
-		FSelectedActorInfo handle = pair.Value;
+	AFSkyline* FSkylin = AFSkyline::Get(this);
 
+	for (TPair<FSBuildable, FSActorMaterial>& pair : ActorMaterialCache){
+		FSBuildable actor = pair.Key;
+		FSActorMaterial handle = pair.Value;
+
+		bool exists = true;
+		/* As some buildables are pure abstracts now this test isnt very useful
+		*  Maybe refactor in anythere way?
 		int num = ActorList.Num();
 		AActor* actor2 = nullptr;
-		bool exists = false;
+		bool exists = true;
 		for (int i = 0; i < num; i++) {
 			if (ActorList[i] != nullptr) {
 				if (actor == ActorList[i]) {
@@ -1645,28 +2513,99 @@ void UFSSelection::DisableAll()
 				}
 			}
 		}
+		*/
 
 		//AActor* actor2 = ActorList.Find(actor);
 		if (exists) {
-			if (pair.Value.HologramHelper) {
-				pair.Value.HologramHelper->Destroy();
-				pair.Value.HologramHelper = nullptr;
-				for (int i = 0; i < pair.Value.copiedComponents.Num(); i++) {
-					pair.Value.copiedComponents[i]->ClearInstances();
+			if (!pair.Value.UseDefaultOutline) {
+				if (pair.Value.HologramHelper) {
+					pair.Value.HologramHelper->Destroy();
+					pair.Value.HologramHelper = nullptr;
+					for (TPair<UStaticMesh*, UHierarchicalInstancedStaticMeshComponent*>& Pair : pair.Value.copiedComponents) {
+						Pair.Value->ClearInstances();
+					}
+
+					if (!actor.Buildable) {
+						//Buildable.Handle.UnHideInstance(true);
+						//Buildable.Handle.HideInstance(false);
+
+						handle.Handle.UnHideInstance(true);
+						//actor.Handle.UnHideInstance(true);
+					}
+
+					if (actor.Buildable) {
+						InstanceHandles = Cast<AFGBuildable>(actor.Buildable)->mInstanceHandles;
+						for (int i = 0; i < InstanceHandles.Num(); i++) {
+							InstanceHandles[i]->UnHideInstance(true);
+						}
+					}
+
+					// also regular meshes can exist with the same buildable with instancing as well so we need to do hologram logic for those meshes as well
+					if (actor.Buildable) {
+						HideHologram(actor.Buildable, handle);
+					}
+
+					continue;
+				}
+			}
+
+			if (pair.Value.UseDefaultOutline) {
+
+				// TODO WE NEED TO FIX FOR DEFAULT OUTLINES
+				//FSkylin->FSCtrl->GetPlayer()->GetOutline()->HideActorOutline(actor);
+
+				/*
+
+				for (const auto& ActorComp : actor->GetComponentsByClass(UMeshComponent::StaticClass())) {
+					UMeshComponent* MeshComponent = Cast<UMeshComponent>(ActorComp);
+
+					if (MeshComponent) {
+
+						FString Name = MeshComponent->GetName();
+						if (!actor->GetClass()->IsChildOf<AFGBuildableWire>()) {
+							if (Name.Contains(TEXT("FogPlane")) || Name.Contains(TEXT("Smoke")) || Name.Contains(TEXT("StaticMeshComponent"))) continue;
+						}
+
+						UFGBlueprintFunctionLibrary::HideOutline(MeshComponent);
+
+					}
+				}
+				*/
+
+				
+				if (pair.Value.HologramHelper) {
+					pair.Value.HologramHelper->Destroy();
+					pair.Value.HologramHelper = nullptr;
 				}
 
-				InstanceHandles = Cast<AFGBuildable>(actor)->mInstanceHandles;
-				for (int i = 0; i < InstanceHandles.Num(); i++) {
-					InstanceHandles[i]->UnHideInstance(true);
+				for (TPair<UStaticMesh*, UInstancedStaticMeshComponent*>& Pair : pair.Value.OutlineProxyData) {
+
+					Pair.Value->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+
+					UFGBlueprintFunctionLibrary::ShowOutline(Pair.Value, EOutlineColor::OC_NONE);
+
+					Pair.Value->ClearInstances();
+					Pair.Value->UnregisterComponent();
+					Pair.Value->DestroyComponent();
+					Pair.Value->FixGarbageOrPendingKillInternalObjectFlags(EInternalObjectFlags::Garbage);
+					Pair.Value->MarkAsGarbage();
+					//Pair.Key->MarkAsGarbage();
+					//Pair.Key = nullptr;
+					Pair.Value = nullptr;
 				}
-				continue;
-			}
-			HideHologram(actor, handle);
-			AFGBuildable* buildableActor = Cast<AFGBuildable>(actor);
-			//buildableActor->ToggleInstanceVisibility(true);
-			if (buildableActor->GetClass()->IsChildOf<AFGBuildableWidgetSign>()) {
-				AFGBuildableWidgetSign* BuildableSign = Cast<AFGBuildableWidgetSign>(buildableActor);
-				BuildableSign->PasteSettings_Implementation(BuildableSign->CopySettings_Implementation());
+				pair.Value.OutlineProxyData.Empty();
+				
+
+			} else {
+				if (actor.Buildable) {
+					HideHologram(actor.Buildable, handle);
+					AFGBuildable* buildableActor = Cast<AFGBuildable>(actor.Buildable);
+					//buildableActor->ToggleInstanceVisibility(true);
+					if (buildableActor->GetClass()->IsChildOf<AFGBuildableWidgetSign>()) {
+						AFGBuildableWidgetSign* BuildableSign = Cast<AFGBuildableWidgetSign>(buildableActor);
+						BuildableSign->PasteSettings_Implementation(BuildableSign->CopySettings_Implementation());
+					}
+				}
 			}
 		}
 		if (handle.hologramVariation) {
@@ -1682,7 +2621,7 @@ void UFSSelection::DisableAll()
 			}
 		}
 	}
-	for (TPair<AFGBuildable*, FSActorMaterial >& Pair : ActorMaterialCache)
+	for (TPair<FSBuildable, FSActorMaterial >& Pair : ActorMaterialCache)
 		//AFGBuildable* buildable = Pair.Value.Buildable.Get();
 		for (FSMeshMaterial& MeshMaterial : Pair.Value.MeshList) {
 			UMeshComponent* MeshComponent = MeshMaterial.MeshComponent.Get();
@@ -1691,6 +2630,7 @@ void UFSSelection::DisableAll()
 				FSMaterialHandle** LocalCache = MaterialMapping.Find(MeshProxy);
 				if (LocalCache) {
 					RemoveInstance(MeshProxy, *LocalCache);
+
 					AFGBuildable* buildable = Pair.Value.Buildable.Get();
 					if (MeshComponent && Pair.Value.Buildable.Get()) {
 						if (MeshProxy->mInstanceHandle.ColorIndex < BUILDABLE_COLORS_MAX_SLOTS) {
@@ -1713,7 +2653,6 @@ void UFSSelection::DisableAll()
 			}
 			*/
 		}
-		
 }
 
 FSISMNode* UFSSelection::GetISM(UFGColoredInstanceMeshProxy* MeshProxy, UMaterialInterface* Material)
@@ -1845,6 +2784,228 @@ void UFSSelection::SelectBuildablesInAreaBox() {
 
 		FBoxSphereBounds bounds1 = Cube->GetRootComponent()->Bounds;
 
+		//const float Range = CVarDisplayLightWeightInstanceDebugRange.GetValueOnAnyThread();
+
+		TArray<UHierarchicalInstancedStaticMeshComponent*> filterList;
+
+		for (TObjectIterator<AFGBuildable> Worker; Worker; ++Worker) {
+			AFGBuildable* buildablePtr = *Worker;
+
+			if (!IsValid(buildablePtr)) {
+				continue;
+			}
+
+			AFGBuildablePipelineFlowIndicator* Indicator = Cast<AFGBuildablePipelineFlowIndicator>(buildablePtr);
+
+			if (Indicator) {
+				//don't want to select any indicators that are already owned as they will be spawned by the pipe instead.
+				if (Indicator->mOwningPipeline) {
+					continue;
+				}
+			}
+
+			InstanceHandles = buildablePtr->mInstanceHandles;
+
+			bool foundInstanceCollision = false;
+
+			if (InstanceHandles.Num() > 0) {
+				for (int i = 0; i < InstanceHandles.Num(); i++) {
+
+					bool foundCollision = false;
+
+					TArray<int32> instances;
+					instances = InstanceHandles[i]->GetInstanceComponent()->GetInstancesOverlappingBox(bounds1.GetBox(), true);
+
+
+					if (instances.Num() > 0) {
+
+
+						for (int q = 0; q < instances.Num(); q++) {
+							if (InstanceHandles[i]->GetHandleID() == instances[q]) {
+
+								//filterList.Add(InstanceHandles[i]->GetInstanceComponent());
+
+								//Design->AddElement(buildablePtr);
+								//Design->BuildableMark.Add(buildablePtr, 1);
+
+
+								FSBuildable Buildable;
+								Buildable.Buildable = buildablePtr;
+
+								Design->AddElement(Buildable);
+								Design->BuildableMark.Add(Buildable, 1);
+								EnableHightLight(Buildable, SelectMaterial);
+								foundCollision = true;
+								break;
+							}
+						}
+					}
+
+					if (foundCollision) {
+						foundInstanceCollision = true;
+						break;
+					}
+
+				}
+			}
+
+			if (InstanceHandles.Num() > 0 && foundInstanceCollision) {
+				for (int i = 0; i < InstanceHandles.Num(); i++) {
+					filterList.Add(InstanceHandles[i]->GetInstanceComponent());
+				}
+			}
+
+			else {
+				FBoxSphereBounds bounds2;
+				if (buildablePtr->GetRootComponent() == nullptr) {
+					continue;
+				}
+				else {
+					bounds2 = buildablePtr->GetRootComponent()->Bounds;
+				}
+				bool Overlap = FBoxSphereBounds::BoxesIntersect(bounds1, bounds2);
+				if (Overlap) {
+					//Design->AddElement(buildablePtr);
+					//Design->BuildableMark.Add(buildablePtr, 1);
+
+					FSBuildable Buildable;
+					//Buildable.Buildable = buildablePtr;
+					Buildable.Buildable = buildablePtr;
+
+					Design->AddElement(Buildable);
+					Design->BuildableMark.Add(Buildable, 1);
+					EnableHightLight(Buildable, SelectMaterial);
+				}else {
+
+					TArray<UStaticMeshComponent*> MeshComponents;
+					buildablePtr->GetComponents<UStaticMeshComponent>(MeshComponents);
+
+					for (UStaticMeshComponent* MeshComponent : MeshComponents) {
+
+						FBox MeshBounds = MeshComponent->CalcBounds(MeshComponent->GetComponentTransform()).GetBox();
+
+						// Get the bounding box of the cube
+						FBox CubeBounds = Cube->GetRootComponent()->Bounds.GetBox();
+
+						// Check for intersection between the bounding boxes
+						bool bIntersects = MeshBounds.Intersect(CubeBounds);
+
+						if (bIntersects) {
+
+							//Design->AddElement(buildablePtr);
+							//Design->BuildableMark.Add(buildablePtr, 1);
+
+							FSBuildable Buildable;
+							Buildable.Buildable = buildablePtr;
+
+							//Select(Buildable);
+
+							Design->AddElement(Buildable);
+							Design->BuildableMark.Add(Buildable, 1);
+							EnableHightLight(Buildable, SelectMaterial);
+
+							break;
+
+						}
+
+					}
+
+				}
+			}
+		}
+
+		
+
+		AAbstractInstanceManager* Manager = AAbstractInstanceManager::GetInstanceManager(FSkyline->World);
+
+		for (const TTuple< FName, FInstanceComponentData >& InstanceData : Manager->InstanceMap)
+		{
+			FString Name = InstanceData.Key.ToString();
+			for (const auto& Handle : InstanceData.Value.InstanceHandles)
+			{
+
+				bool foundCollision = false;
+
+				TArray<int32> instances;
+				instances = Handle->GetInstanceComponent()->GetInstancesOverlappingBox(bounds1.GetBox(), true);
+
+				bool foundFilter = false;
+
+				for (int j = 0; j < filterList.Num(); j++) {
+					UHierarchicalInstancedStaticMeshComponent* filterMesh = filterList[j];
+					UHierarchicalInstancedStaticMeshComponent* HandleMesh = Handle->GetInstanceComponent();
+					if (filterMesh == HandleMesh) {
+						foundFilter = true;
+						break;
+					}
+				}
+
+				if (foundFilter) {
+					continue;
+				}
+
+				if (instances.Num() > 0) {
+
+					for (int q = 0; q < instances.Num(); q++) {
+						if (Handle->GetHandleID() == instances[q]) {
+
+							//Handle->HideInstance(true);
+
+							FLightweightBuildableInstanceRef buildableRef;
+							AFGLightweightBuildableSubsystem::ResolveLightweightInstance(*Handle, buildableRef);
+							TSubclassOf< AFGBuildable > buildableClass = buildableRef.GetBuildableClass();
+							FRuntimeBuildableInstanceData* runtimeData = const_cast<FRuntimeBuildableInstanceData*>(buildableRef.ResolveBuildableInstanceData());
+
+							//FRuntimeBuildableInstanceData data;
+							//UFGLightweightBuildableBlueprintLibrary::ResolveLightweightCustomizationData(buildableRef, data);
+
+
+							FRuntimeBuildableInstanceData RuntimeData;
+
+							if (runtimeData) {
+								RuntimeData.Transform = runtimeData->Transform;
+								RuntimeData.CustomizationData = runtimeData->CustomizationData;
+								RuntimeData.BuiltWithRecipe = runtimeData->BuiltWithRecipe;
+								RuntimeData.BlueprintProxy = runtimeData->BlueprintProxy;
+								RuntimeData.Handles = runtimeData->Handles;
+
+								FSBuildable Buildable;
+								Buildable.Abstract = true;
+								Buildable.Handle = *Handle;
+								Buildable.RuntimeData = RuntimeData;
+								Buildable.BuildableClass = buildableClass;
+								Buildable.Transform = RuntimeData.Transform;
+								//Buildable.Buildable = Building;
+
+								//Select(Buildable);
+
+								Design->AddElement(Buildable);
+								Design->BuildableMark.Add(Buildable, 1);
+								EnableHightLight(Buildable, SelectMaterial);
+
+							}
+
+							//Design->AddElement(Buildable);
+							//Design->BuildableMark.Add(Buildable, 1);
+							//EnableHightLight(Buildable, SelectMaterial);
+
+							foundCollision = true;
+							//break;
+						}
+					}
+
+				}
+				//if (foundCollision) break;
+
+				//Handle->HideInstance(true);
+
+				int32 HandleId = Handle->HandleID;
+				//FTransform T;
+				//InstanceData.Value.InstancedStaticMeshComponent->GetInstanceTransform(HandleId, T, true/* already in world space.*/);
+			}
+		}
+
+		/*
 		for (TObjectIterator<AFGBuildable> Worker; Worker; ++Worker) {
 			AFGBuildable* buildablePtr = *Worker;
 
@@ -1866,41 +3027,19 @@ void UFSSelection::SelectBuildablesInAreaBox() {
 							if (InstanceHandles[i]->GetHandleID() == instances[q]) {
 								Design->AddElement(buildablePtr);
 								Design->BuildableMark.Add(buildablePtr, 1);
-								EnableHightLight(buildablePtr, SelectMaterial);
+
+
+								FSBuildable Buildable;
+								Buildable.Buildable = buildablePtr;
+								EnableHightLight(Buildable, SelectMaterial);
 								foundCollision = true;
 								break;
 							}
 						}
-
-						/*
-						for (int q = 0; q < instances.Num(); q++) {
-
-							FVector SmallScale = FVector(KINDA_SMALL_NUMBER);
-
-							FTransform T;
-							InstanceHandles[i]->GetInstanceComponent()->GetInstanceTransform(instances[q], T);
-							FVector Scale;
-							Scale = T.GetScale3D();
-							T.SetScale3D(SmallScale);
-
-							InstanceHandles[i]->GetInstanceComponent()->UpdateInstanceTransform(instances[q], T, false, true, false);
-							InstanceHandles[i]->GetInstanceComponent()->MarkRenderTransformDirty();
-						}
-						*/
 					}
 
 					if (foundCollision) break;
 
-					// selects all foundations
-					/*
-					FBoxSphereBounds bounds2 = InstanceHandles[i]->GetInstanceComponent()->Bounds;
-					bool Overlap = FBoxSphereBounds::BoxesIntersect(bounds1, bounds2);
-					if (Overlap) {
-						Design->AddElement(buildablePtr);
-						Design->BuildableMark.Add(buildablePtr, 1);
-						EnableHightLight(buildablePtr, SelectMaterial);
-					}
-					*/
 				}
 			}
 			else {
@@ -1909,21 +3048,56 @@ void UFSSelection::SelectBuildablesInAreaBox() {
 				if (Overlap) {
 					Design->AddElement(buildablePtr);
 					Design->BuildableMark.Add(buildablePtr, 1);
-					EnableHightLight(buildablePtr, SelectMaterial);
+
+					FSBuildable Buildable;
+					Buildable.Buildable = buildablePtr;
+					EnableHightLight(Buildable, SelectMaterial);
+				}else {
+
+					TArray<UStaticMeshComponent*> MeshComponents;
+					buildablePtr->GetComponents<UStaticMeshComponent>(MeshComponents);
+
+					for (UStaticMeshComponent* MeshComponent : MeshComponents) {
+
+						FBox MeshBounds = MeshComponent->CalcBounds(MeshComponent->GetComponentTransform()).GetBox();
+
+						// Get the bounding box of the cube
+						FBox CubeBounds = Cube->GetRootComponent()->Bounds.GetBox();
+
+						// Check for intersection between the bounding boxes
+						bool bIntersects = MeshBounds.Intersect(CubeBounds);
+
+						if (bIntersects) {
+
+							Design->AddElement(buildablePtr);
+							Design->BuildableMark.Add(buildablePtr, 1);
+
+							FSBuildable Buildable;
+							Buildable.Buildable = buildablePtr;
+							EnableHightLight(Buildable, SelectMaterial);
+
+							break;
+
+						}
+
+					}
+
 				}
 			}
-
-			/*
-			FBoxSphereBounds bounds2 = buildablePtr->GetRootComponent()->Bounds;
-			bool Overlap = FBoxSphereBounds::BoxesIntersect(bounds1, bounds2);
-			if (Overlap) {
-				Design->AddElement(buildablePtr);
-				Design->BuildableMark.Add(buildablePtr, 1);
-				EnableHightLight(buildablePtr, SelectMaterial);
-			}
-			*/
 		}
 
+		*/
+
+		
 	}
 
+}
+void UFSSelection::UpdateHighlightedActors() {
+
+	// TODO DO WE EVEN NEED THIS ANYMORE?
+	/*
+	AFSkyline* FSkylin = AFSkyline::Get(this);
+	UFGBuildGunStateDismantle* dismantleState = FSkylin->FSCtrl->FGBuildGun->mDismantleStateClass.GetDefaultObject();
+	dismantleState->UpdateHighlightedActors();
+	*/
 }

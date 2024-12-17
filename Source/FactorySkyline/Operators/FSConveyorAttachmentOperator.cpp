@@ -14,13 +14,13 @@ void UFSConveyorAttachmentOperator::ApplyConnection(AFGBuildable* Buildable, UFG
 			Connection = this->ConnectionMapping<UFGFactoryConnectionComponent>(SFC->GetConnection());
 			if (!Connection) {
 				FTransform Transform = TransformOperator.Transform(SFC->GetConnection()->GetComponentTransform());
-				Connection = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(TFC, Transform.GetLocation(), 50.0f);
+				Connection = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(TFC, Transform.GetLocation(), nullptr, 50.0f);
 				if (Connection && (Connection->GetAttachmentRootActor()== Buildable || !(Connection->GetComponentQuat().Vector() + TFC->GetComponentQuat().Vector()).IsNearlyZero()))
 					Connection = nullptr;
 			}
 		}
 		if (!Connection && Force) {
-			Connection = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(TFC, TFC->GetComponentTransform().GetLocation(), 50.0f);
+			Connection = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(TFC, TFC->GetComponentTransform().GetLocation(), nullptr, 50.0f);
 		}
 		if (Connection && !Connection->IsConnected() && TFC->CanConnectTo(Connection))
 			TFC->SetConnection(Connection);
@@ -29,25 +29,28 @@ void UFSConveyorAttachmentOperator::ApplyConnection(AFGBuildable* Buildable, UFG
 
 void UFSConveyorAttachmentOperator::ApplyConnection(AFGBuildable* Buildable, const FSTransformOperator& TransformOperator, bool Force)
 {
-	TArray<UActorComponent*> SourceComponent = Source->GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass());
-	TArray<UActorComponent*> TargetComponent = Buildable->GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass());
-	TArray<UFGFactoryConnectionComponent*> TargetFactoryComponent;
 
-	for (UActorComponent* SourceConnection : SourceComponent) {
-		UFGFactoryConnectionComponent* SFC = Cast<UFGFactoryConnectionComponent>(SourceConnection);
-		UFGFactoryConnectionComponent* TFC = ConnectionMapping<UFGFactoryConnectionComponent>(SFC);
-		if (SFC && TFC) {
-			ApplyConnection(Buildable, SFC, TFC, TransformOperator, Force);
-			if (!TFC->IsConnected() && (SFC->IsConnected() || Force)) TargetFactoryComponent.Add(TFC);
-		}
-	}
+	if (Source.Buildable) {
+		TArray<UActorComponent*> SourceComponent = Source.Buildable->K2_GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass());
+		TArray<UActorComponent*> TargetComponent = Buildable->K2_GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass());
+		TArray<UFGFactoryConnectionComponent*> TargetFactoryComponent;
 
-	for (UFGFactoryConnectionComponent* TFC0 : TargetFactoryComponent)
-		for (UFGFactoryConnectionComponent* TFC1 : TargetFactoryComponent)
-			if (TFC0->GetDirection() != TFC1->GetDirection() && (TFC0->GetComponentQuat().Vector() + TFC1->GetComponentQuat().Vector()).IsNearlyZero()) {
-				TrySplitConveyor(Buildable, TFC0, TFC1);
-				return;
+		for (UActorComponent* SourceConnection : SourceComponent) {
+			UFGFactoryConnectionComponent* SFC = Cast<UFGFactoryConnectionComponent>(SourceConnection);
+			UFGFactoryConnectionComponent* TFC = ConnectionMapping<UFGFactoryConnectionComponent>(SFC);
+			if (SFC && TFC) {
+				ApplyConnection(Buildable, SFC, TFC, TransformOperator, Force);
+				if (!TFC->IsConnected() && (SFC->IsConnected() || Force)) TargetFactoryComponent.Add(TFC);
 			}
+		}
+
+		for (UFGFactoryConnectionComponent* TFC0 : TargetFactoryComponent)
+			for (UFGFactoryConnectionComponent* TFC1 : TargetFactoryComponent)
+				if (TFC0->GetDirection() != TFC1->GetDirection() && (TFC0->GetComponentQuat().Vector() + TFC1->GetComponentQuat().Vector()).IsNearlyZero()) {
+					TrySplitConveyor(Buildable, TFC0, TFC1);
+					return;
+				}
+	}
 
 }
 
@@ -88,14 +91,16 @@ FSBuildableType UFSConveyorAttachmentOperator::GetType() const
 	return FSBuildableType::Factory;
 }
 
-void UFSConveyorAttachmentOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSConveyorAttachmentOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	TArray<UActorComponent*> TargetComponent = Buildable->GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass());
-	for (UActorComponent* TargetConnection : TargetComponent) {
-		UFGFactoryConnectionComponent* TFC = Cast<UFGFactoryConnectionComponent>(TargetConnection);
-		if (TFC && TFC->IsConnected()) {
-			AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
-			List.Add(Connection);
+	if (Buildable->Buildable) {
+		TArray<UActorComponent*> TargetComponent = Buildable->Buildable->K2_GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass());
+		for (UActorComponent* TargetConnection : TargetComponent) {
+			UFGFactoryConnectionComponent* TFC = Cast<UFGFactoryConnectionComponent>(TargetConnection);
+			if (TFC && TFC->IsConnected()) {
+				AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
+				List.Add(Connection);
+			}
 		}
 	}
 }

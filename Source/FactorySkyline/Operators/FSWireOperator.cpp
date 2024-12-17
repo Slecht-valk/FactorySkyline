@@ -10,7 +10,11 @@ AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOp
 {
 	//SML::Logging::info(TEXT("UFSWireOperator::CreateCopy"));
 
-	AFGBuildableWire* SourceWire = Cast<AFGBuildableWire>(Source);
+	AFGBuildableWire* SourceWire = nullptr;
+
+	if (Source.Buildable) {
+		SourceWire = Cast<AFGBuildableWire>(Source.Buildable);
+	}
 
 	if (!SourceWire->GetConnection(0)) return nullptr;
 	if (!SourceWire->GetConnection(1)) return nullptr;
@@ -61,12 +65,24 @@ AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOp
 
 	if (!TargetConnection0 || !TargetConnection1) return nullptr;
 
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
+	FTransform Transform;
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+	}
+	TSubclassOf<UFGRecipe> Recipe;
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -77,7 +93,9 @@ AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOp
 	actors.Add(actor0);
 	actors.Add(actor1);
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;
@@ -88,21 +106,23 @@ FSBuildableType UFSWireOperator::GetType() const
 	return FSBuildableType::Power;
 }
 
-void UFSWireOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSWireOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	AFGBuildableWire* Wire = Cast<AFGBuildableWire>(Buildable);
-	if (!Wire) return;
+	if (Buildable->Buildable) {
+		AFGBuildableWire* Wire = Cast<AFGBuildableWire>(Buildable->Buildable);
+		if (!Wire) return;
 
-	for (int i = 0; i < 2; i++) {
-		UFGCircuitConnectionComponent* ConnectionComponent = (UFGCircuitConnectionComponent*)Wire->GetConnection(i);
-		if (!ConnectionComponent) continue;
+		for (int i = 0; i < 2; i++) {
+			UFGCircuitConnectionComponent* ConnectionComponent = (UFGCircuitConnectionComponent*)Wire->GetConnection(i);
+			if (!ConnectionComponent) continue;
 
-		TArray<UFGCircuitConnectionComponent*> Connections;
-		ConnectionComponent->GetConnections(Connections);
+			TArray<UFGCircuitConnectionComponent*> Connections;
+			ConnectionComponent->GetConnections(Connections);
 
-		for (UFGCircuitConnectionComponent* TargetConnection : Connections) {
-			AFGBuildable* Connection = Cast<AFGBuildable>(TargetConnection->GetAttachmentRootActor());
-			if (Connection) List.Add(Connection);
+			for (UFGCircuitConnectionComponent* TargetConnection : Connections) {
+				AFGBuildable* Connection = Cast<AFGBuildable>(TargetConnection->GetAttachmentRootActor());
+				if (Connection) List.Add(Connection);
+			}
 		}
 	}
 }

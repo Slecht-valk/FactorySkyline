@@ -46,11 +46,22 @@ void UFSBuildableBeamOperator::UpdateHologramState(const FHitResult& Hit, AFGHol
 AFGHologram* UFSBuildableBeamOperator::HologramCopy(FTransform& RelativeTransform)
 {
 	//return SplineHologramFactory->CreateLiftHologram(Cast<AFGBuildableConveyorLift>(Source), RelativeTransform);
-	RelativeTransform = Source->GetTransform();
+	//RelativeTransform = Source->GetTransform();
+
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
+	else {
+		RelativeTransform = Source.Transform;
+	}
+
 	AFGHologram* Hologram = CreateHologram();
 	if (!Hologram) return nullptr;
 
-	AFGBuildableBeam* SourceBuildableBeam = Cast<AFGBuildableBeam>(Source);
+	AFGBuildableBeam* SourceBuildableBeam = nullptr;
+	if (Source.Buildable) {
+		SourceBuildableBeam = Cast<AFGBuildableBeam>(Source.Buildable);
+	}
 	AFGBeamHologram* BuildableBeamHologram = Cast<AFGBeamHologram>(Hologram);
 
 	if (!BuildableBeamHologram) return Hologram;
@@ -94,7 +105,13 @@ AFGBuildable* UFSBuildableBeamOperator::CreateCopy(const FSTransformOperator& Tr
 	FVector newPoint = FVector(X, Y, Z);
 	*/
 
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
 
 	//Transform.CopyRotation(Source->GetTransform());
 	//Transform.SetTranslation(newPoint);
@@ -103,8 +120,14 @@ AFGBuildable* UFSBuildableBeamOperator::CreateCopy(const FSTransformOperator& Tr
 	//Transform.CopyRotation(Source->GetTransform());
 	//Transform.CopyTranslation(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildableBeam* SourceBuildableBeam = Cast<AFGBuildableBeam>(Source);
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildableBeam* SourceBuildableBeam = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceBuildableBeam = Cast<AFGBuildableBeam>(Source.Buildable);
+	}
+	//AFGBuildableBeam* SourceBuildableBeam = Cast<AFGBuildableBeam>(Source);
 	AFGBuildableBeam* BuildableBeam = Cast<AFGBuildableBeam>(Buildable);
 
 
@@ -117,8 +140,15 @@ AFGBuildable* UFSBuildableBeamOperator::CreateCopy(const FSTransformOperator& Tr
 	//AFGBuildableConveyorLift* SourceConveyorLift = Cast<AFGBuildableConveyorLift>(Source);
 	//AFGBuildableConveyorLift* TargetConveyorLift = Cast<AFGBuildableConveyorLift>(Buildable);
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+
+	if (Source.Buildable) {
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -129,13 +159,17 @@ AFGBuildable* UFSBuildableBeamOperator::CreateCopy(const FSTransformOperator& Tr
 	*/
 	//FSkyline->AdaptiveUtil->CopyConveyorLiftAttribute(SourceConveyorLift, TargetConveyorLift);
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	//FSkyline->Select->Select(Buildable);
 	//FSkyline->Select->Select(Buildable);
-	FSkyline->Select->EnableHightLight(Buildable, FSkyline->Select->SelectMaterial);
-	FSkyline->Select->DisableHightLight(Buildable);
+	FSBuildable Buildableptr;
+	Buildableptr.Buildable = Buildable;
+	FSkyline->Select->EnableHightLight(Buildableptr, FSkyline->Select->SelectMaterial);
+	FSkyline->Select->DisableHightLight(Buildableptr);
 	// none of these methods refresh the meshes
 	/*
 	// hack to refresh static mesh - This is needed for power indicators and meshes to update properly.

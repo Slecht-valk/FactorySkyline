@@ -25,7 +25,7 @@ void UFSBuildablePassThroughOperator::UpdateHologramState(const FHitResult& Hit,
 
 	FVector HologramLocation = Hologram->GetTransform().GetLocation();
 
-	for (UActorComponent* Connection : Actor->GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass())) {
+	for (UActorComponent* Connection : Actor->K2_GetComponentsByClass(UFGFactoryConnectionComponent::StaticClass())) {
 		UFGFactoryConnectionComponent* FactoryConnection = Cast<UFGFactoryConnectionComponent>(Connection);
 		if (FactoryConnection) {
 			if (HitConnection == nullptr) HitConnection = FactoryConnection;
@@ -43,8 +43,18 @@ void UFSBuildablePassThroughOperator::UpdateHologramState(const FHitResult& Hit,
 
 AFGHologram* UFSBuildablePassThroughOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	RelativeTransform = Source->GetTransform();
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
+	//RelativeTransform = Source->GetTransform();
+
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
+
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+
 	if (!Recipe) return nullptr;
 	AFGHologram* Hologram = AFGHologram::SpawnHologramFromRecipe(Recipe, Builder, FVector(0.0f, 0.0f, 0.0f), ((AFSkyline*)Skyline)->FSCtrl->GetPlayer());
 	
@@ -52,7 +62,11 @@ AFGHologram* UFSBuildablePassThroughOperator::HologramCopy(FTransform& RelativeT
 	AFGPassthroughHologram* PassthroughHologram = Cast<AFGPassthroughHologram>(Hologram);
 	if (!PassthroughHologram) return Hologram;
 
-	AFGBuildablePassthrough* SourceBuildablePassthrough = Cast<AFGBuildablePassthrough>(Source);
+	AFGBuildablePassthrough* SourceBuildablePassthrough;
+
+	if (Source.Buildable) {
+		SourceBuildablePassthrough = Cast<AFGBuildablePassthrough>(Source.Buildable);
+	}
 
 	//float num = SourceBuildablePassthrough->mSnappedBuildingThickness;
 	//PassthroughHologram.snapped
@@ -87,7 +101,9 @@ AFGHologram* UFSBuildablePassThroughOperator::HologramCopy(FTransform& RelativeT
 	PassthroughHologram->UpdateClearance();
 	*/
 
-	Hologram->SetActorTransform(Source->GetTransform());
+	if (Source.Buildable) {
+		Hologram->SetActorTransform(Source.Buildable->GetTransform());
+	}
 
 	return Hologram;
 }
@@ -96,9 +112,22 @@ AFGBuildable* UFSBuildablePassThroughOperator::CreateCopy(const FSTransformOpera
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
-	AFGBuildablePassthrough* SourceBuildablePassthrough = Cast<AFGBuildablePassthrough>(Source);
+	//FTransform Transform;
+
+	FTransform Transform;
+
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+	AFGBuildablePassthrough* SourceBuildablePassthrough = nullptr;
+	
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+		SourceBuildablePassthrough = Cast<AFGBuildablePassthrough>(Source.Buildable);
+	}
+
 	AFGBuildablePassthrough* BuildablePassthrough = Cast<AFGBuildablePassthrough>(Buildable);
 
 	float num = SourceBuildablePassthrough->mSnappedBuildingThickness;
@@ -112,13 +141,22 @@ AFGBuildable* UFSBuildablePassThroughOperator::CreateCopy(const FSTransformOpera
 	BuildablePassthrough->mEndCapTranslation = SourceBuildablePassthrough->mEndCapTranslation;
 	BuildablePassthrough->mClearanceHeightMin = SourceBuildablePassthrough->mClearanceHeightMin;
 	BuildablePassthrough->mClearanceThickness = SourceBuildablePassthrough->mClearanceThickness;
-	BuildablePassthrough->mUseSoftClearance = SourceBuildablePassthrough->mUseSoftClearance;
+
+	// NO LONGER VALID
+	//BuildablePassthrough->mUseSoftClearance = SourceBuildablePassthrough->mUseSoftClearance;
 
 	//AFGBuildableConveyorLift* SourceConveyorLift = Cast<AFGBuildableConveyorLift>(Source);
 	//AFGBuildableConveyorLift* TargetConveyorLift = Cast<AFGBuildableConveyorLift>(Buildable);
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+	}
+
+	if (Source.Buildable) {
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
@@ -129,7 +167,9 @@ AFGBuildable* UFSBuildablePassThroughOperator::CreateCopy(const FSTransformOpera
 	*/
 	//FSkyline->AdaptiveUtil->CopyConveyorLiftAttribute(SourceConveyorLift, TargetConveyorLift);
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	//this->BuildableSubsystem->RemoveConveyorFromBucket(TargetConveyorLift);

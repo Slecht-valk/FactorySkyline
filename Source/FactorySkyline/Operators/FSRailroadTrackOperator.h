@@ -21,7 +21,7 @@ public:
 	virtual void ApplyConnection(AFGBuildable* Buildable, UFGConnectionComponent* SFC, UFGConnectionComponent* TFC, const FSTransformOperator& TransformOperator, bool Force);
 	virtual void ApplySettingsTo(AFGBuildable* Buildable);
 	virtual FSBuildableType GetType() const;
-	virtual void GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
+	virtual void GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
 
 	void FindOverlappingConnections(TArray<UFGRailroadTrackConnectionComponent*>& Result, UFGRailroadTrackConnectionComponent* Ignored, const FVector& Loc, const float& Radius);
 };

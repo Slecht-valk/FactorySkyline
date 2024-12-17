@@ -41,7 +41,12 @@ void UFSTrainPlatformOperator::ApplySettingsTo(AFGBuildable* Buildable)
 {
 	Super::ApplySettingsTo(Buildable);
 
-	AFGBuildableTrainPlatform* SourcePlatform = Cast<AFGBuildableTrainPlatform>(Source);
+	AFGBuildableTrainPlatform* SourcePlatform = nullptr;
+
+	if (Source.Buildable) {
+		SourcePlatform = Cast<AFGBuildableTrainPlatform>(Source.Buildable);
+	}
+
 	AFGBuildableTrainPlatform* TargetPlatform = Cast<AFGBuildableTrainPlatform>(Buildable);
 
 	if (SourcePlatform->mRailroadTrack) {
@@ -74,17 +79,18 @@ FSBuildableType UFSTrainPlatformOperator::GetType() const
 {
 	return FSBuildableType::Rail;
 }
-void UFSTrainPlatformOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSTrainPlatformOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	AFGBuildableTrainPlatform* TargetPlatform = Cast<AFGBuildableTrainPlatform>(Buildable);
-	if (TargetPlatform->mRailroadTrack) List.Add(TargetPlatform->mRailroadTrack);
-	if (TargetPlatform->mPlatformConnection0->GetConnectedTo()) {
-		AFGBuildableTrainPlatform* Platform = Cast<AFGBuildableTrainPlatform>(TargetPlatform->mPlatformConnection0->GetConnectedTo()->GetAttachmentRootActor());
-		if (Platform) List.Add(Platform);
+	if (Buildable->Buildable) {
+		AFGBuildableTrainPlatform* TargetPlatform = Cast<AFGBuildableTrainPlatform>(Buildable->Buildable);
+		if (TargetPlatform->mRailroadTrack) List.Add(TargetPlatform->mRailroadTrack);
+		if (TargetPlatform->mPlatformConnection0->GetConnectedTo()) {
+			AFGBuildableTrainPlatform* Platform = Cast<AFGBuildableTrainPlatform>(TargetPlatform->mPlatformConnection0->GetConnectedTo()->GetAttachmentRootActor());
+			if (Platform) List.Add(Platform);
+		}
+		if (TargetPlatform->mPlatformConnection1->GetConnectedTo()) {
+			AFGBuildableTrainPlatform* Platform = Cast<AFGBuildableTrainPlatform>(TargetPlatform->mPlatformConnection0->GetConnectedTo()->GetAttachmentRootActor());
+			if (Platform) List.Add(Platform);
+		}
 	}
-	if (TargetPlatform->mPlatformConnection1->GetConnectedTo()) {
-		AFGBuildableTrainPlatform* Platform = Cast<AFGBuildableTrainPlatform>(TargetPlatform->mPlatformConnection0->GetConnectedTo()->GetAttachmentRootActor());
-		if (Platform) List.Add(Platform);
-	}
-	
 }

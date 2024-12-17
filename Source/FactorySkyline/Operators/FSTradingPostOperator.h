@@ -15,5 +15,5 @@ class FACTORYSKYLINE_API UFSTradingPostOperator : public UFSFactoryOperator
 	GENERATED_BODY()
 public:
 	virtual FSBuildableType GetType() const;
-	virtual void GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
+	virtual void GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
 };

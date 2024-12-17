@@ -19,12 +19,14 @@ AFSCommandInstance::AFSCommandInstance() {
 
 static void ListAllActor(UCommandSender* Sender)
 {
+	/* TODO FIX THIS
 	UWorld* World = Sender->GetWorld();
 	for (TActorIterator<AActor>It(World); It; ++It) {
 		AActor* Actor = *It;
 		UE_LOG(LogSkyline, Display, TEXT("%s"), *Actor->GetFullName());
 
 	}
+	*/
 }
 
 static void ListAllUserWidgetr(UCommandSender* Sender)

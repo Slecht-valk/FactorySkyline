@@ -18,5 +18,5 @@ public:
 	virtual AFGHologram* HologramCopy(FTransform& RelativeTransform);
 	virtual AFGBuildable* CreateCopy(const FSTransformOperator& TransformOperator);
 	virtual FSBuildableType GetType() const;
-	virtual void GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
+	virtual void GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
 };

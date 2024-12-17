@@ -19,8 +19,58 @@
 #include "Equipment/FGEquipment.h"
 #include "Buildables/FGBuildableResourceSink.h"
 #include "UI/FGGameUI.h"
+
+
+
+#include "FGLightweightBuildableSubsystem.h"
+
 #include "FSController.generated.h"
 
+
+struct FSHitResults
+{
+	// because buildings can have multiple different forms now, either buildings that exist as Afgbuildables or abstracts, we need to determine
+	// the type here to better handle specific logic that needs to happen differently for each one
+	bool Abstract = false;
+	// the handle for this abstract buildable
+	FInstanceHandle Handle;
+	// the runtime data for this abstract buildable
+	//FRuntimeBuildableInstanceData* RuntimeData = new FRuntimeBuildableInstanceData();
+	 FRuntimeBuildableInstanceData RuntimeData;
+	//
+	TSubclassOf< AFGBuildable > BuildableClass = nullptr;
+
+	FTransform InstanceTransform;
+
+	//UHierarchicalInstancedStaticMeshComponent* InstancedStaticMeshComponent;
+
+	FHitResult Hit;
+};
+
+/*
+struct FSBuildable
+{
+
+	// because buildings can have multiple different forms now, either buildings that exist as Afgbuildables or abstracts, we need to determine
+	// the type here to better handle specific logic that needs to happen differently for each one
+	bool Abstract = false;
+	// the handle for this abstract buildable
+	FInstanceHandle Handle;
+	// the runtime data for this abstract buildable
+	FRuntimeBuildableInstanceData* RuntimeData = nullptr;
+	//
+	TSubclassOf< AFGBuildable > BuildableClass = nullptr;
+
+	// the data stored above is needed for the abstracts only, for buildables that also have instance data we can just store the reference here instead
+	AFGBuildable* Buildable = nullptr;
+
+	bool operator==(const FSBuildable& Other) const {
+
+		return Abstract == Other.Abstract && (Handle.HandleID == Other.Handle.HandleID) && RuntimeData == Other.RuntimeData && BuildableClass == Other.BuildableClass;
+	}
+
+};
+*/
 
 enum FSState
 {
@@ -79,6 +129,7 @@ public:
 		if (!HasKey("InfiniteAmmo")) SetBool("InfiniteAmmo", false);
 		if (!HasKey("DontSaveAnything")) SetBool("DontSaveAnything", false);
 		if (!HasKey("RecycleMaterials")) SetBool("RecycleMaterials", false);
+		SetBool("UseDefaultHologram", false);
 	}
 };
 
@@ -175,10 +226,11 @@ public:
 	bool CheckAnchor(bool Warn);
 	AFGBuildable* AcquireBuildable(const FHitResult& Hit);
 
-	FHitResult GetCopyHitResult();
-	FHitResult GetSelectHitResult();
+	FSHitResults GetCopyHitResult();
+	FHitResult GetCopyHitResultGeneric();
+	FSHitResults GetSelectHitResult();
 	FHitResult GetMouseCursorHitResult(bool RequireBuildable);
-	void SetFocusBuilding(AFGBuildable* Buildable);
+	void SetFocusBuilding(FSBuildable Buildable);
 	void ClearFocusBuilding();
 	void ChangeConnectSelectMode();
 
@@ -188,8 +240,11 @@ public:
 	void onSwitchThirdPersonView();
 	void onSwitchRecycleMaterials();
 
+	void PerformGarbageCollection();
+
 	AFGCharacterPlayer* GetPlayer();
 	TWeakObjectPtr<AFGCharacterPlayer> CurrentPlayer = nullptr;
+	AFGCharacterPlayer* localPlayer = nullptr;
 
 	UWorld* World = nullptr;
 	AFGWorldSettings* WorldSettings = nullptr;
@@ -218,7 +273,7 @@ public:
 	FSState State = FSState::Close;
 	UFSDesign* Design = nullptr;
 	FHitResult CurrentHitResult;
-	TWeakObjectPtr<AFGBuildable> CurrentFocusBuilding = nullptr;
+	FSBuildable CurrentFocusBuilding;
 	FSTime Timer;
 	FSRepeat Repeat;
 
@@ -257,4 +312,29 @@ public:
 	bool BuildRepeatCallBack = false;
 	bool RecycleMaterials;
 	AFGBuildable* BuildingPtr;
+
+	bool areaSelectPressed = false;
+	FVector InitialMousePosition;
+	FVector CurrentMousePosition;
+	FVector BoxStartPosition;
+
+	AFGBuildableSubsystem* BuildableSubsystem;
+
+	TSubclassOf< AFGBuildable > buildableClass;
+	FRuntimeBuildableInstanceData* runtimeData;
+	FInstanceHandle Handle;
+	FInstanceToTemporaryBuildable* tempData;
+	AActor* tempActor;
+
+	AHologramHelper* WorldHologramHelper = nullptr;
+	UHierarchicalInstancedStaticMeshComponent* CompCopy = nullptr;
+	FSBuildable BuildableEmpty;
+
+	FSBuildableTest Buildable1;
+
+	bool Collectgarbage = false;
+	bool bGarbageCollectionScheduled = false;
+	bool IsDoWorkComplete = false;
+	FTimerHandle GCTimerHandle;
+
 };

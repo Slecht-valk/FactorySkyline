@@ -36,7 +36,7 @@ public:
 	void AddResource(const TArray<FInventoryStack>& InventoryStack, int Multiplier = 1);
 	void AddResource(const FInventoryStack& Inventory, int Multiplier = 1);
 	void AddResource(TSubclassOf<UFGItemDescriptor> ItemClass, int Multiplier = 1);
-	void AddResourceCheckRecipe(AFGBuildable* Buildable, int Multiplier = 1);
+	void AddResourceCheckRecipe(FSBuildable Buildable, int Multiplier = 1);
 	void Empty();
 
 	bool Valid(TMap<TSubclassOf<UFGItemDescriptor>, int>& Minus);

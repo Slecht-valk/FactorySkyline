@@ -14,5 +14,5 @@ class FACTORYSKYLINE_API UFSPipelineSupportStkOperator : public UFSPipelineSuppo
 {
 	GENERATED_BODY()
 public:
-	virtual void GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
+	virtual void GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
 };

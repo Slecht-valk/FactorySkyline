@@ -10,6 +10,6 @@ FSBuildableType UFSTradingPostOperator::GetType() const
 {
 	return FSBuildableType::Building;
 }
-void UFSTradingPostOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSTradingPostOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
 }

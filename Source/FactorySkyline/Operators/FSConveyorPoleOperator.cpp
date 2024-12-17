@@ -9,14 +9,22 @@
 
 AFGHologram* UFSConveyorPoleOperator::HologramCopy(FTransform& RelativeTransform)
 {
-	RelativeTransform = Source->GetTransform();
+	//RelativeTransform = Source->GetTransform();
+
+	if (Source.Buildable) {
+		RelativeTransform = Source.Buildable->GetTransform();
+	}
 
 	AFGHologram* Hologram = CreateHologram();
 	if (!Hologram) return nullptr;
 	AFGConveyorPoleHologram* ConveyorPoleHologram = Cast<AFGConveyorPoleHologram>(Hologram);
 	if (!ConveyorPoleHologram) return Hologram;
 
-	AFGBuildablePole* SourcePole = Cast<AFGBuildablePole>(Source);
+	AFGBuildablePole* SourcePole = nullptr;
+
+	if (Source.Buildable) {
+		SourcePole = Cast<AFGBuildablePole>(Source.Buildable);
+	}
 
 	FHitResult Hit;
 	//Hit.Actor = nullptr;
@@ -40,24 +48,45 @@ AFGHologram* UFSConveyorPoleOperator::HologramCopy(FTransform& RelativeTransform
 
 AFGBuildable* UFSConveyorPoleOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
-	FTransform Transform = TransformOperator.Transform(Source->GetTransform());
+	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 
-	AFGBuildable* Buildable = BuildableSubsystem->BeginSpawnBuildable(Source->GetClass(), Transform);
+	FTransform Transform;
 
-	TSubclassOf<UFGRecipe> Recipe = SplineHologramFactory->GetRecipeFromClass(Source->GetClass());
-	if (!Recipe) Recipe = Source->GetBuiltWithRecipe();
+	if (Source.Buildable) {
+		Transform = TransformOperator.Transform(Source.Buildable->GetTransform());
+	}
+
+	AFGBuildable* Buildable = nullptr;
+
+	if (Source.Buildable) {
+		Buildable = BuildableSubsystem->BeginSpawnBuildable(Source.Buildable->GetClass(), Transform);
+	}
+
+	TSubclassOf<UFGRecipe> Recipe;
+
+	if (Source.Buildable) {
+		Recipe = SplineHologramFactory->GetRecipeFromClass(Source.Buildable->GetClass());
+		if (!Recipe) Recipe = Source.Buildable->GetBuiltWithRecipe();
+	}
 	if (!Recipe) return nullptr;
 
 	Buildable->SetBuiltWithRecipe(Recipe);
 	//TODO:
 	//Buildable->SetBuildingID(Source->GetBuildingID());
 
-	AFGBuildablePole* SourcePole = Cast<AFGBuildablePole>(Source);
+	AFGBuildablePole* SourcePole = nullptr;
+
+	if (Source.Buildable) {
+		SourcePole = Cast<AFGBuildablePole>(Source.Buildable);
+	}
+
 	AFGBuildablePole* BuildablePole = Cast<AFGBuildablePole>(Buildable);
 
 	BuildablePole->SetPoleHeight(SourcePole->mHeight);
 
-	Buildable->SetCustomizationData_Implementation(Source->GetCustomizationData_Implementation());
+	if (Source.Buildable) {
+		Buildable->SetCustomizationData_Implementation(Source.Buildable->GetCustomizationData_Implementation());
+	}
 	Buildable->FinishSpawning(Transform);
 
 	return Buildable;

@@ -36,7 +36,12 @@ void UFSManufacturerOperator::ApplySettingsTo(AFGBuildable* Buildable)
 {
 	Super::ApplySettingsTo(Buildable);
 
-	AFGBuildableManufacturer* SourceManufacturer = Cast<AFGBuildableManufacturer>(Source);
+	AFGBuildableManufacturer* SourceManufacturer = nullptr;
+
+	if (Source.Buildable) {
+		SourceManufacturer = Cast<AFGBuildableManufacturer>(Source.Buildable);
+	}
+
 	AFGBuildableManufacturer* TargetManufacturer = Cast<AFGBuildableManufacturer>(Buildable);
 
 	TargetManufacturer->SetRecipe(SourceManufacturer->GetCurrentRecipe());

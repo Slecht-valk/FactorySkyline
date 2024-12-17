@@ -57,17 +57,19 @@ FSBuildableType UFSConveyorOperator::GetType() const
 	return FSBuildableType::Factory;
 }
 
-void UFSConveyorOperator::GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
+void UFSConveyorOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {
-	TArray<UActorComponent*> TargetComponent = Buildable->GetComponentsByClass(UFGConnectionComponent::StaticClass());
-	for (UActorComponent* TargetConnection : TargetComponent)
-		if (Cast<UFGFactoryConnectionComponent>(TargetConnection)) {
-			UFGFactoryConnectionComponent* TFC = Cast<UFGFactoryConnectionComponent>(TargetConnection);
-			if (TFC->GetConnection()) {
-				AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
-				if (Connection) List.Add(Connection);
+	if (Buildable->Buildable) {
+		TArray<UActorComponent*> TargetComponent = Buildable->Buildable->K2_GetComponentsByClass(UFGConnectionComponent::StaticClass());
+		for (UActorComponent* TargetConnection : TargetComponent)
+			if (Cast<UFGFactoryConnectionComponent>(TargetConnection)) {
+				UFGFactoryConnectionComponent* TFC = Cast<UFGFactoryConnectionComponent>(TargetConnection);
+				if (TFC->GetConnection()) {
+					AFGBuildable* Connection = Cast<AFGBuildable>(TFC->GetConnection()->GetAttachmentRootActor());
+					if (Connection) List.Add(Connection);
+				}
 			}
-		}
+	}
 }
 
 UFGFactoryConnectionComponent* UFSConveyorOperator::FindCompatibleConnections(UFGFactoryConnectionComponent* Component, const FVector& Loc, float Radius)

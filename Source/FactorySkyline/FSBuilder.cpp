@@ -41,6 +41,10 @@
 #include "FGPowerConnectionComponent.h"
 #include "FGPowerInfoComponent.h"
 
+#include "Buildables/FGBuildableRailroadSwitchControl.h"
+
+#include <cmath>
+
 void AFSBuilder::Init()
 {
 	AFSkyline* FSkyline = AFSkyline::Get(this);
@@ -67,67 +71,99 @@ bool AFSBuilder::CheckAnchor(UFSDesign* DesignParam)
 {
 	AnchorConnection = AnchorInput = AnchorOutput = nullptr;
 
-	if (Cast<AFGBuildableConveyorBase>(DesignParam->Anchor)) {
+	TObjectPtr<UClass> classObject = DesignParam->Anchor.BuildableClass;
+	//AFGBuildable* defaultObject = classObject->GetDefaultObject<AFGBuildable>();
+	//UAbstractInstanceDataObject* instanceDataObject = nullptr;
+
+	//instanceDataObject = defaultObject ? defaultObject->GetInstanceDataCDO() : nullptr;
+
+	// TODO REWORK THIS
+	
+	if (!DesignParam->Anchor.Buildable) {
+		return true;
+	}
+	if (Cast<AFGBuildableConveyorBase>(DesignParam->Anchor.Buildable)) {
 		AFSkyline* FSkyline = AFSkyline::Get(this);
-		AFGBuildableConveyorBase* Conveyor = Cast<AFGBuildableConveyorBase>(DesignParam->Anchor);
+		AFGBuildableConveyorBase* Conveyor = Cast<AFGBuildableConveyorBase>(DesignParam->Anchor.Buildable);
 		//UFGFactoryConnectionComponent* Connection = Conveyor->GetConnection0();
 		UFGFactoryConnectionComponent* Connection = FSkyline->AdaptiveUtil->GetConveyorConnection(Conveyor, 0);
-		if (!Connection->IsConnected() || !DesignParam->IsElementSelected(Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor()))) AnchorInput = Connection;
+
+		FSBuildable ptr;
+		ptr.Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
+		if (!Connection->IsConnected() || !DesignParam->IsElementSelected(ptr)) AnchorInput = Connection;
 		else {
+			FSBuildable ptr;
+			ptr.Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
 			AFGBuildable* Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
-			if (!Buildable || !DesignParam->IsElementSelected(Buildable)) AnchorInput = Connection;
+			if (!Buildable || !DesignParam->IsElementSelected(ptr)) AnchorInput = Connection;
 		}
 
 		//Connection = Conveyor->GetConnection1();
 		Connection = FSkyline->AdaptiveUtil->GetConveyorConnection(Conveyor, 1);
-		if (!Connection->IsConnected() || !DesignParam->IsElementSelected(Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor()))) AnchorOutput = Connection;
+
+		FSBuildable ptr1;
+		ptr1.Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
+		if (!Connection->IsConnected() || !DesignParam->IsElementSelected(ptr1)) AnchorOutput = Connection;
 		else {
 			AFGBuildable* Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
-			if (!Buildable || !DesignParam->IsElementSelected(Buildable)) AnchorOutput = Connection;
+			if (!Buildable || !DesignParam->IsElementSelected(ptr1)) AnchorOutput = Connection;
 		}
 
 		return AnchorConnection || AnchorInput || AnchorOutput;
 	}
 	
-	if (Cast<AFGBuildablePipeBase>(DesignParam->Anchor)) {
-		AFGBuildablePipeBase* Pipe = Cast<AFGBuildablePipeBase>(DesignParam->Anchor);
+	if (Cast<AFGBuildablePipeBase>(DesignParam->Anchor.Buildable)) {
+
+		AFGBuildablePipeBase* Pipe = Cast<AFGBuildablePipeBase>(DesignParam->Anchor.Buildable);
 		UFGPipeConnectionComponentBase* Connection = Pipe->GetConnection1();
 
 		if (!Connection->IsConnected()) AnchorConnection = Connection;
 		else {
+			FSBuildable ptr2;
+			ptr2.Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
 			AFGBuildable* Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
-			if (!Buildable || !DesignParam->IsElementSelected(Buildable)) AnchorConnection = Connection;
+			if (!Buildable || !DesignParam->IsElementSelected(ptr2)) AnchorConnection = Connection;
 		}
 
 		Connection = Pipe->GetConnection0();
 		if (!Connection->IsConnected()) AnchorConnection = Connection;
 		else {
+
+			FSBuildable ptr3;
+			ptr3.Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
 			AFGBuildable* Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
-			if (!Buildable || !DesignParam->IsElementSelected(Buildable)) AnchorConnection = Connection;
+			if (!Buildable || !DesignParam->IsElementSelected(ptr3)) AnchorConnection = Connection;
 		}
 
 		return AnchorConnection != nullptr;
 	}
 
-	if (Cast<AFGBuildableRailroadTrack>(DesignParam->Anchor)) {
-		AFGBuildableRailroadTrack* Track = Cast<AFGBuildableRailroadTrack>(DesignParam->Anchor);
+	if (Cast<AFGBuildableRailroadTrack>(DesignParam->Anchor.Buildable)) {
+		AFGBuildableRailroadTrack* Track = Cast<AFGBuildableRailroadTrack>(DesignParam->Anchor.Buildable);
 		UFGRailroadTrackConnectionComponent* Connection = Track->GetConnection(1);
 		
 		if (!Connection->IsConnected()) AnchorConnection = Connection;
 		else {
+			
+			FSBuildable ptr;
+			ptr.Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
 			AFGBuildable* Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
-			if (!Buildable || !DesignParam->IsElementSelected(Buildable)) AnchorConnection = Connection;
+			if (!Buildable || !DesignParam->IsElementSelected(ptr)) AnchorConnection = Connection;
 		}
 
 		Connection = Track->GetConnection(0);
 		if (!Connection->IsConnected()) AnchorConnection = Connection;
 		else {
+			FSBuildable ptr;
+			ptr.Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
 			AFGBuildable* Buildable = Cast<AFGBuildable>(Connection->GetConnection()->GetAttachmentRootActor());
-			if (!Buildable || !DesignParam->IsElementSelected(Buildable)) AnchorConnection = Connection;
+			if (!Buildable || !DesignParam->IsElementSelected(ptr)) AnchorConnection = Connection;
 		}
 
 		return AnchorConnection != nullptr;
 	}
+
+	
 	return true;
 }
 
@@ -136,12 +172,24 @@ void AFSBuilder::Load(UFSDesign* DesignParam, bool FullPreview)
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 	FSkyline->SkylineUI->CompletionWidget->SetVisibility(ESlateVisibility::Collapsed);
 
+	/*
+	UFGBuildGunStateDismantle* dismantleState = FSkyline->FSCtrl->FGBuildGun->mDismantleStateClass.GetDefaultObject();
+	//FSkylin->FSCtrl->FGBuildGun->GotoDismantleState();
+	FSkyline->FSCtrl->GetPlayer()->SetOverrideEquipment(FSkyline->FSCtrl->FGBuildGun);
+	AFGEquipment* Equipment = FSkyline->FSCtrl->GetPlayer()->GetEquipmentInSlot(EEquipmentSlot::ES_ARMS);
+	FSkyline->FSCtrl->GetPlayer()->EquipEquipment(FSkyline->FSCtrl->FGBuildGun);
+	FSkyline->FSCtrl->FGBuildGun->Equip(FSkyline->FSCtrl->GetPlayer());
+	FSkyline->FSCtrl->FGBuildGun->GotoStateInternal(EBuildGunState::BGS_DISMANTLE);
+	*/
+
 	SplineHologramFactory->Load();
 
 	this->Design = DesignParam;
 	this->Design->RecheckNullptr();
 
-	AFGBuildable* AnchorBuildable = this->Design->Anchor.Get();
+	FSBuildable* AnchorBuildable = &this->Design->Anchor;
+
+	// TODO REWORK THIS METHOD
 	this->AnchorOperator = OperatorFactory->CreateOperator(AnchorBuildable);
 
 	this->Hologram = this->AnchorOperator->CreateHologram();
@@ -149,33 +197,58 @@ void AFSBuilder::Load(UFSDesign* DesignParam, bool FullPreview)
 	//this->Hologram->SetActorHiddenInGame(false);
 	//SML::Logging::info(*this->Hologram->GetFullName());
 
-	FVector AnchorLocation = AnchorBuildable->GetTransform().GetLocation();
+	// TODO REWORK THIS
+	
+	FVector AnchorLocation;
+
+	if (AnchorBuildable->Buildable) {
+		AnchorLocation = AnchorBuildable->Buildable->GetTransform().GetLocation();
+	}
+	else {
+		AnchorLocation = AnchorBuildable->Transform.GetLocation();
+	}
 	if (AnchorOutput) AnchorLocation = AnchorOutput->GetComponentLocation();
 	if (AnchorInput) AnchorLocation = AnchorInput->GetComponentLocation();
 	if (AnchorConnection) AnchorLocation = AnchorConnection->GetComponentLocation();
 	
-	for (TWeakObjectPtr<AFGBuildable> BuildablePtr : DesignParam->BuildableSet) if (BuildablePtr.Get()) {
-		AFGBuildable* Buildable = BuildablePtr.Get();
+	
+	// TODO REWORK THIS
+	
+	for (FSBuildable BuildablePtr : DesignParam->BuildableSet) {
+		if (BuildablePtr != FSBuildable()) {
+			//AFGBuildable* Buildable = BuildablePtr.Get();
+			//float Dist;
+			FTransform Transform;
+			if (BuildablePtr.Buildable) {
+				Transform = BuildablePtr.Buildable->GetTransform();
+			}
+			else {
+				Transform = BuildablePtr.Transform;
+			}
+			float Dist = (Transform.GetLocation() - AnchorLocation).Size();
+			if (BuildablePtr == *AnchorBuildable || Dist < 2500.0f || FullPreview) {
+				UFSBuildableOperator* BuildableOperator = OperatorFactory->AcquireOperator(&BuildablePtr);
 
-		float Dist = (Buildable->GetTransform().GetLocation() - AnchorLocation).Size();
-		if (Buildable == AnchorBuildable || Dist < 10000.0f || FullPreview) {
-			UFSBuildableOperator* BuildableOperator = OperatorFactory->AcquireOperator(Buildable);
+				FTransform RelativeTransformVar;
+				AFGHologram* HologramVar = BuildableOperator->HologramCopy(RelativeTransformVar);
 
-			FTransform RelativeTransformVar;
-			AFGHologram* HologramVar = BuildableOperator->HologramCopy(RelativeTransformVar);
-
-			if (HologramVar) {
-				this->HologramList.Add(HologramVar);
-				this->RelativeTransform.Add(RelativeTransformVar);
+				if (HologramVar) {
+					this->HologramList.Add(HologramVar);
+					this->RelativeTransform.Add(RelativeTransformVar);
+				}
 			}
 		}
-
 	}
+	
 	
 	Cost.Empty();
 	AFGGameState* GameState = Cast<AFGGameState>(World->GetGameState());
 	if (!GameState || !(GameState->GetCheatNoCost() == 1)) {
-		Cost.AddResource(DesignParam);
+		AFSController* FSCtrlVar = (AFSController*)this->FSCtrl;
+		bool NoCost = FSCtrlVar->GetPlayer()->GetInventory()->GetNoBuildCost();
+		if (!NoCost) {
+			Cost.AddResource(DesignParam);
+		}
 	}
 
 	LastShow = LastValid = false;
@@ -255,7 +328,9 @@ bool AFSBuilder::Build(FSRepeat* Repeat)
 		UE_LOG(LogSkyline, Verbose, TEXT("Warnning: FSBuilder call build while building"));
 		return false;
 	}
-	if (!this->Design->Anchor.Get()) return false;
+
+	// TODO REWORK THIS
+	if (this->Design->Anchor == FSBuildable()) return false;
 
 	if (this->Hologram == nullptr) return false;
 
@@ -274,8 +349,11 @@ bool AFSBuilder::Build(FSRepeat* Repeat)
 	this->IsBuilding = true;
 	FSkyline->SkylineUI->CompletionWidget->SetVisibility(ESlateVisibility::Collapsed);
 
+	// TODO REWORK THIS
+	
 	SyncBuild->Anchor = this->Design->Anchor;
 	SyncBuild->BuildableSet = this->Design->BuildableSet;
+	
 	SyncBuild->CurrentDesignMenu = CurrentDesignMenu;
 	SyncBuild->NewDesignMenu = UFSDesignMenu::CopyFrom(CurrentDesignMenu->ParentItem, CurrentDesignMenu, true);
 	SyncBuild->NewDesign = SyncBuild->NewDesignMenu->Design;
@@ -294,6 +372,11 @@ bool AFSBuilder::Build(FSRepeat* Repeat)
 	//SyncBuild->DoWork(1e6f);
 	//SyncBuild->Unload();
 
+	// doing the start of work needlessly delays building for no reason so lets not
+	//SyncBuild->StartDoWorkTimer(1.0f);
+
+	// instead call the callback once to do the first building step
+	SyncBuild->DoWorkTimerCallback();
 
 	return true;
 }
@@ -301,11 +384,13 @@ bool AFSBuilder::Build(FSRepeat* Repeat)
 bool AFSBuilder::CheckReady(float TimeLimit)
 {
 	//SML::Logging::info(SyncBuild->GetCurrent(), TEXT(" "), SyncBuild->GetTotal());
+	/*
 	if (SyncBuild->DoWork(TimeLimit)) {
 		this->IsBuilding = false;
 		SyncBuild->Unload();
 		return true;
 	}
+	*/
 	return false;
 }
 
@@ -316,7 +401,58 @@ void AFSBuilder::Update(const FHitResult& Hit)
 	bool ShouldShow = false;
 	bool Valid = false;
 	bool ValidTarget = false;
+
+	AFSkyline* FSkyline = AFSkyline::Get(this);
+
+	
+	FSHitResults FSHit = FSkyline->FSCtrl->GetSelectHitResult();
+	AFGBuildable* Building = nullptr;
+	Building = FSkyline->FSCtrl->AcquireBuildable(Hit);
+
+	FSBuildable Buildable;
+	Buildable.Abstract = FSHit.Abstract;
+	Buildable.Handle = FSHit.Handle;
+	Buildable.RuntimeData = FSHit.RuntimeData;
+	Buildable.BuildableClass = FSHit.BuildableClass;
+	Buildable.Transform = FSHit.InstanceTransform;
+	Buildable.Buildable = Building;
+
+	AFGLightweightBuildableSubsystem* lightweightSubsystem;
+	lightweightSubsystem = AFGLightweightBuildableSubsystem::Get(FSkyline->World);
+	
+
+	// if no temporary has been spawned and this is a abstract instance
+	if (Buildable != FSBuildable() && Buildable.Buildable == nullptr) {
+
+		/*
+		AFGLightweightBuildableSubsystem* lightweightSubsystem;
+
+		lightweightSubsystem = AFGLightweightBuildableSubsystem::Get(FSkyline->World);
+		lightweightSubsystem->AddInstanceConverterInstigator(10000, nullptr, Buildable.RuntimeData.Transform);
+
+		bool didSpawn = false;
+		lightweightSubsystem->FindOrSpawnBuildableForRuntimeData(&Buildable.RuntimeData, Buildable.Handle.GetHandleID(), didSpawn);
+		*/
+
+		//AFGLightweightBuildableSubsystem* lightweightSubsystem;
+		//lightweightSubsystem = AFGLightweightBuildableSubsystem::Get(FSkyline->World);
+
+		FLightweightBuildableInstanceRef buildableRef;
+		AFGLightweightBuildableSubsystem::ResolveLightweightInstance(Buildable.Handle, buildableRef);
+
+		//if (TemporaryBuildable == nullptr) {
+			//TemporaryBuildable = buildableRef.SpawnTemporaryBuildable();
+
+		TemporaryBuildable = UFGLightweightBuildableBlueprintLibrary::SpawnTemporaryFromLightweight(buildableRef);
+
+	}
+
 	this->AnchorOperator->UpdateHologramState(Hit, this->Hologram, ShouldShow, Valid);
+
+	lightweightSubsystem->RemoveStaleTemporaryBuildables();
+
+	//this->Hologram->SetActorHiddenInGame(false);
+	//return;
 
 	//SML::Logging::info(*this->Hologram->GetActorLocation().ToString());
 
@@ -331,6 +467,30 @@ void AFSBuilder::Update(const FHitResult& Hit)
 		if (!CheckCost()) Valid = false;
 	}
 
+	/*
+	FVector translate = this->Target.GetTranslation();
+
+
+	FVector Vector;
+	Vector.X = translate.X;
+	Vector.Y = translate.Y;
+	Vector.Z = translate.Z;
+	*/
+
+	//FQuat Quat1 = Repeat->NextRelative.GetRotation();
+
+	//FQuat Quat;
+	//Quat.X = 0;
+	//Quat.Y = 0;
+	//Quat.Z = 0;
+
+	//float W = FMath::Sqrt(FMath::Max(0.0f, 1.0f - Quat.X * Quat.X - Quat.Y * Quat.Y - Quat.Z * Quat.Z));
+	//Quat.W = W;
+
+	//this->Target = FTransform(Quat, Vector);
+
+	//FTransform RotationTransform(Quat, Vector);
+
 	if (LastShow != ShouldShow || ShouldShow) {
 
 		FSTransformOperator FSTransform;
@@ -338,6 +498,41 @@ void AFSBuilder::Update(const FHitResult& Hit)
 
 		for (int i = 0; i < this->HologramList.Num(); i++) {
 			if (LastShow != ShouldShow)	this->HologramList[i]->SetActorHiddenInGame(!ShouldShow);
+
+			//FTransform CurrentTransform = this->HologramList[i]->GetActorTransform();
+
+			//FTransform RelativeTransform = CurrentTransform.GetRelativeTransform(RotationTransform);
+
+			//if (ShouldShow) this->HologramList[i]->SetActorTransform(FSTransform.Transform(RelativeTransform));
+
+			//if (ShouldShow) this->HologramList[i]->SetActorTransform(RelativeTransform);
+
+			//FTransform CurrentTransform = this->RelativeTransform[i];
+			//FTransform RelativeTransform = CurrentTransform.GetRelativeTransform(RotationTransform);
+			//if (ShouldShow) this->HologramList[i]->SetActorTransform(RelativeTransform);
+
+
+			// doesn't work
+			/*
+			FTransform PivotTransform = FTransform(this->RelativeTransform[i].GetRotation(), this->AnchorOperator->Source->GetTransform().GetTranslation());
+			FTransform DeltaPivotToOriginal = this->RelativeTransform[i] * PivotTransform.Inverse();
+			FTransform RotationTransform(Quat);
+			FTransform New;
+			New = FTransform(Quat.Inverse() * (float)1, FVector(0, 0, 0)) *
+				DeltaPivotToOriginal *
+				FTransform(RotationTransform.GetRotation(), FVector(0, 0, 0)) *
+				PivotTransform;
+			this->HologramList[i]->SetActorTransform(New);
+			*/
+
+			//this->HologramList[i]->SetActorTransform(this->Target);
+
+
+			//this->HologramList[i]->SetActorTransform(FSTransform.Transform(this->AnchorOperator->Source->GetTransform()));
+
+			// sets the holograms to the current selected buildable locations
+			//if (ShouldShow) this->HologramList[i]->SetActorTransform(this->RelativeTransform[i]);
+
 			if (ShouldShow) this->HologramList[i]->SetActorTransform(FSTransform.Transform(this->RelativeTransform[i]));
 			this->HologramList[i]->SetPlacementMaterialState(EHologramMaterialState::HMS_OK);
 		}
@@ -349,6 +544,27 @@ void AFSBuilder::Update(const FHitResult& Hit)
 
 void AFSBuilder::Update(FSRepeat* Repeat)
 {
+
+	FVector translate = Repeat->NextRelative.GetTranslation();
+
+
+	FVector Vector;
+	Vector.X = translate.X;
+	Vector.Y = translate.Y;
+	Vector.Z = translate.Z;
+
+	FQuat Quat1 = Repeat->NextRelative.GetRotation();
+
+	FQuat Quat;
+	Quat.X = Quat1.X;
+	Quat.Y = Quat1.Y;
+	Quat.Z = Quat1.Z;
+
+	float W = FMath::Sqrt(FMath::Max(0.0f, 1.0f - Quat.X * Quat.X - Quat.Y * Quat.Y - Quat.Z * Quat.Z));
+	Quat.W = W;
+
+	Repeat->NextRelative = FTransform(Quat, Vector);
+
 	if (!Repeat) return;
 	FSTransformOperator FSTransform = FSTransformOperator(Repeat->Source, Repeat->Next());
 	if (!IsBuilding) {
@@ -380,7 +596,7 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 			AnchorConnection = AnchorInput ? AnchorInput : AnchorOutput;
 			UFGFactoryConnectionComponent* Connection = nullptr;
 			if (AnchorInput && AnchorOutput) {
-				Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
+				Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
 				if (Connection) {
 					if (Connection->GetDirection() == EFactoryConnectionDirection::FCD_SNAP_ONLY) AnchorConnection = AnchorInput;
 					else AnchorConnection = AnchorOutput;
@@ -388,8 +604,8 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 				else AnchorConnection = AnchorInput;
 			}
 			else {
-				if (AnchorInput) Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
-				if (AnchorOutput) Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_OUTPUT);
+				if (AnchorInput) Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
+				if (AnchorOutput) Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_OUTPUT);
 				if (Connection) {
 					Valid = (Connection->GetDirection() == EFactoryConnectionDirection::FCD_SNAP_ONLY);
 				}
@@ -406,7 +622,7 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 					if (LiftOperator->HitConnection->GetDirection() == EFactoryConnectionDirection::FCD_INPUT) AnchorConnection = AnchorOutput;
 					else if (LiftOperator->HitConnection->GetDirection() == EFactoryConnectionDirection::FCD_OUTPUT ) AnchorConnection = AnchorInput;
 					else {
-						Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
+						Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
 						if (Connection) {
 							if (Connection->GetDirection() == EFactoryConnectionDirection::FCD_SNAP_ONLY) AnchorConnection = AnchorInput;
 							else AnchorConnection = AnchorOutput;
@@ -417,11 +633,11 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 				else {
 					if (AnchorInput) {
 						if (LiftOperator->HitConnection->GetDirection() == EFactoryConnectionDirection::FCD_INPUT) Connection = LiftOperator->HitConnection;
-						else Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
+						else Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
 					}
 					if (AnchorOutput) {
 						if (LiftOperator->HitConnection->GetDirection() == EFactoryConnectionDirection::FCD_OUTPUT) Connection = LiftOperator->HitConnection;
-						else Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_OUTPUT);
+						else Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_OUTPUT);
 					}
 					if (Connection) {
 						Valid = (Connection->GetDirection() == EFactoryConnectionDirection::FCD_SNAP_ONLY);
@@ -448,12 +664,23 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 
 FTransform AFSBuilder::GetFixedSourceTransform()
 {
-	FTransform Transform = this->Design->Anchor->GetTransform();
-	if (Cast<AFGBuildableConveyorBase>(this->Design->Anchor) || Cast<AFGBuildablePipeBase>(this->Design->Anchor) || Cast<AFGBuildableRailroadTrack>(this->Design->Anchor)) {
-		Transform = AnchorConnection->GetComponentTransform();
-		if (Cast<AFGBuildableConveyorLift>(this->Design->Anchor)) return Transform;
-		return FTransform((-Transform.GetRotation().Vector()).ToOrientationQuat(), Transform.GetLocation());
+	FTransform Transform;
+	// TODO REWORK THIS
+	
+	if (this->Design->Anchor.Buildable) {
+		Transform = this->Design->Anchor.Buildable->GetTransform();
 	}
+	else {
+		Transform = this->Design->Anchor.Transform;
+	}
+	if (this->Design->Anchor.Buildable) {
+		if (Cast<AFGBuildableConveyorBase>(this->Design->Anchor.Buildable) || Cast<AFGBuildablePipeBase>(this->Design->Anchor.Buildable) || Cast<AFGBuildableRailroadTrack>(this->Design->Anchor.Buildable)) {
+			Transform = AnchorConnection->GetComponentTransform();
+			if (Cast<AFGBuildableConveyorLift>(this->Design->Anchor.Buildable)) return Transform;
+			return FTransform((-Transform.GetRotation().Vector()).ToOrientationQuat(), Transform.GetLocation());
+		}
+	}
+	
 	return Transform;
 }
 
@@ -558,24 +785,50 @@ void UFSSyncBuild::PreWork()
 	Step = 0;
 	Current = 0;
 	Index = 0;
-	for (TWeakObjectPtr<AFGBuildable> BuildablePtr : this->BuildableSet) if (BuildablePtr.Get())
-		List.Add(BuildablePtr);
+	for (FSBuildable BuildablePtr : this->BuildableSet) {
+		//if (BuildablePtr.Get()) {
+			List.Add(BuildablePtr);
+		//}
+	}
 	Total = List.Num();
 
 	//UFSSelection::SetAutoRebuildTreeAll(false);
 }
 
-bool UFSSyncBuild::DoWork(float TimeLimitParam)
+void UFSSyncBuild::DoWork()
 {
-	this->TimeLimit = TimeLimitParam;
-	Time.Start();
-	while (Time.GetTime() < TimeLimitParam) {
-		if (Step == 0) StepA();
-		if (Step == 1) StepB();
-		if (Step == 2) StepC();
-		if (Step == 3) return true;
+	//this->TimeLimit = TimeLimitParam;
+	//Time.Start();
+	//while (Time.GetTime() < TimeLimitParam) {
+	if (Step == 0) {
+		StepA();
+		
+		// start the delayed work after first step so, hopefully given enough time for the buildables to fully initialize?
+		AFSkyline* FSkyline = AFSkyline::Get(this);
+		FSkyline->Builder->SyncBuild->StartDoWorkTimer(0.1f);
+
+		return;
 	}
-	return false;
+	if (Step == 1) {
+		StepB();
+		return;
+	}
+	if (Step == 2) {
+		StepC();
+		return;
+	}
+
+	//if (Step == 3)
+			//return true;
+	//}
+	//return false;
+
+	AFSkyline* FSkyline = AFSkyline::Get(this);
+	FSkyline->Builder->IsBuilding = false;
+	FSkyline->GetWorldTimerManager().ClearTimer(TimerHandle_DoWork);
+	this->Unload();
+
+
 }
 
 void UFSSyncBuild::StepA()
@@ -587,18 +840,22 @@ void UFSSyncBuild::StepA()
 	//passThroughNewList.Empty();
 
 	for (; Index < List.Num(); Index++) {
-		if (Time.GetTime() > TimeLimit) return;
+		//if (Time.GetTime() > TimeLimit) return;
 
-		AFGBuildable* Buildable = List[Index].Get();
+		FSBuildable* Buildable = &List[Index];
 		if (Buildable) {
 			UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Buildable);
 
-			if (Cast< AFGBuildableRailroadSignal>(Buildable)) continue;
-			if (Cast<AFGBuildableWire>(Buildable)) continue;
+			// check to see if its a pure abstract because the buildable wont exist
+			if (!Buildable->Buildable) continue;
+
+			if (Cast< AFGBuildableRailroadSignal>(Buildable->Buildable)) continue;
+			if (Cast<AFGBuildableWire>(Buildable->Buildable)) continue;
+			if (Cast<AFGBuildableRailroadSwitchControl>(Buildable->Buildable)) continue;
 			
 			//check if its a lift
-			if (Cast<AFGBuildableConveyorLift>(Buildable)) {
-				TArray< class AFGBuildablePassthrough* > ThroughsSource = Cast<AFGBuildableConveyorLift>(Buildable)->GetSnappedPassthroughs();
+			if (Cast<AFGBuildableConveyorLift>(Buildable->Buildable)) {
+				TArray< class AFGBuildablePassthrough* > ThroughsSource = Cast<AFGBuildableConveyorLift>(Buildable->Buildable)->GetSnappedPassthroughs();
 				// if its connected to any passthroughs we build these a little different so skip the normal buildig method.
 				if (ThroughsSource[0] || ThroughsSource[1]) {
 					continue;
@@ -609,7 +866,7 @@ void UFSSyncBuild::StepA()
 			//if (Buildable->GetName().Contains("Build_PowerPoleMk")) {
 				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
 				if (NewBuildable != nullptr) {
-					BuildableMapping.Add(Buildable, NewBuildable);
+					BuildableMapping.Add(Buildable->Buildable, NewBuildable);
 
 					if (NewBuildable) {
 
@@ -617,27 +874,23 @@ void UFSSyncBuild::StepA()
 						//NewBuildable->PlayBuildEffects(FSkyline->FSCtrl->GetPlayer());
 						//NewBuildable->ExecutePlayBuildEffects();
 
-						this->NewDesign->BuildableSet.Add(NewBuildable);
+						FSBuildable buildable;
+						buildable.Buildable = NewBuildable;
+						this->NewDesign->BuildableSet.Add(buildable);
 
-						if (Cast<AFGBuildablePassthrough>(Buildable)) {
+						if (Cast<AFGBuildablePassthrough>(Buildable->Buildable)) {
 							/*
 							if (Buildable->GetName().Contains("Build_FoundationPassthrough_Pipe_C")) {
 								continue;
 							}
 							*/
-							if (!Buildable->GetName().Contains("Build_FoundationPassthrough_Lift_C")) {
+							if (!Buildable->Buildable->GetName().Contains("Build_FoundationPassthrough_Lift_C")) {
 								continue;
 							}
 							UFSBuildableOperatorList.Add(Operator);
-							passThroughBuildableList.Add(Cast<AFGBuildablePassthrough>(Buildable));
+							passThroughBuildableList.Add(Cast<AFGBuildablePassthrough>(Buildable->Buildable));
 							passThroughNewList.Add(Cast<AFGBuildablePassthrough>(NewBuildable));
 
-							for (TObjectIterator<AFGBuildable> Worker; Worker; ++Worker) {
-								AFGBuildable* buildablePtr = *Worker;
-								if (Cast<AFGBuildableBlueprintDesigner>(buildablePtr)) {
-									Cast<AFGBuildableBlueprintDesigner>(buildablePtr)->OnBuildableConstructedInsideDesigner(NewBuildable);
-								}
-							}
 
 						}
 
@@ -660,6 +913,10 @@ void UFSSyncBuild::StepA()
 
 	// conveyor buildablepassthrough logic here
 	// first build all of the passthroughs
+
+	//FPlatformProcess::Sleep(10.0f);
+
+	//std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(10.0f * 1000)));
 
 	for (int i = 0; i < passThroughBuildableList.Num(); i++) {
 		AFGBuildablePassthrough* passThrough1 = passThroughBuildableList[i];
@@ -692,13 +949,21 @@ void UFSSyncBuild::StepA()
 				}
 			}
 			if (foundNoPassThroughConnections) {
-				UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(bottomConnectedLift1));
+
+				FSBuildable ptr;
+				ptr.Buildable = Cast< AFGBuildable>(bottomConnectedLift1);
+
+				UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(&ptr);
 				Operator->bottomPassThrough = passThroughNewList[i];
 				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
 				if (NewBuildable != nullptr) {
 					BuildableMapping.Add(Cast< AFGBuildable>(bottomConnectedLift1), NewBuildable);
 					Operator->UpdateInternelConnection(NewBuildable);
-					this->NewDesign->BuildableSet.Add(NewBuildable);
+
+
+					FSBuildable buildable;
+					buildable.Buildable = NewBuildable;
+					this->NewDesign->BuildableSet.Add(buildable);
 				}
 			}
 		}
@@ -736,14 +1001,21 @@ void UFSSyncBuild::StepA()
 
 			}
 			if (foundNoPassThroughConnections) {
-				UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(topConnectedLift1));
+
+				FSBuildable ptr;
+				ptr.Buildable = Cast< AFGBuildable>(topConnectedLift1);
+
+				UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(&ptr);
 				//Operator->bottomPassThrough = passThroughNewList[i];
 				Operator->topPassThrough = passThroughNewList[i];
 				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
 				if (NewBuildable != nullptr) {
 					BuildableMapping.Add(Cast< AFGBuildable>(topConnectedLift1), NewBuildable);
 					Operator->UpdateInternelConnection(NewBuildable);
-					this->NewDesign->BuildableSet.Add(NewBuildable);
+
+					FSBuildable buildable;
+					buildable.Buildable = NewBuildable;
+					this->NewDesign->BuildableSet.Add(buildable);
 				}
 			}
 
@@ -759,14 +1031,21 @@ void UFSSyncBuild::StepA()
 				UFGConnectionComponent* bottomConnection2 = passThrough2->mBottomSnappedConnection;
 				AFGBuildableConveyorLift* bottomConnectedLift = Cast<AFGBuildableConveyorLift>(Cast< UFGFactoryConnectionComponent>(bottomConnection2)->GetOuterBuildable());
 				if (bottomConnectedLift == topConnectedLift1) {
-					UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(bottomConnectedLift));
+
+					FSBuildable ptr;
+					ptr.Buildable = Cast< AFGBuildable>(bottomConnectedLift);
+
+					UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(&ptr);
 					Operator->bottomPassThrough = passThroughNewList[i];
 					Operator->topPassThrough = passThroughNewList[foundIndex];
 					AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
 					if (NewBuildable != nullptr) {
 						BuildableMapping.Add(Cast< AFGBuildable>(topConnectedLift1), NewBuildable);
 						Operator->UpdateInternelConnection(NewBuildable);
-						this->NewDesign->BuildableSet.Add(NewBuildable);
+
+						FSBuildable buildable;
+						buildable.Buildable = NewBuildable;
+						this->NewDesign->BuildableSet.Add(buildable);
 					}
 				}
 
@@ -780,18 +1059,21 @@ void UFSSyncBuild::StepA()
 void UFSSyncBuild::StepB()
 {
 	for (; Index < List.Num(); Index++) {
-		if (Time.GetTime() > TimeLimit) return;
+		//if (Time.GetTime() > TimeLimit) return;
 
-		AFGBuildable* Buildable = List[Index].Get();
+		FSBuildable* Buildable = &List[Index];
 		if (Buildable) {
 			UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Buildable);
 
-			if (Cast<AFGBuildableWire>(Buildable)) {
+			// check to see if its a pure abstract because the buildable wont exist
+			if (!Buildable->Buildable) continue;
+
+			if (Cast<AFGBuildableWire>(Buildable->Buildable)) {
 				//if (!Operator->firstBuild) {
 					AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
 
 					if (NewBuildable != nullptr) {
-						BuildableMapping.Add(Buildable, NewBuildable);
+						BuildableMapping.Add(Buildable->Buildable, NewBuildable);
 
 						if (NewBuildable) {
 
@@ -799,14 +1081,16 @@ void UFSSyncBuild::StepB()
 							//NewBuildable->PlayBuildEffects(this->Player);
 							//NewBuildable->ExecutePlayBuildEffects();
 
-							this->NewDesign->BuildableSet.Add(NewBuildable);
+							FSBuildable buildable;
+							buildable.Buildable = NewBuildable;
+							this->NewDesign->BuildableSet.Add(buildable);
 						}
 					}
 					Current++;
 				//}
 			}
 			else {
-				AFGBuildable** NewBuildable = BuildableMapping.Find(Buildable);
+				AFGBuildable** NewBuildable = BuildableMapping.Find(Buildable->Buildable);
 
 				if (NewBuildable && *NewBuildable) {
 					Operator->ApplySettingsTo(*NewBuildable);
@@ -815,6 +1099,7 @@ void UFSSyncBuild::StepB()
 			}
 		}
 	}
+
 	Index = 0;
 	Step++;
 	
@@ -883,6 +1168,99 @@ void UFSSyncBuild::StepB()
 
 	}
 	
+	/*
+	for (; Index < List.Num(); Index++) {
+		//if (Time.GetTime() > TimeLimit) return;
+
+		FSBuildable* Buildable = &List[Index];
+		if (Buildable) {
+			UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Buildable);
+
+			UFSBuildableOperator* OperatorSwitch = nullptr;
+
+			// check to see if its a pure abstract because the buildable wont exist
+			if (!Buildable->Buildable) continue;
+
+			if (Cast<AFGBuildableRailroadTrack>(Buildable->Buildable)) {
+				//if (!Operator->firstBuild) {
+
+				AFGBuildableRailroadTrack* Track = Cast<AFGBuildableRailroadTrack>(Buildable->Buildable);
+
+				TArray< UFGRailroadTrackConnectionComponent* > mConnections = Track->mConnections;
+
+				// cycle through all connections for this piece of track
+				for (int i = 0; i < mConnections.Num(); i++) {
+					AFGBuildableRailroadSwitchControl* Switch = mConnections[i]->GetSwitchControl();
+
+					// find if this track has a valid switch, may or may not if its a track that has multiple connections
+					if (Switch) {
+
+						FSBuildable SwitchBuildable;
+						SwitchBuildable.Buildable = Switch;
+
+						OperatorSwitch = OperatorFactory->AcquireOperator(&SwitchBuildable);
+
+
+						// get the track this switch has control over
+						AFGBuildableRailroadTrack* Track2 = mConnections[i]->GetTrack();
+
+						if (Track2) {
+
+							AFGBuildable* NewTrack = *BuildableMapping.Find(Track2);
+
+							// get the new track thats spawning in
+							AFGBuildableRailroadTrack* Track3 = Cast<AFGBuildableRailroadTrack>(NewTrack);
+							TArray< UFGRailroadTrackConnectionComponent* > mConnections2 = Track3->mConnections;
+
+							// now we have to find the connection component that belongs to this piece of track that needs a new switch created for it
+
+							for (int j = 0; j < mConnections2.Num(); j++) {
+
+								AFGBuildableRailroadTrack* Track4 = mConnections2[j]->GetTrack();
+								if (Track4 == Track3) {
+									OperatorSwitch->Connection0 = mConnections2[j];
+									break;
+								}
+							}
+
+						}
+
+					}
+				}
+
+				//UFGRailroadTrackConnectionComponent* Connection1 = Track->GetForwardConnection();
+				//UFGRailroadTrackConnectionComponent* Connection2 = Cast<AFGBuildableRailroadTrack>(Buildable->Buildable)->GetReverseConnection();
+
+				//Operator->Connection0 = Cast<AFGBuildableRailroadSwitchControl>(Buildable->Buildable)->mControlledConnection;
+
+				if (!OperatorSwitch) continue;
+				AFGBuildable* NewBuildable = OperatorSwitch->CreateCopy(FSTransform);
+
+				if (NewBuildable != nullptr) {
+					BuildableMapping.Add(Buildable->Buildable, NewBuildable);
+
+					if (NewBuildable) {
+
+						Operator->UpdateInternelConnection(NewBuildable);
+						//NewBuildable->PlayBuildEffects(this->Player);
+						//NewBuildable->ExecutePlayBuildEffects();
+
+						FSBuildable buildable;
+						buildable.Buildable = NewBuildable;
+						this->NewDesign->BuildableSet.Add(buildable);
+					}
+				}
+				//Current++;
+				//}
+			}
+			else {
+			}
+		}
+	}
+	*/
+
+	Index = 0;
+
 }
 
 void UFSSyncBuild::StepC()
@@ -892,7 +1270,15 @@ void UFSSyncBuild::StepC()
 	AFGRailroadSubsystem* RailroadSubsystem = AFGRailroadSubsystem::Get(this);
 
 	for (; Index < List.Num(); Index++) {
-		AFGBuildable** Ptr = BuildableMapping.Find(List[Index].Get());
+
+		FSBuildable* Buildable = &List[Index];
+
+		if (Buildable) {
+			// check to see if its a pure abstract because the buildable wont exist
+			if (!Buildable->Buildable) continue;
+		}
+
+		AFGBuildable** Ptr = BuildableMapping.Find(Buildable->Buildable);
 		if (Ptr) {
 			IFGFluidIntegrantInterface* FluidIntegrant = Cast<IFGFluidIntegrantInterface>(*Ptr);
 			if (FluidIntegrant) {
@@ -904,7 +1290,15 @@ void UFSSyncBuild::StepC()
 	
 	for (Index = 0; Index < List.Num(); Index++) {
 		//if (Time.GetTime() > TimeLimit) return;
-		AFGBuildable** Ptr = BuildableMapping.Find(List[Index].Get());
+
+		FSBuildable* Buildable = &List[Index];
+
+		if (Buildable) {
+			// check to see if its a pure abstract because the buildable wont exist
+			if (!Buildable->Buildable) continue;
+		}
+
+		AFGBuildable** Ptr = BuildableMapping.Find(Buildable->Buildable);
 		if (Ptr) {
 			AFGBuildableConveyorBase* Conveyor = Cast<AFGBuildableConveyorBase>(*Ptr);
 			if (Conveyor) {
@@ -969,7 +1363,15 @@ void UFSSyncBuild::StepC()
 	// first iterate through all signals
 	
 	for (Index = 0; Index < List.Num(); Index++) {
-		AFGBuildable* ExistingBuildable = List[Index].Get();
+
+		FSBuildable* Buildable = &List[Index];
+
+		if (Buildable) {
+			// check to see if its a pure abstract because the buildable wont exist
+			if (!Buildable->Buildable) continue;
+		}
+
+		AFGBuildable* ExistingBuildable = List[Index].Buildable;
 		//AFGBuildable** Ptr = BuildableMapping.Find(ExistingBuildable);
 		if (ExistingBuildable) {
 			AFGBuildableRailroadSignal* ExistingSignal = Cast<AFGBuildableRailroadSignal>(ExistingBuildable);
@@ -994,7 +1396,7 @@ void UFSSyncBuild::StepC()
 
 					// now find a existing track this connection is connected to
 					for (int i = 0; i < List.Num(); i++) {
-						AFGBuildable* ExistingBuildable = List[i].Get();
+						AFGBuildable* ExistingBuildable = List[i].Buildable;
 						AFGBuildable** Ptr = BuildableMapping.Find(ExistingBuildable);
 						if (Ptr) {
 							AFGBuildableRailroadTrack* NewTrack = Cast<AFGBuildableRailroadTrack>(*Ptr);
@@ -1003,7 +1405,11 @@ void UFSSyncBuild::StepC()
 								UFGRailroadTrackConnectionComponent* Connection1 = ExistingTrack->GetConnection(1);
 
 								if (GuardedConnection == Connection1) {
-									UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Cast< AFGBuildable>(ExistingSignal));
+									
+									FSBuildable ptr;
+									ptr.Buildable = Cast< AFGBuildable>(ExistingSignal);
+
+									UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(&ptr);
 
 									Operator->Connection1 = NewTrack->GetConnection(1);
 
@@ -1011,7 +1417,10 @@ void UFSSyncBuild::StepC()
 									if (NewBuildable != nullptr) {
 										BuildableMapping.Add(Cast< AFGBuildable>(ExistingSignal), NewBuildable);
 										Operator->UpdateInternelConnection(NewBuildable);
-										this->NewDesign->BuildableSet.Add(NewBuildable);
+
+										FSBuildable buildable;
+										buildable.Buildable = NewBuildable;
+										this->NewDesign->BuildableSet.Add(buildable);
 									}
 									//NewSignal->mObservedConnections.Add(NewTrack->GetConnection(0));
 								}
@@ -1027,7 +1436,15 @@ void UFSSyncBuild::StepC()
 
 	// not sure what AddSignal actually does?
 	for (Index = 0; Index < List.Num(); Index++) {
-		AFGBuildable** Ptr = BuildableMapping.Find(List[Index].Get());
+
+		FSBuildable* Buildable = &List[Index];
+
+		if (Buildable) {
+			// check to see if its a pure abstract because the buildable wont exist
+			if (!Buildable->Buildable) continue;
+		}
+
+		AFGBuildable** Ptr = BuildableMapping.Find(Buildable->Buildable);
 		if (Ptr) {
 			AFGBuildableRailroadSignal* Signal = Cast<AFGBuildableRailroadSignal>(*Ptr);
 			if (Signal) {
@@ -1036,14 +1453,186 @@ void UFSSyncBuild::StepC()
 		}
 	}
 
+	for (Index = 0; Index < List.Num(); Index++) {
+		//if (Time.GetTime() > TimeLimit) return;
+
+		FSBuildable* Buildable = &List[Index];
+		if (Buildable) {
+			UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Buildable);
+
+			// check to see if its not a pure abstract because we only want to do specific logic with them
+			if (Buildable->Buildable) continue;
+
+			//if (Cast<AFGBuildableWire>(Buildable->Buildable)) {
+				//if (!Operator->firstBuild) {
+				AFGBuildable* NewBuildable = Operator->CreateCopy(FSTransform);
+
+				if (NewBuildable != nullptr) {
+					//NewBuildable->Destroy();
+					//BuildableMapping.Add(Buildable->Buildable, NewBuildable);
+
+					if (NewBuildable) {
+
+						//Operator->UpdateInternelConnection(NewBuildable);
+						//NewBuildable->PlayBuildEffects(this->Player);
+						//NewBuildable->ExecutePlayBuildEffects();
+
+						FSBuildable buildable;
+						buildable.Buildable = NewBuildable;
+						this->NewDesign->BuildableSet.Add(buildable);
+					}
+				}
+				Current++;
+				//}
+			//}
+		}
+	}
+	Index = 0;
+
+	
+		for (; Index < List.Num(); Index++) {
+			//if (Time.GetTime() > TimeLimit) return;
+
+			FSBuildable* Buildable = &List[Index];
+			if (Buildable) {
+				UFSBuildableOperator* Operator = OperatorFactory->AcquireOperator(Buildable);
+
+				UFSBuildableOperator* OperatorSwitch = nullptr;
+
+				// check to see if its a pure abstract because the buildable wont exist
+				if (!Buildable->Buildable) continue;
+
+				if (Cast<AFGBuildableRailroadTrack>(Buildable->Buildable)) {
+					//if (!Operator->firstBuild) {
+
+					AFGBuildableRailroadTrack* Track = Cast<AFGBuildableRailroadTrack>(Buildable->Buildable);
+
+					TArray< UFGRailroadTrackConnectionComponent* > mConnections = Track->mConnections;
+
+					// cycle through all connections for this piece of track
+					for (int i = 0; i < mConnections.Num(); i++) {
+						AFGBuildableRailroadSwitchControl* Switch = mConnections[i]->GetSwitchControl();
+
+						// find if this track has a valid switch, may or may not if its a track that has multiple connections
+						if (Switch) {
+
+							FSBuildable SwitchBuildable;
+							SwitchBuildable.Buildable = Switch;
+
+							OperatorSwitch = OperatorFactory->AcquireOperator(&SwitchBuildable);
+
+
+							// get the track this switch has control over
+							AFGBuildableRailroadTrack* Track2 = mConnections[i]->GetTrack();
+
+							//check if its valid
+							if (Track2) {
+								//find the new track thats being corrected as this needs a new control component for the switch
+								AFGBuildable* NewTrack = *BuildableMapping.Find(Track2);
+								AFGBuildableRailroadTrack* Track3 = Cast<AFGBuildableRailroadTrack>(NewTrack);
+								// this makes and attachs a new component to this new track thats being created, so the switch can use it
+								UFGRailroadTrackConnectionComponent* NewConnectionComponent = DuplicateSceneComponent(NewTrack, mConnections[i]);
+								// finally store the pointer to this component in the operator, so when we get to that logic the switch can be set to it
+								OperatorSwitch->Connection0 = NewConnectionComponent;
+							}
+
+							UFGRailroadTrackConnectionComponent* SwitchControlledConnectionComponent = Switch->mControlledConnection;
+
+							TArray< UFGRailroadTrackConnectionComponent* > SwitchConnectedComponents = SwitchControlledConnectionComponent->mConnectedComponents;
+
+							for (int j = 0; j < SwitchConnectedComponents.Num(); j++) {
+								UFGRailroadTrackConnectionComponent* ConnectedComponent = SwitchConnectedComponents[j];
+								AFGBuildableRailroadTrack* ConnectedTrack = Cast<AFGBuildableRailroadTrack>(ConnectedComponent->GetAttachmentRootActor());
+								TArray< UFGRailroadTrackConnectionComponent* > ConnectedTrackConnectedComponent = ConnectedTrack->mConnections;
+
+								// index for the connection components we should get for the new tracks to store in the new connection component
+								int TrackConnectionIndex = 0;
+
+								for (int q = 0; q < ConnectedTrackConnectedComponent.Num(); q++) {
+									if (ConnectedComponent == ConnectedTrackConnectedComponent[q]) {
+										TrackConnectionIndex = q;
+										break;
+									}
+								}
+
+								AFGBuildableRailroadTrack* NewTrack = Cast<AFGBuildableRailroadTrack>(*BuildableMapping.Find(ConnectedTrack));
+								TArray< UFGRailroadTrackConnectionComponent* > NewTrackConnectedTrackConnectedComponent = NewTrack->mConnections;
+								OperatorSwitch->Connection0->mConnectedComponents.Add(NewTrack->mConnections[TrackConnectionIndex]);
+							}
+
+							/*
+							if (Track2) {
+
+								AFGBuildable* NewTrack = *BuildableMapping.Find(Track2);
+
+								//DuplicateSceneComponent
+
+								// get the new track thats spawning in
+								AFGBuildableRailroadTrack* Track3 = Cast<AFGBuildableRailroadTrack>(NewTrack);
+								TArray< UFGRailroadTrackConnectionComponent* > mConnections2 = Track3->mConnections;
+
+								// now we have to find the connection component that belongs to this piece of track that needs a new switch created for it
+
+								for (int j = 0; j < mConnections2.Num(); j++) {
+
+									AFGBuildableRailroadTrack* Track4 = mConnections2[j]->GetTrack();
+									if (Track4 == Track3) {
+										OperatorSwitch->Connection0 = mConnections2[j];
+										break;
+									}
+								}
+
+							}
+							*/
+						}
+					}
+
+					//UFGRailroadTrackConnectionComponent* Connection1 = Track->GetForwardConnection();
+					//UFGRailroadTrackConnectionComponent* Connection2 = Cast<AFGBuildableRailroadTrack>(Buildable->Buildable)->GetReverseConnection();
+
+					//Operator->Connection0 = Cast<AFGBuildableRailroadSwitchControl>(Buildable->Buildable)->mControlledConnection;
+
+					if (!OperatorSwitch) continue;
+					AFGBuildable* NewBuildable = OperatorSwitch->CreateCopy(FSTransform);
+
+					if (NewBuildable != nullptr) {
+						BuildableMapping.Add(Buildable->Buildable, NewBuildable);
+
+						if (NewBuildable) {
+
+							Operator->UpdateInternelConnection(NewBuildable);
+							//NewBuildable->PlayBuildEffects(this->Player);
+							//NewBuildable->ExecutePlayBuildEffects();
+
+							FSBuildable buildable;
+							buildable.Buildable = NewBuildable;
+							this->NewDesign->BuildableSet.Add(buildable);
+						}
+					}
+					//Current++;
+					//}
+				}
+				else {
+				}
+			}
+		}
+		
+
+	Index = 0;
+
 	BuildableSubsystem->mFactoryBuildingGroupsDirty = true;
 
-	AFGBuildable** Result = BuildableMapping.Find(this->Anchor.Get());
-	NewDesign->Anchor = Result ? *Result : nullptr;
+	//AFGBuildable** Result = BuildableMapping.Find(this->Anchor.Get());
+
+	// TODO REWORK THIS
+	//NewDesign->Anchor = Result ? *Result : nullptr;
 
 	AFSkyline* Skyline = AFSkyline::Get(this);
 	Skyline->SkylineUI->CompletionWidget->Load(CurrentDesignMenu, NewDesignMenu);
 	Skyline->SkylineUI->CompletionWidget->StartEnterAnimation();
+
+	//Skyline->FSCtrl->Collectgarbage = true;
+	//Skyline->FSCtrl->IsDoWorkComplete = true;
 
 	//UFSSelection::SetAutoRebuildTreeAll(true);
 
@@ -1058,4 +1647,64 @@ int UFSSyncBuild::GetTotal()
 int UFSSyncBuild::GetCurrent()
 {
 	return Current;
+}
+
+void UFSSyncBuild::StartDoWorkTimer(float TimeInterval)
+{
+	AFSkyline* FSkyline = AFSkyline::Get(this);
+	FSkyline->GetWorldTimerManager().SetTimer(TimerHandle_DoWork, this, &UFSSyncBuild::DoWorkTimerCallback, TimeInterval, true);
+}
+UFUNCTION()
+void UFSSyncBuild::DoWorkTimerCallback()
+{
+	AFSkyline* FSkyline = AFSkyline::Get(this);
+	FSkyline->Builder->SyncBuild->DoWork();
+}
+
+UFGRailroadTrackConnectionComponent* UFSSyncBuild::DuplicateSceneComponent(UObject* Outer, UFGRailroadTrackConnectionComponent* Original)
+{
+	if (!Original || !Outer)
+	{
+		return nullptr;
+	}
+
+	// Create a new component of the same class as the original
+	UFGRailroadTrackConnectionComponent* NewComponent = NewObject<UFGRailroadTrackConnectionComponent>(Outer, Original->GetClass(), Original->GetFName());
+
+	if (!NewComponent)
+	{
+		return nullptr;
+	}
+
+	// Copy relevant properties
+	NewComponent->SetWorldTransform(Original->GetComponentTransform());
+	NewComponent->SetVisibility(Original->IsVisible());
+	NewComponent->SetRelativeScale3D(Original->GetRelativeScale3D());
+	NewComponent->SetMobility(Original->Mobility);
+
+	// Attach to the same parent if applicable
+	if (Original->GetAttachParent())
+	{
+		NewComponent->AttachToComponent(Original->GetAttachParent(), FAttachmentTransformRules::KeepWorldTransform);
+	}
+
+	/*
+	// Copy tags or other custom properties
+	NewComponent->ComponentTags = Original->ComponentTags;
+
+	// Iterate through children if needed
+	for (USceneComponent* Child : Original->GetAttachChildren())
+	{
+		USceneComponent* DuplicatedChild = DuplicateSceneComponent(Outer, Child);
+		if (DuplicatedChild)
+		{
+			DuplicatedChild->AttachToComponent(NewComponent, FAttachmentTransformRules::KeepWorldTransform);
+		}
+	}
+	*/
+
+	// Register the new component if required
+	NewComponent->RegisterComponent();
+
+	return NewComponent;
 }

@@ -14,6 +14,6 @@ class FACTORYSKYLINE_API UFSWallOperator : public UFSBuildableOperator
 {
 	GENERATED_BODY()
 public:
-	virtual void GetSelectConnectList(AFGBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
+	virtual void GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable> >& List) const;
 
 };
