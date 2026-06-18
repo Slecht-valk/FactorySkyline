@@ -5,6 +5,8 @@
 #include "Buildables/FGBuildable.h"
 #include "Buildables/FGBuildableFoundation.h"
 
+#include "Engine/OverlapResult.h"
+
 
 void UFSFoundationOperator::UpdateHologramState(const FHitResult& Hit, AFGHologram* Hologram, bool& ShouldShow, bool& Valid)
 {

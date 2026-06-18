@@ -257,7 +257,7 @@ void UFSRailroadTrackOperator::FindOverlappingConnections(TArray<UFGRailroadTrac
 			float DistSqr = (Component->GetComponentLocation() - Loc).SizeSquared();
 			if (DistSqr < RadiusSqr) {
 				AFGBuildableRailroadTrack* Track = Cast<AFGBuildableRailroadTrack>(Component->GetAttachmentRootActor());
-				if (Track && !Track->IsPendingKillOrUnreachable()) {
+				if (Track && !IsValid(Track)) {
 					Result.Add(Component);
 				}
 			}

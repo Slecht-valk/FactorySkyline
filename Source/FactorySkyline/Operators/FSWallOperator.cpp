@@ -5,6 +5,8 @@
 #include "Buildables/FGBuildableFactoryBuilding.h"
 #include "Buildables/FGBuildableWall.h"
 
+#include "Engine/OverlapResult.h"
+
 
 void UFSWallOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {

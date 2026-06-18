@@ -21,7 +21,7 @@
 #include "FGBuildablePolePipe.h"
 #include "FGRailroadTrackConnectionComponent.h"
 
-#include "FSBuildable.h"
+#include "FactorySkyline/FSBuildable.h"
 
 #include "FSBuildableOperator.generated.h"
 

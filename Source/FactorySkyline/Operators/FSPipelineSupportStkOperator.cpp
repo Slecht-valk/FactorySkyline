@@ -4,6 +4,8 @@
 #include "FSPipelineSupportStkOperator.h"
 #include "FGBuildablePolePipe.h"
 
+#include "Engine/OverlapResult.h"
+
 
 void UFSPipelineSupportStkOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {

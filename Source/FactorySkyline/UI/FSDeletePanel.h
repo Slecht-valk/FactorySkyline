@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/FSFoldWidgetBase.h"
-#include "FSDesign.h"
+#include "FactorySkyline/UI/FSFoldWidgetBase.h"
+#include "FactorySkyline/FSDesign.h"
 #include "Blueprint/UserWidget.h"
 #include "FSDeletePanel.generated.h"
 

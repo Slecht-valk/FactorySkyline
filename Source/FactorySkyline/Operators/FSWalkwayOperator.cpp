@@ -5,6 +5,8 @@
 #include "Buildables/FGBuildableFactoryBuilding.h"
 #include "Buildables/FGBuildableWalkway.h"
 
+#include "Engine/OverlapResult.h"
+
 
 void UFSWalkwayOperator::GetSelectConnectList(FSBuildable* Buildable, TArray<TWeakObjectPtr<AFGBuildable>>& List) const
 {

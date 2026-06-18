@@ -3,6 +3,7 @@
 
 #include "FSRailroadSwitchOperator.h"
 #include "Buildables/FGBuildableRailroadSwitchControl.h"
+#include "FGFactoryLegsComponent.h"
 
 /*
 AFGHologram* UFSRailroadSwitchOperator::CreateHologram()

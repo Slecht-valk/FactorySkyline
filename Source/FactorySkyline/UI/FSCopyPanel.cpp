@@ -41,10 +41,12 @@ void UFSCopyPanel::onStartCopy()
 void UFSCopyPanel::CopyToBpDesigner()
 {
 	return;
+	/*
 	AFSkyline* Skyline = AFSkyline::Get(this);
 
 	FHitResult Hit = Skyline->FSCtrl->GetCopyHitResultGeneric();
 	AFGBuildable* Building = Skyline->FSCtrl->AcquireBuildable(Hit);
+	*/
 
 	/*
 	if (Building) {
@@ -91,10 +93,11 @@ void UFSCopyPanel::CopyToBpDesigner()
 	//FTransform Transform = TransformOperator.Transform(Source->GetTransform());
 	//FTransform Transform = FTransform ();
 
-	AFGBuildable* Buildable;
+	//AFGBuildable* Buildable;
 
-	AFGBuildableSubsystem* BuildableSubsystem = AFGBuildableSubsystem::Get(this);
+	//AFGBuildableSubsystem* BuildableSubsystem = AFGBuildableSubsystem::Get(this);
 
+	/*
 	if (Skyline->FSCtrl->Design->Anchor != FSBuildable()) {
 
 
@@ -120,62 +123,6 @@ void UFSCopyPanel::CopyToBpDesigner()
 			//UPrimitiveComponent* MainComponent = Cast<UPrimitiveComponent>(Skyline->FSCtrl->Design->Anchor.Buildable->GetRootComponent());
 
 				// Get the bounds of the component in the world
-
-			/*
-			FVector Origin, BoxExtent;
-			Skyline->FSCtrl->Design->Anchor.Buildable->GetActorBounds(false, Origin, BoxExtent);
-
-			// Calculate the height (twice the Z extent of the bounding box)
-			float Height = BoxExtent.Z * 2;
-
-			// Adjust your transform as needed
-				//FTransform NewTransform = Transform;
-
-			// Example: Move the transform up by half the actor's height
-			FVector AdjustedLocation = Transform.GetLocation();
-			AdjustedLocation.Z += Height*4;
-			Transform.SetLocation(AdjustedLocation);
-			*/
-
-			/*
-			if (UPrimitiveComponent* PrimComp = Skyline->FSCtrl->Design->Anchor.Buildable->FindComponentByClass<UPrimitiveComponent>())
-			{
-				FBoxSphereBounds Bounds = PrimComp->Bounds;
-
-				// Use the BoxExtent directly to get the height
-				float ActorHeight = Bounds.BoxExtent.Z * 2;
-
-				// Example: Adjust transform based on the height
-				//FTransform NewTransform = Skyline->FSCtrl->Design->Anchor.Buildable->GetActorTransform();
-				FVector AdjustedLocation = Transform.GetLocation();
-				AdjustedLocation.Z += ActorHeight * 0.5f;  // Move up by half the height
-				//Transform.SetLocation(AdjustedLocation);
-
-				//MyBuildableActor->SetActorTransform(NewTransform);
-			}
-
-			if (Skyline->FSCtrl->Design->Anchor.Buildable->mInstanceHandles.Num() > 0) {
-
-				TArray<FInstanceHandle*> InstanceHandles = Skyline->FSCtrl->Design->Anchor.Buildable->mInstanceHandles;
-
-				for (int i = 0; i < InstanceHandles.Num(); i++) {
-					UHierarchicalInstancedStaticMeshComponent* component = InstanceHandles[i]->GetInstanceComponent();
-
-					FBoxSphereBounds Bounds = component->Bounds;
-
-
-					// Use the BoxExtent directly to get the height
-					float ActorHeight = (Bounds.Origin.Z - Bounds.BoxExtent.Z);
-
-					// Example: Adjust transform based on the height
-					//FTransform NewTransform = Skyline->FSCtrl->Design->Anchor.Buildable->GetActorTransform();
-					FVector AdjustedLocation = Transform.GetLocation();
-					AdjustedLocation.Z += ActorHeight/22;  // Move up by half the height
-					Transform.SetLocation(AdjustedLocation);
-
-				}
-			}
-			*/
 		}
 
 		TSubclassOf< UFGRecipe > ConveyorPoleRecipe = LoadClass<UFGRecipe>(this, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_BlueprintDesigner.Recipe_BlueprintDesigner_C"));
@@ -235,14 +182,6 @@ void UFSCopyPanel::CopyToBpDesigner()
 
 			}
 
-			/*
-			if (BuildablePtr.Get()) {
-				AFGBuildable* Buildable = BuildablePtr.Get();
-
-				Designer->mBuildables.Add(Buildable);
-			}
-			*/
-
 		}
 		
 
@@ -281,7 +220,7 @@ void UFSCopyPanel::CopyToBpDesigner()
 		}
 
 	}
-	
+	*/
 }
 
 void UFSCopyPanel::Init()

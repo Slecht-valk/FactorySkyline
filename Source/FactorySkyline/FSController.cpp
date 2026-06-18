@@ -23,7 +23,7 @@
 
 #include "Tickable.h"
 #include "HAL/PlatformProcess.h" 
-#include "Ticker.h"
+#include "Containers/Ticker.h"
 
 //#include "FGLightweightBuildableSubsystem.h"
 
@@ -1007,7 +1007,7 @@ void AFSController::LoadDesign(UFSDesign* DesignParam)
 	Repeat.Ready = false;
 
 	if (this->Select != nullptr && this->Select->Cube != nullptr) {
-		if (this->Select->Cube->IsValidLowLevel() && !this->Select->Cube->IsPendingKill()) {
+		if (this->Select->Cube->IsValidLowLevel() && !IsValid(this->Select->Cube)) {
 			this->Select->Cube->Destroy();
 			this->Select->Cube = nullptr;
 		}
@@ -1022,7 +1022,7 @@ void AFSController::UnloadDesign(bool ShowMouse)
 	if (ShowMouse) this->ShowMouseCursor();
 
 	if (this->Select != nullptr && this->Select->Cube != nullptr) {
-		if (this->Select->Cube->IsValidLowLevel() && !this->Select->Cube->IsPendingKill()) {
+		if (this->Select->Cube->IsValidLowLevel() && !IsValid(this->Select->Cube)) {
 			this->Select->Cube->Destroy();
 			this->Select->Cube = nullptr;
 		}
@@ -1044,7 +1044,7 @@ void AFSController::onEscPressed()
 	}
 
 	if (this->Select != nullptr && this->Select->Cube != nullptr) {
-		if (this->Select->Cube->IsValidLowLevel() && !this->Select->Cube->IsPendingKill()) {
+		if (this->Select->Cube->IsValidLowLevel() && !IsValid(this->Select->Cube)) {
 			this->Select->Cube->Destroy();
 			this->Select->Cube = nullptr;
 		}
@@ -1798,7 +1798,7 @@ FSHitResults AFSController::GetSelectHitResult()
 			//return FSHit;
 
 			//UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = Handle.GetInstanceComponent();
-			UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
+			ULightweightHierarchicalInstancedStaticMeshComponent* OriginalHISMC = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
 
 			if (CompCopy == nullptr) {
 				/*
@@ -2145,72 +2145,6 @@ FSHitResults AFSController::GetCopyHitResult()
 
 			return FSHit;
 
-			//UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = Handle.GetInstanceComponent();
-			UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
-
-			if (CompCopy == nullptr) {
-				/*
-				CompCopy = DuplicateObject<UHierarchicalInstancedStaticMeshComponent>(OriginalHISMC, WorldHologramHelper);
-
-				CompCopy->ClearInstances();
-
-				// Attach the duplicated component to the actor
-				CompCopy->AttachToComponent(WorldHologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-				CompCopy->RegisterComponent();
-
-				// Make sure to set other properties as needed
-				CompCopy->SetVisibility(true);
-				CompCopy->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-				*/
-
-
-				CompCopy = NewObject<UHierarchicalInstancedStaticMeshComponent>(WorldHologramHelper);
-
-
-				FTransform InstanceRelativeTransform = Handle.GetInstanceComponent()->GetRelativeTransform();
-				const FTransform InstanceSpawnLocation = InstanceRelativeTransform * WorldHologramHelper->GetActorTransform();
-
-				CompCopy->SetStaticMesh(Handle.GetInstanceComponent()->GetStaticMesh());
-
-				FInstanceData instanceData = FInstanceData();
-				instanceData.OverridenMaterials.Add(FSkyline->Select->SelectMaterial);
-
-				CompCopy->OverrideMaterials = instanceData.OverridenMaterials;
-				CompCopy->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-				CompCopy->SetGenerateOverlapEvents(false);
-				CompCopy->SetMobility(Handle.GetInstanceComponent()->Mobility);
-				CompCopy->AttachToComponent(WorldHologramHelper->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-
-				CompCopy->SetRelativeTransform(FTransform::Identity);
-				CompCopy->SetVisibility(true);
-				//comp2->NumCustomDataFloats = InstanceHandles[i]->GetInstanceComponent()->NumCustomDataFloats;
-				CompCopy->RegisterComponent();
-
-
-
-			}
-
-			//FTransform InstanceTransform;
-			//Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform);
-			//CompCopy->AddInstance(InstanceTransform);
-
-			FTransform InstanceTransform2;
-			Handle.GetInstanceComponent()->GetInstanceTransform(Handle.GetHandleID(), InstanceTransform2, true);
-
-
-			// worth noting runtimeData transformation data is off in world position from world position returned by the components
-			// meaning this isnt accurate data to work with for some reason, investigate more to root cause to this as it should be the same?
-			//InstanceTransform = runtimeData->Transform;
-
-			CompCopy->AddInstance(InstanceTransform2, true);
-
-			//bool didSpawn = false;
-			//tempData = lightweightSubsystem->FindOrSpawnBuildableForRuntimeData(runtimeData, Handle.GetHandleID(), didSpawn);
-
-			// TODO FIX FOR 1.1
-			//Handle.HideInstance(true);
-
-
 		}
 	}
 
@@ -2266,11 +2200,12 @@ FHitResult AFSController::GetMouseCursorHitResult(bool RequireBuildable)
 
 		if (HUD->GetHitBoxAtCoordinates(MousePosition, true)) return FHitResult();
 
-		FVector WorldOrigin;
-		FVector WorldDirection;
+		//FVector WorldOrigin;
+		//FVector WorldDirection;
 
 		// TODO WE NEED TO DO THIS LOGIC DIFFERENTLY
 
+		/*
 		if (UGameplayStatics::DeprojectScreenToWorld(this->FGController, MousePosition, WorldOrigin, WorldDirection))
 		{
 			FHitResult Hit;
@@ -2280,6 +2215,9 @@ FHitResult AFSController::GetMouseCursorHitResult(bool RequireBuildable)
 				}
 			}
 		}
+
+		*/
+
 	}
 
 	return FHitResult();

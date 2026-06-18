@@ -64,7 +64,7 @@ bool UFSDesign::IsElementSelected(FSBuildable Buildable)
 	return Result1 != nullptr;
 
 	// Alternatively, if BuildableSet contains FSBuildable structs (TSet<FSBuildable>)
-	return BuildableSet.Contains(Buildable);
+	//return BuildableSet.Contains(Buildable);
 
 	/*
 	if (!Buildable) return false;

@@ -598,7 +598,7 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 			AnchorConnection = AnchorInput ? AnchorInput : AnchorOutput;
 			UFGFactoryConnectionComponent* Connection = nullptr;
 			if (AnchorInput && AnchorOutput) {
-				Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
+				Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionDirection::FCD_INPUT);
 				if (Connection) {
 					if (Connection->GetDirection() == EFactoryConnectionDirection::FCD_SNAP_ONLY) AnchorConnection = AnchorInput;
 					else AnchorConnection = AnchorOutput;
@@ -606,8 +606,8 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 				else AnchorConnection = AnchorInput;
 			}
 			else {
-				if (AnchorInput) Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
-				if (AnchorOutput) Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_OUTPUT);
+				if (AnchorInput) Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionDirection::FCD_INPUT);
+				if (AnchorOutput) Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Transform.GetLocation(), nullptr, 50.0f, EFactoryConnectionDirection::FCD_OUTPUT);
 				if (Connection) {
 					Valid = (Connection->GetDirection() == EFactoryConnectionDirection::FCD_SNAP_ONLY);
 				}
@@ -624,7 +624,7 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 					if (LiftOperator->HitConnection->GetDirection() == EFactoryConnectionDirection::FCD_INPUT) AnchorConnection = AnchorOutput;
 					else if (LiftOperator->HitConnection->GetDirection() == EFactoryConnectionDirection::FCD_OUTPUT ) AnchorConnection = AnchorInput;
 					else {
-						Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
+						Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionDirection::FCD_INPUT);
 						if (Connection) {
 							if (Connection->GetDirection() == EFactoryConnectionDirection::FCD_SNAP_ONLY) AnchorConnection = AnchorInput;
 							else AnchorConnection = AnchorOutput;
@@ -635,11 +635,11 @@ FTransform AFSBuilder::GetFixedTargetTransform(AFGHologram* HologramParam, bool&
 				else {
 					if (AnchorInput) {
 						if (LiftOperator->HitConnection->GetDirection() == EFactoryConnectionDirection::FCD_INPUT) Connection = LiftOperator->HitConnection;
-						else Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_INPUT);
+						else Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionDirection::FCD_INPUT);
 					}
 					if (AnchorOutput) {
 						if (LiftOperator->HitConnection->GetDirection() == EFactoryConnectionDirection::FCD_OUTPUT) Connection = LiftOperator->HitConnection;
-						else Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionConnector::FCC_CONVEYOR, EFactoryConnectionDirection::FCD_OUTPUT);
+						else Connection = UFGFactoryConnectionComponent::FindOverlappingConnections(World, Location, nullptr, 50.0f, EFactoryConnectionDirection::FCD_OUTPUT);
 					}
 					if (Connection) {
 						Valid = (Connection->GetDirection() == EFactoryConnectionDirection::FCD_SNAP_ONLY);

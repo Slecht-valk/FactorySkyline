@@ -5,6 +5,8 @@
 #include "Buildables/FGBuildableLadder.h"
 #include "Hologram/FGLadderHologram.h"
 
+#include "Engine/OverlapResult.h"
+
 
 AFGHologram* UFSLadderOperator::HologramCopy(FTransform& RelativeTransform)
 {

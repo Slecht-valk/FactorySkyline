@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Containers/List.h"
-#include "UI/FSMenuWidget.h"
-#include "UI/FSMenuEntryBase.h"
-#include "UI/FSButtonWidget.h"
+#include "FactorySkyline/UI/FSMenuWidget.h"
+#include "FactorySkyline/UI/FSMenuEntryBase.h"
+#include "FactorySkyline/UI/FSButtonWidget.h"
 #include "UObject/NoExportTypes.h"
-#include "FSDesign.h"
+#include "FactorySkyline/FSDesign.h"
 #include "FSMenuItem.generated.h"
 
 /**

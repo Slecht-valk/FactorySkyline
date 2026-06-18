@@ -6,6 +6,8 @@
 #include "Hologram/FGWireHologram.h"
 #include "FGCircuitConnectionComponent.h"
 
+#include "Engine/OverlapResult.h"
+
 AFGBuildable* UFSWireOperator::CreateCopy(const FSTransformOperator& TransformOperator)
 {
 	//SML::Logging::info(TEXT("UFSWireOperator::CreateCopy"));

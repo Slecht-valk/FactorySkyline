@@ -22,6 +22,8 @@
 #include "Buildables/FGBuildablePowerStorage.h"
 #include "Buildables/FGBuildableCircuitSwitch.h"
 
+#include "FGBuildablePipelineFlowIndicator.h"
+
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
 #include "AbstractInstanceManager.h"
@@ -563,10 +565,13 @@ void UFSSelection::Select(FSBuildable Buildable)
 	//FSkyline->FSCtrl->GetPlayer()->GetOutline()->ShowMultiActorOutline(NewArr, EOutlineColor::OC_HOLOGRAM);
 
 	return;
+	/*
 	if (Cube != nullptr) {
 		Cube->Destroy();
 	}
-
+	*/
+	
+	/*
 	AFSkyline* FSkyline = AFSkyline::Get(this);
 
 	FActorSpawnParameters* parameters = new FActorSpawnParameters();
@@ -578,6 +583,9 @@ void UFSSelection::Select(FSBuildable Buildable)
 
 	Cube = (AMyActor*)FSkyline->FSCtrl->World->SpawnActorAbsolute(AMyActor::StaticClass(), cubeTransform, *parameters);
 	FBoxSphereBounds baseBounds = Cube->GetRootComponent()->Bounds;
+	*/
+
+
 	//Cube->SetActorScale3D(FVector(8, 8, 8));
 	//Cube->SetActorScale3D(FVector(16, 8, 8));
 	//Cube->SetActorScale3D(FVector(24, 8, 8));
@@ -591,15 +599,15 @@ void UFSSelection::Select(FSBuildable Buildable)
 
 	//crashes the game I think?
 	//Cube->SetActorScale3D(FVector(2000, 2000, 2000));
-	Cube->SetActorScale3D(FVector(10000, 10000, 10000));
+	//Cube->SetActorScale3D(FVector(10000, 10000, 10000));
 
-	Cube->SetActorEnableCollision(false);
-	FBoxSphereBounds bounds1 = Cube->GetRootComponent()->Bounds;
+	//Cube->SetActorEnableCollision(false);
+	//FBoxSphereBounds bounds1 = Cube->GetRootComponent()->Bounds;
 
 
-	FTransform transform = Cube->GetTransform();
+	//FTransform transform = Cube->GetTransform();
 
-	FVector translate = transform.GetTranslation();
+	//FVector translate = transform.GetTranslation();
 	//FVector newPoint = FVector(translate.X, translate.Y + (bounds1.BoxExtent.Y / 2) + baseBounds.BoxExtent.Y - 250, translate.Z);
 	//FVector newPoint = FVector(translate.X, translate.Y + (bounds1.BoxExtent.Y / 2) + baseBounds.BoxExtent.Y - 50, translate.Z);
 	//FVector newPoint = FVector(translate.X, translate.Y+(bounds1.BoxExtent.Y/2)+baseBounds.BoxExtent.Y+150, translate.Z);
@@ -620,15 +628,18 @@ void UFSSelection::Select(FSBuildable Buildable)
 	//FVector newPoint = FVector(translate.X + (bounds1.BoxExtent.X / 2) + baseBounds.BoxExtent.X + 750, translate.Y, translate.Z);
 
 
+	/*
 	int xScaleFactorStart = 48;
 	xScaleFactorStart -= 8;
 	int Adjustment = (xScaleFactorStart / 8)*(400);
 	FVector newPoint = FVector(translate.X + Adjustment, translate.Y, translate.Z);
+	*/
 
 
 	//transform.SetTranslation(newPoint);
 	//Cube->SetActorTransform(transform);
 
+	/*
 	TInlineComponentArray<UMeshComponent*> MeshComps(Cube);
 	for (const auto& MeshComponent : MeshComps) {
 		int num = MeshComponent->GetNumMaterials();
@@ -638,6 +649,8 @@ void UFSSelection::Select(FSBuildable Buildable)
 			}
 		}
 	}
+	*/
+
 
 	// TODO REWORK THIS DO WE STILL NEED?
 	/*
@@ -1288,7 +1301,7 @@ void UFSSelection::EnableHightLight(FSActorMaterial& Cache, FSBuildable Buildabl
 
 
 					//UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = Handle.GetInstanceComponent();
-					UHierarchicalInstancedStaticMeshComponent* OriginalHISMC = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
+					ULightweightHierarchicalInstancedStaticMeshComponent* OriginalHISMC = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
 
 
 					comp2 = NewObject<UHierarchicalInstancedStaticMeshComponent>(Cache.HologramHelper);
@@ -1346,7 +1359,7 @@ void UFSSelection::EnableHightLight(FSActorMaterial& Cache, FSBuildable Buildabl
 					FVector Scale{};
 					FTransform T;
 
-					UHierarchicalInstancedStaticMeshComponent* comp = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
+					ULightweightHierarchicalInstancedStaticMeshComponent* comp = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
 
 					
 					//comp->GetInstanceTransform(Handle.GetHandleID(), T, false);
@@ -2314,7 +2327,7 @@ void UFSSelection::DisableHightLight(FSBuildable Buildable)
 				Pair.Value->ClearInstances();
 				Pair.Value->UnregisterComponent();
 				Pair.Value->DestroyComponent();
-				Pair.Value->FixGarbageOrPendingKillInternalObjectFlags(EInternalObjectFlags::Garbage);
+				//Pair.Value->FixGarbageOrPendingKillInternalObjectFlags(EInternalObjectFlags::Garbage);
 				Pair.Value->MarkAsGarbage();
 				//Pair.Key->MarkAsGarbage();
 				//Pair.Key = nullptr;
@@ -2349,8 +2362,8 @@ void UFSSelection::DisableHightLight(FSBuildable Buildable)
 					FTransform T;
 					//Cache->Handle.GetInstanceComponent
 
-					UHierarchicalInstancedStaticMeshComponent* comp;
-					comp = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Cache->Handle.GetInstanceComponent());
+					ULightweightHierarchicalInstancedStaticMeshComponent* comp;
+					comp = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Cache->Handle.GetInstanceComponent());
 
 					
 					//comp->GetInstanceTransform(Cache->Handle.GetHandleID(), T);
@@ -2632,7 +2645,7 @@ void UFSSelection::DisableAll()
 					Pair.Value->ClearInstances();
 					Pair.Value->UnregisterComponent();
 					Pair.Value->DestroyComponent();
-					Pair.Value->FixGarbageOrPendingKillInternalObjectFlags(EInternalObjectFlags::Garbage);
+					//Pair.Value->FixGarbageOrPendingKillInternalObjectFlags(EInternalObjectFlags::Garbage);
 					Pair.Value->MarkAsGarbage();
 					//Pair.Key->MarkAsGarbage();
 					//Pair.Key = nullptr;
@@ -2708,7 +2721,7 @@ FSISMNode* UFSSelection::GetISM(UFGColoredInstanceMeshProxy* MeshProxy, UMateria
 	FSISMNode* Node = new FSISMNode();
 	ISMMapping.Add(TPair<UFGColoredInstanceManager*, UMaterialInterface* >(MeshProxy->mInstanceManager, Material), Node);
 
-	UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
+	TObjectPtr<UInstancedStaticMeshComponent> HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
 	Node->ISMComponent = NewObject<UHierarchicalInstancedStaticMeshComponent>(HISMComponent->GetAttachmentRootActor());
 	//Node->ISMComponent->AttachTo(HISMComponent->GetAttachmentRootActor()->GetRootComponent());
 	Node->ISMComponent->SetStaticMesh(HISMComponent->GetStaticMesh());
@@ -2750,7 +2763,7 @@ void UFSSelection::RemoveInstance(UFGColoredInstanceMeshProxy* MeshProxy, FSMate
 
 void UFSSelection::AddInstance(UFGColoredInstanceMeshProxy* MeshProxy, uint8 Slot)
 {
-	UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
+	TObjectPtr<UInstancedStaticMeshComponent> HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
 	HISMComponent->AddInstance(MeshProxy->GetComponentTransform());
 	TArray <UFGColoredInstanceManager::FInstanceHandle*>& NewHandlesArray = MeshProxy->mInstanceManager->mHandles;
 	MeshProxy->mInstanceHandle.HandleID = NewHandlesArray.Add(&MeshProxy->mInstanceHandle);
@@ -2759,7 +2772,7 @@ void UFSSelection::AddInstance(UFGColoredInstanceMeshProxy* MeshProxy, uint8 Slo
 void UFSSelection::RemoveInstance(UFGColoredInstanceMeshProxy* MeshProxy, uint8 Slot)
 {
 	if (MeshProxy->mInstanceManager != nullptr) {
-		UHierarchicalInstancedStaticMeshComponent* HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
+		TObjectPtr<UInstancedStaticMeshComponent> HISMComponent = MeshProxy->mInstanceManager->mInstanceComponent;
 		int32 Index = MeshProxy->mInstanceHandle.HandleID;
 		if (Index < 0) return;
 
@@ -2831,7 +2844,7 @@ void UFSSelection::SelectBuildablesInAreaBox() {
 
 		//const float Range = CVarDisplayLightWeightInstanceDebugRange.GetValueOnAnyThread();
 
-		TArray<UHierarchicalInstancedStaticMeshComponent*> filterList;
+		TArray<ULightweightHierarchicalInstancedStaticMeshComponent*> filterList;
 
 		for (TObjectIterator<AFGBuildable> Worker; Worker; ++Worker) {
 			AFGBuildable* buildablePtr = *Worker;
@@ -2997,14 +3010,14 @@ void UFSSelection::SelectBuildablesInAreaBox() {
 					TArray<int32> instances;
 					//instances = Handle->GetInstanceComponent()->GetInstancesOverlappingBox(bounds1.GetBox(), true);
 					//instances = Handle->GetInstanceComponent()->GetInstancesOverlappingBox(bounds1.GetBox(), true);
-					instances = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.Get()->GetInstanceComponent())->GetInstancesOverlappingBox(bounds1.GetBox(), true);
+					instances = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.Get()->GetInstanceComponent())->GetInstancesOverlappingBox(bounds1.GetBox(), true);
 
 					bool foundFilter = false;
 
 					for (int j = 0; j < filterList.Num(); j++) {
-						UHierarchicalInstancedStaticMeshComponent* filterMesh = filterList[j];
+						ULightweightHierarchicalInstancedStaticMeshComponent* filterMesh = filterList[j];
 						//UHierarchicalInstancedStaticMeshComponent* HandleMesh = Handle->GetInstanceComponent();
-						UHierarchicalInstancedStaticMeshComponent* HandleMesh = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.Get()->GetInstanceComponent());
+						ULightweightHierarchicalInstancedStaticMeshComponent* HandleMesh = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.Get()->GetInstanceComponent());
 						if (filterMesh == HandleMesh) {
 							foundFilter = true;
 							break;

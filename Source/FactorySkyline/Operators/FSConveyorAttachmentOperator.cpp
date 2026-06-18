@@ -5,6 +5,8 @@
 #include "Buildables/FGBuildableAttachmentMerger.h"
 #include "Buildables/FGBuildableAttachmentSplitter.h"
 
+#include "Engine/OverlapResult.h"
+
 
 void UFSConveyorAttachmentOperator::ApplyConnection(AFGBuildable* Buildable, UFGFactoryConnectionComponent* SFC, UFGFactoryConnectionComponent* TFC, const FSTransformOperator& TransformOperator, bool Force)
 {

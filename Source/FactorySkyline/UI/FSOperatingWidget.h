@@ -15,6 +15,9 @@
 #include "FactorySkyline/UI/FSAdvancedCopyPanel.h"
 #include "FactorySkyline/UI/FSEditAreaPanel.h"
 #include "FactorySkyline/FSDesign.h"
+
+#include "FactorySkyline/FSMenuItem.h"
+
 #include "FSOperatingWidget.generated.h"
 
 /**

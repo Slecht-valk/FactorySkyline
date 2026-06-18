@@ -1100,8 +1100,8 @@ AFGConveyorLiftHologram* UFSSplineHologramFactory::CreateLiftHologram(AFGBuildab
 	//ConveyorLiftHologram->ConfigureComponents(Cast< AFGBuildable>(ConveyorLiftHologram));
 	//ConveyorLiftHologram->UpdateConnectionDirections();
 
-	FHitResult Hit2;
-	FRotator rotator;
+	//FHitResult Hit2;
+	//FRotator rotator;
 
 	//ConveyorLiftHologram->UpdateTopTransform(Hit2, rotator);
 	//ConveyorLiftHologram->OnRep_TopTransform();

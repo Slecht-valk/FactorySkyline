@@ -63,6 +63,7 @@ struct FSBuildable
 		}
 		return false;
 
+		/*
 		if (Buildable|| Other.Buildable) {
 			return Buildable == Other.Buildable;
 		}
@@ -76,8 +77,8 @@ struct FSBuildable
 				//UHierarchicalInstancedStaticMeshComponent* hismc = Handle.GetInstanceComponent();
 				//UHierarchicalInstancedStaticMeshComponent* hismcOther = Other.Handle.GetInstanceComponent();
 
-				UHierarchicalInstancedStaticMeshComponent* hismc = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
-				UHierarchicalInstancedStaticMeshComponent* hismcOther = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Other.Handle.GetInstanceComponent());
+				ULightweightHierarchicalInstancedStaticMeshComponent* hismc = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
+				ULightweightHierarchicalInstancedStaticMeshComponent* hismcOther = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Other.Handle.GetInstanceComponent());
 
 				// Check if they share the same mesh component.
 				if (hismc == hismcOther) {
@@ -95,6 +96,7 @@ struct FSBuildable
 				}
 			}
 		}
+		*/
 	}
 
 	bool operator!=(const FSBuildable& Other) const {
@@ -104,7 +106,7 @@ struct FSBuildable
 		}
 		return false;
 
-
+		/*
 		if (BuildableClass == nullptr && Other.BuildableClass == nullptr) {
 		//if (Buildable && Other.Buildable) {
 			return Buildable != Other.Buildable;
@@ -119,8 +121,8 @@ struct FSBuildable
 				//UHierarchicalInstancedStaticMeshComponent* hismc = Handle.GetInstanceComponent();
 				//UHierarchicalInstancedStaticMeshComponent* hismcOther = Other.Handle.GetInstanceComponent();
 
-				UHierarchicalInstancedStaticMeshComponent* hismc = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
-				UHierarchicalInstancedStaticMeshComponent* hismcOther = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Other.Handle.GetInstanceComponent());
+				ULightweightHierarchicalInstancedStaticMeshComponent* hismc = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
+				ULightweightHierarchicalInstancedStaticMeshComponent* hismcOther = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Other.Handle.GetInstanceComponent());
 
 				// Check if they share the same mesh component.
 				if (hismc == hismcOther) {
@@ -137,6 +139,7 @@ struct FSBuildable
 				}
 			}
 		}
+		*/
 
 		/*
 		if (Buildable != Other.Buildable && BuildableClass != Other.BuildableClass) {
@@ -237,8 +240,8 @@ struct FSBuildableTest
 				//UHierarchicalInstancedStaticMeshComponent* hismc = Handle.GetInstanceComponent();
 				//UHierarchicalInstancedStaticMeshComponent* hismcOther = Other.Handle.GetInstanceComponent();
 
-				UHierarchicalInstancedStaticMeshComponent* hismc = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
-				UHierarchicalInstancedStaticMeshComponent* hismcOther = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Other.Handle.GetInstanceComponent());
+				ULightweightHierarchicalInstancedStaticMeshComponent* hismc = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
+				ULightweightHierarchicalInstancedStaticMeshComponent* hismcOther = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Other.Handle.GetInstanceComponent());
 
 				// Check if they share the same mesh component.
 				if (hismc == hismcOther) {
@@ -274,8 +277,8 @@ struct FSBuildableTest
 				//UHierarchicalInstancedStaticMeshComponent* hismc = Handle.GetInstanceComponent();
 				//UHierarchicalInstancedStaticMeshComponent* hismcOther = Other.Handle.GetInstanceComponent();
 
-				UHierarchicalInstancedStaticMeshComponent* hismc = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
-				UHierarchicalInstancedStaticMeshComponent* hismcOther = const_cast<UHierarchicalInstancedStaticMeshComponent*>(Other.Handle.GetInstanceComponent());
+				ULightweightHierarchicalInstancedStaticMeshComponent* hismc = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Handle.GetInstanceComponent());
+				ULightweightHierarchicalInstancedStaticMeshComponent* hismcOther = const_cast<ULightweightHierarchicalInstancedStaticMeshComponent*>(Other.Handle.GetInstanceComponent());
 
 				// Check if they share the same mesh component.
 				if (hismc == hismcOther) {

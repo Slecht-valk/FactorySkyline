@@ -39,7 +39,10 @@ void FSInventory::AddResource(UFSDesign* Design, int Multiplier)
 
 			//TODO: Figure out why GetDismantleRefundReturnsMultiplier() gives millions
 			//this->AddResource(UFGRecipe::GetIngredients(Recipe), Buildable->GetDismantleRefundReturnsMultiplier() * Multiplier);
-			this->AddResource(UFGRecipe::GetIngredients(Recipe), 1 * Multiplier);
+
+			const UObject* worldContext = SplineHologramFactory;
+
+			this->AddResource(UFGRecipe::GetIngredients(worldContext, Recipe), 1 * Multiplier);
 
 		}
 	}
@@ -65,7 +68,10 @@ void FSInventory::AddResource(AFGBuildable* Buildable, int Multiplier)
 
 	//TODO: Figure out why GetDismantleRefundReturnsMultiplier() gives millions
 	//this->AddResource(UFGRecipe::GetIngredients(Recipe), Buildable->GetDismantleRefundReturnsMultiplier() * Multiplier);
-	this->AddResource(UFGRecipe::GetIngredients(Recipe), 1 * Multiplier);
+
+	const UObject* worldContext = SplineHologramFactory;
+
+	this->AddResource(UFGRecipe::GetIngredients(worldContext, Recipe), 1 * Multiplier);
 }
 
 void FSInventory::AddResourceCheckRecipe(FSBuildable Buildable, int Multiplier)
@@ -85,7 +91,10 @@ void FSInventory::AddResourceCheckRecipe(FSBuildable Buildable, int Multiplier)
 
 	//TODO: Figure out why GetDismantleRefundReturnsMultiplier() gives millions
 	//this->AddResource(UFGRecipe::GetIngredients(Recipe), Buildable->GetDismantleRefundReturnsMultiplier() * Multiplier);
-	this->AddResource(UFGRecipe::GetIngredients(Recipe), 1 * Multiplier);
+
+	const UObject* worldContext = SplineHologramFactory;
+
+	this->AddResource(UFGRecipe::GetIngredients(worldContext, Recipe), 1 * Multiplier);
 }
 
 void FSInventory::AddResource(const TArray<FItemAmount>& Items, int Multiplier)

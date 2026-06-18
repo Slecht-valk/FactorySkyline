@@ -49,7 +49,6 @@ public class FactorySkyline : ModuleRules
 		// FactoryGame plugins
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"AbstractInstance",
-			"InstancedSplinesComponent",
 			"SignificanceISPC"
 		});
 

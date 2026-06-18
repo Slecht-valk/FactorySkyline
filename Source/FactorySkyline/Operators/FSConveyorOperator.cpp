@@ -84,7 +84,7 @@ UFGFactoryConnectionComponent* UFSConveyorOperator::FindCompatibleConnections(UF
 			float DistSqr = (TargetComponent->GetComponentLocation() - Loc).SizeSquared();
 			if (DistSqr < RadiusSqr) {
 				AFGBuildable* Buildable = Cast<AFGBuildable>(TargetComponent->GetAttachmentRootActor());
-				if (Buildable && !Buildable->IsPendingKillOrUnreachable()) return TargetComponent;
+				if (Buildable && !IsValid(Buildable)) return TargetComponent;
 			}
 		}
 	}

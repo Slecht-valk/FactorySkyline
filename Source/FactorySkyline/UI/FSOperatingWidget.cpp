@@ -138,7 +138,7 @@ void UFSOperatingWidget::OnTab1Click()
 	AFSkyline* Skyline = AFSkyline::Get(this);
 
 	if (Skyline->FSCtrl->Select != nullptr && Skyline->FSCtrl->Select->Cube != nullptr) {
-		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !Skyline->FSCtrl->Select->Cube->IsPendingKill()) {
+		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !IsValid(Skyline->FSCtrl->Select->Cube)) {
 			Skyline->FSCtrl->Select->Cube->Destroy();
 			Skyline->FSCtrl->Select->Cube = nullptr;
 		}
@@ -163,7 +163,7 @@ void UFSOperatingWidget::OnTab2Click()
 	AFSkyline* Skyline = AFSkyline::Get(this);
 
 	if (Skyline->FSCtrl->Select != nullptr && Skyline->FSCtrl->Select->Cube != nullptr) {
-		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !Skyline->FSCtrl->Select->Cube->IsPendingKill()) {
+		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !IsValid(Skyline->FSCtrl->Select->Cube)) {
 			Skyline->FSCtrl->Select->Cube->Destroy();
 			Skyline->FSCtrl->Select->Cube = nullptr;
 		}
@@ -188,7 +188,7 @@ void UFSOperatingWidget::OnTab3Click()
 	AFSkyline* Skyline = AFSkyline::Get(this);
 
 	if (Skyline->FSCtrl->Select != nullptr && Skyline->FSCtrl->Select->Cube != nullptr) {
-		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !Skyline->FSCtrl->Select->Cube->IsPendingKill()) {
+		if (Skyline->FSCtrl->Select->Cube->IsValidLowLevel() && !IsValid(Skyline->FSCtrl->Select->Cube)) {
 			Skyline->FSCtrl->Select->Cube->Destroy();
 			Skyline->FSCtrl->Select->Cube = nullptr;
 		}

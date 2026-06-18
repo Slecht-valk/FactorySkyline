@@ -3,6 +3,8 @@
 
 #include "FSConveyorPoleStackableOperator.h"
 
+#include "Engine/OverlapResult.h"
+
 
 AFGHologram* UFSConveyorPoleStackableOperator::HologramCopy(FTransform& RelativeTransform)
 {
